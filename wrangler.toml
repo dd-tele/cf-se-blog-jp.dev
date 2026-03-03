@@ -1,0 +1,38 @@
+name = "cf-se-blog"
+account_id = "a4ca1c82309af1a392f77e6e5db8fd68"
+compatibility_date = "2025-12-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./build/client"
+
+[vars]
+ENVIRONMENT = "production"
+SITE_NAME = "Cloudflare Solution Blog"
+SITE_URL = "https://cf-se-blog-jp.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cf-se-blog-db"
+database_id = "aa01eaf8-f9c9-47e5-9665-f64f7daa43ae"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "cf-se-blog-media"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "4ef10924f893416e990475d35b0b09af"
+
+[[kv_namespaces]]
+binding = "PAGE_CACHE"
+id = "c9bca5ddaf3147808a590b433eedb684"
+
+[[kv_namespaces]]
+binding = "DRAFTS"
+id = "da6f80df5213422a97ee6972e2f7f772"
+
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "cf-se-blog-vectors"

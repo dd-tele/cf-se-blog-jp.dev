@@ -1,0 +1,289 @@
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@remix-run/cloudflare";
+import {
+  Form,
+  useLoaderData,
+  useActionData,
+  useNavigation,
+  Link,
+} from "@remix-run/react";
+import { redirect } from "@remix-run/cloudflare";
+import { requireUser } from "~/lib/auth.server";
+import {
+  getPostById,
+  updatePost,
+  deletePost,
+  getAllCategories,
+} from "~/lib/posts.server";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => [
+  { title: `${data?.post?.title ?? "記事"} を編集 — Cloudflare Solution Blog` },
+];
+
+export async function loader({ params, request, context }: LoaderFunctionArgs) {
+  const user = await requireUser(request);
+  const db = context.cloudflare.env.DB;
+  const postId = params.id;
+  if (!postId) throw new Response("Not Found", { status: 404 });
+
+  const post = await getPostById(db, postId);
+  if (!post) throw new Response("Not Found", { status: 404 });
+  if (post.author_id !== user.id && user.role !== "admin") {
+    throw new Response("Forbidden", { status: 403 });
+  }
+
+  const categories = await getAllCategories(db);
+  return { post, categories, user };
+}
+
+export async function action({ params, request, context }: ActionFunctionArgs) {
+  const user = await requireUser(request);
+  const db = context.cloudflare.env.DB;
+  const postId = params.id;
+  if (!postId) throw new Response("Not Found", { status: 404 });
+
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
+
+  if (intent === "delete") {
+    await deletePost(db, postId, user);
+    return redirect("/portal/posts");
+  }
+
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+  const categoryId = (formData.get("categoryId") as string) || undefined;
+  const tagsStr = formData.get("tags") as string;
+  const tagsJson = tagsStr
+    ? JSON.stringify(
+        tagsStr
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+      )
+    : undefined;
+  const status = (formData.get("status") as string) || undefined;
+
+  if (!title || !content) {
+    return { error: "タイトルと本文は必須です" };
+  }
+
+  try {
+    const result = await updatePost(
+      db,
+      postId,
+      {
+        title,
+        content,
+        categoryId,
+        tagsJson,
+        status: status as "draft" | "pending_review" | undefined,
+      },
+      user
+    );
+
+    if (intent === "submit") {
+      return redirect("/portal/posts?status=pending_review");
+    }
+    return { success: true, message: "保存しました" };
+  } catch (e: any) {
+    return { error: e.message || "更新に失敗しました" };
+  }
+}
+
+export default function EditPost() {
+  const { post, categories, user } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+
+  const tags: string[] = post.tags_json ? JSON.parse(post.tags_json) : [];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="border-b bg-white">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
+              Cloudflare Solution Blog
+            </Link>
+            <span className="text-sm text-gray-400">|</span>
+            <span className="text-sm font-medium text-gray-600">記事を編集</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                post.status === "published"
+                  ? "bg-green-100 text-green-700"
+                  : post.status === "pending_review"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : post.status === "rejected"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {post.status === "published"
+                ? "公開中"
+                : post.status === "pending_review"
+                  ? "審査中"
+                  : post.status === "rejected"
+                    ? "差戻し"
+                    : "下書き"}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        {actionData && "error" in actionData && (
+          <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            {actionData.error}
+          </div>
+        )}
+        {actionData && "success" in actionData && (
+          <div className="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+            {actionData.message}
+          </div>
+        )}
+
+        <Form method="post" className="space-y-6">
+          {/* Title */}
+          <div>
+            <label
+              htmlFor="title"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              タイトル *
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              required
+              defaultValue={post.title}
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label
+              htmlFor="categoryId"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              カテゴリ
+            </label>
+            <select
+              id="categoryId"
+              name="categoryId"
+              defaultValue={post.category_id ?? ""}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="">選択してください</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label
+              htmlFor="tags"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              タグ（カンマ区切り）
+            </label>
+            <input
+              type="text"
+              id="tags"
+              name="tags"
+              defaultValue={tags.join(", ")}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+
+          {/* Content */}
+          <div>
+            <label
+              htmlFor="content"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              本文 *
+            </label>
+            <textarea
+              id="content"
+              name="content"
+              required
+              rows={20}
+              defaultValue={post.content}
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between border-t pt-6">
+            <Form method="post">
+              <input type="hidden" name="intent" value="delete" />
+              <button
+                type="submit"
+                onClick={(e) => {
+                  if (!confirm("この記事を削除しますか？")) e.preventDefault();
+                }}
+                className="text-sm text-red-500 hover:text-red-700"
+              >
+                削除
+              </button>
+            </Form>
+
+            <div className="flex gap-3">
+              {(post.status === "draft" || post.status === "rejected") && (
+                <>
+                  <button
+                    type="submit"
+                    name="intent"
+                    value="save"
+                    disabled={isSubmitting}
+                    className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    下書き保存
+                  </button>
+                  <button
+                    type="submit"
+                    name="intent"
+                    value="submit"
+                    disabled={isSubmitting}
+                    className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
+                  >
+                    レビューに提出
+                  </button>
+                </>
+              )}
+              {post.status === "published" && (
+                <button
+                  type="submit"
+                  name="intent"
+                  value="save"
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
+                >
+                  更新
+                </button>
+              )}
+              {post.status === "pending_review" && (
+                <span className="flex items-center text-sm text-yellow-600">
+                  審査中のため編集できません
+                </span>
+              )}
+            </div>
+          </div>
+        </Form>
+      </main>
+    </div>
+  );
+}

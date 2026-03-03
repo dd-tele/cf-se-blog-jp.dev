@@ -1,0 +1,230 @@
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@remix-run/cloudflare";
+import { Form, useLoaderData, useActionData, useNavigation, Link } from "@remix-run/react";
+import { redirect } from "@remix-run/cloudflare";
+import { requireUser } from "~/lib/auth.server";
+import { createPost, getAllCategories, ensureUser } from "~/lib/posts.server";
+import { generatePostSummary } from "~/lib/ai.server";
+import { indexPost } from "~/lib/vectorize.server";
+
+export const meta: MetaFunction = () => [
+  { title: "新しい記事を書く — Cloudflare Solution Blog" },
+];
+
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const user = await requireUser(request);
+  const db = context.cloudflare.env.DB;
+  const categories = await getAllCategories(db);
+  return { user, categories };
+}
+
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = await requireUser(request);
+  const db = context.cloudflare.env.DB;
+
+  // Ensure user exists in D1
+  await ensureUser(db, user);
+
+  const formData = await request.formData();
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+  const categoryId = (formData.get("categoryId") as string) || undefined;
+  const tagsStr = formData.get("tags") as string;
+  const tagsJson = tagsStr
+    ? JSON.stringify(tagsStr.split(",").map((t) => t.trim()).filter(Boolean))
+    : undefined;
+
+  if (!title || !content) {
+    return { error: "タイトルと本文は必須です" };
+  }
+
+  try {
+    const result = await createPost(
+      db,
+      { title, content, categoryId, tagsJson },
+      user
+    );
+
+    if (result.autoApproved) {
+      const ai = context.cloudflare.env.AI;
+      if (ai) {
+        // Fire-and-forget AI summary generation
+        generatePostSummary(ai, db, result.id, title, content).catch(
+          (e) => console.error("AI summary failed:", e)
+        );
+        // Fire-and-forget Vectorize indexing
+        const vectorize = context.cloudflare.env.VECTORIZE;
+        if (vectorize) {
+          const tags: string[] = tagsJson ? JSON.parse(tagsJson) : [];
+          indexPost(ai, vectorize, { id: result.id, title, content, tags }).catch(
+            (e) => console.error("Vectorize indexing failed:", e)
+          );
+        }
+      }
+      return redirect(`/posts/${result.slug}`);
+    }
+    return redirect(`/portal?submitted=true`);
+  } catch (e: any) {
+    return { error: e.message || "記事の作成に失敗しました" };
+  }
+}
+
+export default function NewPost() {
+  const { user, categories } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="border-b bg-white">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
+              Cloudflare Solution Blog
+            </Link>
+            <span className="text-sm text-gray-400">|</span>
+            <span className="text-sm font-medium text-gray-600">
+              新しい記事
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">{user.displayName}</span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                user.role === "admin"
+                  ? "bg-red-100 text-red-700"
+                  : user.role === "se"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-green-100 text-green-700"
+              }`}
+            >
+              {user.role}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <h1 className="mb-8 text-2xl font-bold text-gray-900">
+          新しい記事を書く
+        </h1>
+
+        {actionData && "error" in actionData && (
+          <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            {actionData.error}
+          </div>
+        )}
+
+        <Form method="post" className="space-y-6">
+          {/* Title */}
+          <div>
+            <label
+              htmlFor="title"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              タイトル *
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              required
+              placeholder="記事のタイトルを入力..."
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label
+              htmlFor="categoryId"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              カテゴリ
+            </label>
+            <select
+              id="categoryId"
+              name="categoryId"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="">選択してください</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label
+              htmlFor="tags"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              タグ（カンマ区切り）
+            </label>
+            <input
+              type="text"
+              id="tags"
+              name="tags"
+              placeholder="Workers, D1, セキュリティ"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+
+          {/* Content */}
+          <div>
+            <label
+              htmlFor="content"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              本文 *
+            </label>
+            <textarea
+              id="content"
+              name="content"
+              required
+              rows={20}
+              placeholder="記事の内容を入力...&#10;&#10;Markdown やHTMLで記述できます。"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+
+          {/* Auto-approval info */}
+          <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            {user.role === "admin" ? (
+              <span>Admin ユーザーのため、記事は自動的に公開されます。</span>
+            ) : (
+              <span>
+                投稿後、管理者の承認を経て公開されます。承認済み記事が3件以上になると自動公開になります。
+              </span>
+            )}
+          </div>
+
+          {/* Submit */}
+          <div className="flex items-center justify-between border-t pt-6">
+            <Link
+              to="/portal"
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              キャンセル
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-lg bg-brand-500 px-8 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50 transition-colors"
+            >
+              {isSubmitting ? "送信中..." : "記事を投稿する"}
+            </button>
+          </div>
+        </Form>
+      </main>
+    </div>
+  );
+}
