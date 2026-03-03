@@ -8,7 +8,10 @@ export interface SessionUser {
   avatarUrl?: string;
 }
 
-const SESSION_SECRET = "__dev_session_secret_change_in_prod__";
+const SESSION_SECRET =
+  typeof process !== "undefined" && process.env?.SESSION_SECRET
+    ? process.env.SESSION_SECRET
+    : "__dev_session_secret_change_in_prod__";
 
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
@@ -21,6 +24,13 @@ export const sessionStorage = createCookieSessionStorage({
     secure: true,
   },
 });
+
+export function isAccessConfigured(env: {
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  CF_ACCESS_AUD?: string;
+}): boolean {
+  return !!(env.CF_ACCESS_TEAM_DOMAIN && env.CF_ACCESS_AUD);
+}
 
 export async function getSession(request: Request) {
   return sessionStorage.getSession(request.headers.get("Cookie"));

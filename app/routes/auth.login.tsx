@@ -4,8 +4,19 @@ import type {
   MetaFunction,
 } from "@remix-run/cloudflare";
 import { Form, useLoaderData, useSearchParams } from "@remix-run/react";
-import { createUserSession, getSessionUser } from "~/lib/auth.server";
+import {
+  createUserSession,
+  getSessionUser,
+  isAccessConfigured,
+} from "~/lib/auth.server";
 import { redirect } from "@remix-run/cloudflare";
+import {
+  getAccessJWT,
+  verifyAccessJWT,
+  resolveRole,
+  buildSessionUserFromAccess,
+} from "~/lib/access.server";
+import { ensureUser } from "~/lib/posts.server";
 
 export const meta: MetaFunction = () => [
   { title: "ログイン — Cloudflare Solution Blog" },
@@ -32,12 +43,45 @@ const DEV_USERS = [
   },
 ];
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
   if (user) {
     return redirect("/portal");
   }
-  return { devUsers: DEV_USERS };
+
+  const env = context.cloudflare.env;
+
+  // Production: authenticate via Cloudflare Access JWT
+  if (isAccessConfigured(env)) {
+    const jwt = getAccessJWT(request);
+    if (jwt) {
+      const payload = await verifyAccessJWT(
+        jwt,
+        env.CF_ACCESS_TEAM_DOMAIN!,
+        env.CF_ACCESS_AUD!
+      );
+      if (payload) {
+        const role = resolveRole(
+          payload.email,
+          env.ADMIN_EMAILS,
+          env.SE_EMAIL_DOMAINS
+        );
+        const sessionUser = buildSessionUserFromAccess(payload, role);
+
+        // Ensure user exists in D1
+        await ensureUser(env.DB, sessionUser);
+
+        const url = new URL(request.url);
+        const returnTo = url.searchParams.get("returnTo") || "/portal";
+        return createUserSession(sessionUser, returnTo);
+      }
+    }
+    // Access configured but JWT missing/invalid
+    return { mode: "access" as const, devUsers: [] };
+  }
+
+  // Dev: show mock login
+  return { mode: "dev" as const, devUsers: DEV_USERS };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -54,9 +98,30 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginPage() {
-  const { devUsers } = useLoaderData<typeof loader>();
+  const { mode, devUsers } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/portal";
+
+  if (mode === "access") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Cloudflare Solution Blog
+          </h1>
+          <p className="mt-4 text-sm text-gray-500">
+            認証情報を確認しています...
+          </p>
+          <div className="mt-6 flex justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+          </div>
+          <p className="mt-6 text-xs text-gray-400">
+            自動的にリダイレクトされない場合は、ページを再読み込みしてください。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
@@ -66,7 +131,7 @@ export default function LoginPage() {
             Cloudflare Solution Blog
           </h1>
           <p className="mt-2 text-sm text-gray-500">
-            ローカル開発用ログイン
+            開発用ログイン
           </p>
           <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
             本番環境では Cloudflare Access で認証されます
