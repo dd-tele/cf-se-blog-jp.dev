@@ -1,5 +1,5 @@
 name = "cf-se-blog"
-account_id = "a4ca1c82309af1a392f77e6e5db8fd68"
+# account_id は環境変数 CLOUDFLARE_ACCOUNT_ID で指定: a4ca1c82309af1a392f77e6e5db8fd68
 compatibility_date = "2025-12-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./build/client"

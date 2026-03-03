@@ -18,7 +18,7 @@ export const sessionStorage = createCookieSessionStorage({
     path: "/",
     sameSite: "lax",
     secrets: [SESSION_SECRET],
-    secure: false, // false for local dev; true in production
+    secure: true,
   },
 });
 
