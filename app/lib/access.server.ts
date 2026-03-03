@@ -125,7 +125,7 @@ export async function verifyAccessJWT(
 
     return payload;
   } catch (e) {
-    console.error("Access JWT verification failed:", e);
+    console.error("[JWT] verification error");
     return null;
   }
 }

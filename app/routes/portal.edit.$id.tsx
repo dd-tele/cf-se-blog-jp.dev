@@ -11,6 +11,7 @@ import {
   Link,
 } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
+import { useRef } from "react";
 import { requireUser } from "~/lib/auth.server";
 import {
   getPostById,
@@ -18,6 +19,7 @@ import {
   deletePost,
   getAllCategories,
 } from "~/lib/posts.server";
+import { ImageUploader } from "~/components/ImageUploader";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: `${data?.post?.title ?? "記事"} を編集 — Cloudflare Solution Blog` },
@@ -101,6 +103,22 @@ export default function EditPost() {
   const isSubmitting = navigation.state === "submitting";
 
   const tags: string[] = post.tags_json ? JSON.parse(post.tags_json) : [];
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  function handleImageInsert(markdown: string) {
+    const ta = contentRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const value = ta.value;
+    ta.value = value.slice(0, start) + markdown + value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + markdown.length;
+    ta.focus();
+    // Trigger React's change detection
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+    nativeInputValueSetter?.call(ta, ta.value);
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,13 +228,17 @@ export default function EditPost() {
 
           {/* Content */}
           <div>
-            <label
-              htmlFor="content"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              本文 *
-            </label>
+            <div className="mb-1 flex items-center justify-between">
+              <label
+                htmlFor="content"
+                className="block text-sm font-medium text-gray-700"
+              >
+                本文 *
+              </label>
+              <ImageUploader onInsert={handleImageInsert} />
+            </div>
             <textarea
+              ref={contentRef}
               id="content"
               name="content"
               required
@@ -224,6 +246,9 @@ export default function EditPost() {
               defaultValue={post.content}
               className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
+            <p className="mt-1 text-xs text-gray-400">
+              Markdown 形式で記述できます。画像は上の「画像を挿入」ボタンからアップロードできます。
+            </p>
           </div>
 
           {/* Actions */}

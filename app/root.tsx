@@ -4,6 +4,8 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteError,
+  isRouteErrorResponse,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/cloudflare";
 
@@ -45,4 +47,77 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return <Outlet />;
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  // "Failed to fetch" happens when Remix client-side navigation
+  // hits a Cloudflare Access redirect (cross-origin).
+  // Force a full page reload so the browser can follow the redirect.
+  // Use sessionStorage to prevent infinite reload loops.
+  if (
+    !isRouteErrorResponse(error) &&
+    error instanceof Error &&
+    error.message === "Failed to fetch"
+  ) {
+    return (
+      <html lang="ja">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>リダイレクト中...</title>
+        </head>
+        <body>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                var key = '__cf_reload_' + location.pathname;
+                var count = parseInt(sessionStorage.getItem(key) || '0', 10);
+                if (count < 2) {
+                  sessionStorage.setItem(key, String(count + 1));
+                  location.reload();
+                } else {
+                  sessionStorage.removeItem(key);
+                  location.href = '/';
+                }
+              `,
+            }}
+          />
+        </body>
+      </html>
+    );
+  }
+
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? error.statusText
+    : error instanceof Error
+      ? error.message
+      : "予期しないエラーが発生しました";
+
+  return (
+    <html lang="ja">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+        <title>エラー — Cloudflare Solution Blog</title>
+      </head>
+      <body className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-6xl font-bold text-gray-300">{status}</h1>
+          <p className="mt-4 text-lg text-gray-600">{message}</p>
+          <a
+            href="/"
+            className="mt-6 inline-block rounded-lg bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600"
+          >
+            ホームに戻る
+          </a>
+        </div>
+        <Scripts />
+      </body>
+    </html>
+  );
 }

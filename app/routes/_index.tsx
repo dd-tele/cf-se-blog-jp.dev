@@ -1,6 +1,7 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { useLoaderData, Link, Form } from "@remix-run/react";
+import { useLoaderData, Link } from "@remix-run/react";
 import { getSessionUser } from "~/lib/auth.server";
+import { getPublishedPosts } from "~/lib/posts.server";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,14 +16,17 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
+  const db = context.cloudflare.env.DB;
+  const latestPosts = await getPublishedPosts(db, { limit: 6 });
   return {
     siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
     user,
+    latestPosts,
   };
 }
 
 export default function Index() {
-  const { siteName, user } = useLoaderData<typeof loader>();
+  const { siteName, user, latestPosts } = useLoaderData<typeof loader>();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -58,22 +62,20 @@ export default function Index() {
                 >
                   {user.role}
                 </span>
-                <Form method="post" action="/auth/logout">
-                  <button
-                    type="submit"
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
-                  >
-                    ログアウト
-                  </button>
-                </Form>
+                <Link
+                  to="/auth/logout"
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
+                >
+                  ログアウト
+                </Link>
               </div>
             ) : (
-              <Link
-                to="/auth/login"
+              <a
+                href="/portal"
                 className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
               >
                 ログイン
-              </Link>
+              </a>
             )}
           </nav>
         </div>
@@ -160,20 +162,67 @@ export default function Index() {
               すべて見る →
             </Link>
           </div>
-          <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-16 text-center">
-            <p className="text-base text-gray-400">
-              まだ事例が投稿されていません
-            </p>
-            <p className="mt-2 text-sm text-gray-400">
-              最初のエンジニアリング事例を投稿して、知見を共有しましょう。
-            </p>
-            <Link
-              to="/portal/templates"
-              className="mt-6 inline-block rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
-            >
-              事例を投稿する
-            </Link>
-          </div>
+
+          {latestPosts.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-16 text-center">
+              <p className="text-base text-gray-400">
+                まだ事例が投稿されていません
+              </p>
+              <p className="mt-2 text-sm text-gray-400">
+                最初のエンジニアリング事例を投稿して、知見を共有しましょう。
+              </p>
+              <Link
+                to="/portal/templates"
+                className="mt-6 inline-block rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+              >
+                事例を投稿する
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {latestPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  to={`/posts/${post.slug}`}
+                  className="group rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-gray-400 hover:shadow-md"
+                >
+                  {post.coverImageUrl && (
+                    <div className="mb-4 overflow-hidden rounded-lg">
+                      <img
+                        src={post.coverImageUrl}
+                        alt={post.title}
+                        className="h-40 w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    </div>
+                  )}
+                  {post.categoryName && (
+                    <span className="mb-2 inline-block rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
+                      {post.categoryName}
+                    </span>
+                  )}
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-600 line-clamp-2">
+                    {post.title}
+                  </h3>
+                  {post.excerpt && (
+                    <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                  )}
+                  <div className="mt-4 flex items-center gap-3 text-xs text-gray-400">
+                    <span>{post.authorName}</span>
+                    {post.publishedAt && (
+                      <span>
+                        {new Date(post.publishedAt).toLocaleDateString("ja-JP")}
+                      </span>
+                    )}
+                    {post.readingTimeMinutes && (
+                      <span>{post.readingTimeMinutes}分</span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

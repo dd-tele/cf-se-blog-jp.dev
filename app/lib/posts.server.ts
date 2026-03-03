@@ -270,6 +270,7 @@ export async function getPendingPosts(db: D1Database) {
       id: posts.id,
       title: posts.title,
       slug: posts.slug,
+      content: posts.content,
       excerpt: posts.excerpt,
       authorId: posts.author_id,
       authorName: users.display_name,

@@ -69,7 +69,16 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
     }
   }
 
-  const userPrompt = buildUserPrompt(inputs, fields);
+  // Get user-provided title and company name
+  const customTitle = (formData.get("custom_title") as string) || "";
+  const companyName = (formData.get("company_name") as string) || "";
+
+  // Add company name to inputs if provided
+  if (companyName) {
+    inputs["__company_name"] = companyName;
+  }
+
+  const userPrompt = buildUserPrompt(inputs, fields, companyName);
   const startTime = Date.now();
 
   try {
@@ -93,9 +102,12 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
       return { error: "AI からの応答が空でした。もう一度お試しください。" };
     }
 
-    // Extract title from generated markdown (first # heading)
-    const titleMatch = generatedContent.match(/^#\s+(.+)$/m);
-    const title = titleMatch ? titleMatch[1].trim() : template.name;
+    // Use custom title if provided, otherwise extract from generated markdown
+    let title = customTitle;
+    if (!title) {
+      const titleMatch = generatedContent.match(/^#\s+(.+)$/m);
+      title = titleMatch ? titleMatch[1].trim() : template.name;
+    }
 
     // Create draft post
     const result = await createPost(
@@ -219,6 +231,46 @@ export default function TemplateInput() {
         )}
 
         <Form method="post" className="space-y-6">
+          {/* Custom title */}
+          <div>
+            <label
+              htmlFor="custom_title"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              記事タイトル
+            </label>
+            <input
+              type="text"
+              id="custom_title"
+              name="custom_title"
+              placeholder="タイトルを入力（空欄の場合 AI が自動生成）"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              記事の趣旨が分かるタイトルを入力してください。空欄の場合は AI が自動生成します。
+            </p>
+          </div>
+
+          {/* Company name */}
+          <div>
+            <label
+              htmlFor="company_name"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              会社名（任意）
+            </label>
+            <input
+              type="text"
+              id="company_name"
+              name="company_name"
+              placeholder="例: 株式会社〇〇"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              記事に会社名を含める場合に入力してください。
+            </p>
+          </div>
+
           {fields.map((field) => (
             <FieldRenderer key={field.id} field={field} />
           ))}

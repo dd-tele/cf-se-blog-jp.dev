@@ -54,9 +54,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // Production: authenticate via Cloudflare Access JWT
   if (isAccessConfigured(env)) {
     const jwt = getAccessJWT(request);
-    console.log("[Access Auth] JWT present:", !!jwt);
-    console.log("[Access Auth] Team domain:", env.CF_ACCESS_TEAM_DOMAIN);
-    console.log("[Access Auth] AUD (first 8):", env.CF_ACCESS_AUD?.slice(0, 8));
     if (jwt) {
       try {
         const payload = await verifyAccessJWT(
@@ -64,7 +61,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           env.CF_ACCESS_TEAM_DOMAIN!,
           env.CF_ACCESS_AUD!
         );
-        console.log("[Access Auth] Payload:", payload ? `email=${payload.email}` : "null (verification failed)");
         if (payload) {
           const role = resolveRole(
             payload.email,
@@ -72,22 +68,26 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
             env.SE_EMAIL_DOMAINS
           );
           const sessionUser = buildSessionUserFromAccess(payload, role);
-          console.log("[Access Auth] Role:", role, "User:", sessionUser.displayName);
 
           // Ensure user exists in D1
           await ensureUser(env.DB, sessionUser);
 
           const url = new URL(request.url);
           const returnTo = url.searchParams.get("returnTo") || "/portal";
+
+          // Create session and redirect (works for document requests)
           return createUserSession(sessionUser, returnTo);
         }
       } catch (err) {
+        if (err instanceof Response) throw err;
         console.error("[Access Auth] Error:", err);
       }
     }
-    // Access configured but JWT missing/invalid
-    console.log("[Access Auth] Falling back to access spinner page");
-    return { mode: "access" as const, devUsers: [] };
+
+    // Access configured but no JWT — redirect to /portal to trigger Access auth
+    const url = new URL(request.url);
+    const returnTo = url.searchParams.get("returnTo") || "/portal";
+    return redirect(returnTo);
   }
 
   // Dev: show mock login
@@ -108,31 +108,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginPage() {
-  const { mode, devUsers } = useLoaderData<typeof loader>();
+  const { devUsers } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/portal";
 
-  if (mode === "access") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Cloudflare Solution Blog
-          </h1>
-          <p className="mt-4 text-sm text-gray-500">
-            認証情報を確認しています...
-          </p>
-          <div className="mt-6 flex justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
-          </div>
-          <p className="mt-6 text-xs text-gray-400">
-            自動的にリダイレクトされない場合は、ページを再読み込みしてください。
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // In production, the loader always redirects (either to /portal or after JWT auth).
+  // This component only renders in dev mode.
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">

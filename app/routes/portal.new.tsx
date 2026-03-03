@@ -5,10 +5,12 @@ import type {
 } from "@remix-run/cloudflare";
 import { Form, useLoaderData, useActionData, useNavigation, Link } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
+import { useRef } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { createPost, getAllCategories, ensureUser } from "~/lib/posts.server";
 import { generatePostSummary } from "~/lib/ai.server";
 import { indexPost } from "~/lib/vectorize.server";
+import { ImageUploader } from "~/components/ImageUploader";
 
 export const meta: MetaFunction = () => [
   { title: "新しい記事を書く — Cloudflare Solution Blog" },
@@ -77,6 +79,21 @@ export default function NewPost() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  function handleImageInsert(markdown: string) {
+    const ta = contentRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const value = ta.value;
+    ta.value = value.slice(0, start) + markdown + value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + markdown.length;
+    ta.focus();
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+    nativeInputValueSetter?.call(ta, ta.value);
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -180,20 +197,27 @@ export default function NewPost() {
 
           {/* Content */}
           <div>
-            <label
-              htmlFor="content"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              本文 *
-            </label>
+            <div className="mb-1 flex items-center justify-between">
+              <label
+                htmlFor="content"
+                className="block text-sm font-medium text-gray-700"
+              >
+                本文 *
+              </label>
+              <ImageUploader onInsert={handleImageInsert} />
+            </div>
             <textarea
+              ref={contentRef}
               id="content"
               name="content"
               required
               rows={20}
-              placeholder="記事の内容を入力...&#10;&#10;Markdown やHTMLで記述できます。"
+              placeholder="記事の内容を入力...&#10;&#10;Markdown 形式で記述できます。"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
+            <p className="mt-1 text-xs text-gray-400">
+              Markdown 形式で記述できます。画像は上の「画像を挿入」ボタンからアップロードできます。
+            </p>
           </div>
 
           {/* Auto-approval info */}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -6,6 +7,7 @@ import type {
 import { useLoaderData, Form, Link, useNavigation } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
 import { getPendingPosts, approvePost, rejectPost, getPostById } from "~/lib/posts.server";
+import { renderMarkdown } from "~/lib/markdown.server";
 import { generatePostSummary } from "~/lib/ai.server";
 import { indexPost } from "~/lib/vectorize.server";
 import { writeAuditLog } from "~/lib/audit.server";
@@ -19,7 +21,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const user = await requireRole(request, ["admin", "se"]);
   const db = context.cloudflare.env.DB;
   const pending = await getPendingPosts(db);
-  return { user, pendingPosts: pending };
+  const pendingPosts = pending.map((p) => ({
+    ...p,
+    contentHtml: renderMarkdown(p.content),
+  }));
+  return { user, pendingPosts };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -164,6 +170,7 @@ export default function AdminIndex() {
                       {post.excerpt}
                     </p>
                   )}
+                  <ContentPreview contentHtml={post.contentHtml} />
                 </div>
 
                 {user.role === "admin" && (
@@ -197,6 +204,28 @@ export default function AdminIndex() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function ContentPreview({ contentHtml }: { contentHtml: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="text-xs font-medium text-brand-600 hover:text-brand-700"
+      >
+        {open ? "▼ プレビューを閉じる" : "▶ 記事をプレビュー"}
+      </button>
+      {open && (
+        <div className="mt-3 max-h-[600px] overflow-y-auto rounded-lg border border-gray-200 bg-white p-6">
+          <article className="prose prose-sm prose-gray max-w-none prose-headings:font-bold prose-a:text-brand-600 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-img:rounded-lg">
+            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+          </article>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
-import { useLoaderData, Link, Form } from "@remix-run/react";
+import { useLoaderData, Link } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
 import { getUserBadges } from "~/lib/badges.server";
 import { getDb } from "~/lib/db.server";
@@ -74,14 +74,12 @@ export default function PortalIndex() {
             >
               {user.role}
             </span>
-            <Form method="post" action="/auth/logout">
-              <button
-                type="submit"
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
-              >
-                ログアウト
-              </button>
-            </Form>
+            <Link
+              to="/auth/logout"
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+            >
+              ログアウト
+            </Link>
           </div>
         </div>
       </header>

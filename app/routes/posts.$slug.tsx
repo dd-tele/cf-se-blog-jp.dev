@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getPostBySlug, getPostSummary, incrementViewCount } from "~/lib/posts.server";
 import { getSessionUser } from "~/lib/auth.server";
+import { renderMarkdown } from "~/lib/markdown.server";
 import { findRelatedPosts } from "~/lib/vectorize.server";
 import { ChatWidget } from "~/components/ChatWidget";
 
@@ -77,8 +78,11 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
     } catch { /* ignore */ }
   }
 
+  // Convert Markdown content to HTML
+  const contentHtml = renderMarkdown(post.content);
+
   return {
-    post,
+    post: { ...post, contentHtml },
     user,
     aiSummary,
     relatedPosts,
@@ -115,12 +119,12 @@ export default function PostDetail() {
                 ダッシュボード
               </Link>
             ) : (
-              <Link
-                to="/auth/login"
+              <a
+                href="/portal"
                 className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
               >
                 ログイン
-              </Link>
+              </a>
             )}
           </nav>
         </div>
@@ -221,8 +225,8 @@ export default function PostDetail() {
         )}
 
         {/* Content */}
-        <article className="prose prose-gray max-w-none prose-headings:font-bold prose-a:text-brand-600 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:text-sm">
-          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        <article className="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:leading-relaxed prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-brand-400 prose-blockquote:text-gray-600 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-img:rounded-xl prose-img:shadow-md prose-table:text-sm prose-th:bg-gray-50 prose-th:px-4 prose-th:py-2 prose-td:px-4 prose-td:py-2">
+          <div dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
         </article>
 
         {/* Tags */}

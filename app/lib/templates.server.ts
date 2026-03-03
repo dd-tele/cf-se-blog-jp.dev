@@ -82,9 +82,14 @@ export function parseInputFields(json: string): TemplateField[] {
 
 export function buildUserPrompt(
   inputs: Record<string, any>,
-  fields: TemplateField[]
+  fields: TemplateField[],
+  companyName?: string
 ): string {
   let prompt = "## ユーザー入力情報\n\n";
+
+  if (companyName) {
+    prompt += `### 会社名\n${companyName}\n\n`;
+  }
 
   for (const field of fields) {
     const value = inputs[field.id];
