@@ -54,29 +54,39 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // Production: authenticate via Cloudflare Access JWT
   if (isAccessConfigured(env)) {
     const jwt = getAccessJWT(request);
+    console.log("[Access Auth] JWT present:", !!jwt);
+    console.log("[Access Auth] Team domain:", env.CF_ACCESS_TEAM_DOMAIN);
+    console.log("[Access Auth] AUD (first 8):", env.CF_ACCESS_AUD?.slice(0, 8));
     if (jwt) {
-      const payload = await verifyAccessJWT(
-        jwt,
-        env.CF_ACCESS_TEAM_DOMAIN!,
-        env.CF_ACCESS_AUD!
-      );
-      if (payload) {
-        const role = resolveRole(
-          payload.email,
-          env.ADMIN_EMAILS,
-          env.SE_EMAIL_DOMAINS
+      try {
+        const payload = await verifyAccessJWT(
+          jwt,
+          env.CF_ACCESS_TEAM_DOMAIN!,
+          env.CF_ACCESS_AUD!
         );
-        const sessionUser = buildSessionUserFromAccess(payload, role);
+        console.log("[Access Auth] Payload:", payload ? `email=${payload.email}` : "null (verification failed)");
+        if (payload) {
+          const role = resolveRole(
+            payload.email,
+            env.ADMIN_EMAILS,
+            env.SE_EMAIL_DOMAINS
+          );
+          const sessionUser = buildSessionUserFromAccess(payload, role);
+          console.log("[Access Auth] Role:", role, "User:", sessionUser.displayName);
 
-        // Ensure user exists in D1
-        await ensureUser(env.DB, sessionUser);
+          // Ensure user exists in D1
+          await ensureUser(env.DB, sessionUser);
 
-        const url = new URL(request.url);
-        const returnTo = url.searchParams.get("returnTo") || "/portal";
-        return createUserSession(sessionUser, returnTo);
+          const url = new URL(request.url);
+          const returnTo = url.searchParams.get("returnTo") || "/portal";
+          return createUserSession(sessionUser, returnTo);
+        }
+      } catch (err) {
+        console.error("[Access Auth] Error:", err);
       }
     }
     // Access configured but JWT missing/invalid
+    console.log("[Access Auth] Falling back to access spinner page");
     return { mode: "access" as const, devUsers: [] };
   }
 
