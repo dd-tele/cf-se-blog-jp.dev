@@ -9,6 +9,7 @@ const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODERATION_MODEL = "@cf/meta/llama-guard-3-8b";
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_MESSAGES_PER_MINUTE = 10;
+const ACTIVE_THREAD_TTL_DAYS = 28; // 4 weeks
 
 // ─── Types ──────────────────────────────────────────────────
 export interface ChatMessage {
@@ -325,4 +326,77 @@ export async function updateThreadStatus(
     .prepare("UPDATE qa_threads SET status = ?, updated_at = ? WHERE id = ?")
     .bind(status, now, threadId)
     .run();
+}
+
+// ─── Admin: delete thread and its messages ───────────────────
+export async function deleteThread(
+  db: D1Database,
+  threadId: string
+): Promise<void> {
+  // Delete messages first (FK constraint)
+  await db
+    .prepare("DELETE FROM qa_messages WHERE thread_id = ?")
+    .bind(threadId)
+    .run();
+  await db
+    .prepare("DELETE FROM qa_threads WHERE id = ?")
+    .bind(threadId)
+    .run();
+}
+
+// ─── Admin: delete single message ────────────────────────────
+export async function deleteMessage(
+  db: D1Database,
+  messageId: string,
+  threadId: string
+): Promise<void> {
+  await db
+    .prepare("DELETE FROM qa_messages WHERE id = ?")
+    .bind(messageId)
+    .run();
+  // Decrement message count
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+  await db
+    .prepare(
+      "UPDATE qa_threads SET message_count = MAX(message_count - 1, 0), updated_at = ? WHERE id = ?"
+    )
+    .bind(now, threadId)
+    .run();
+}
+
+// ─── Auto-expire: delete active threads older than 4 weeks ───
+export async function deleteExpiredActiveThreads(
+  db: D1Database
+): Promise<number> {
+  const cutoff = new Date(
+    Date.now() - ACTIVE_THREAD_TTL_DAYS * 24 * 60 * 60 * 1000
+  )
+    .toISOString()
+    .replace("T", " ")
+    .slice(0, 19);
+
+  // Find expired active threads
+  const expired = await db
+    .prepare(
+      "SELECT id FROM qa_threads WHERE status = 'active' AND created_at < ?"
+    )
+    .bind(cutoff)
+    .all<{ id: string }>();
+
+  const ids = expired.results ?? [];
+  if (ids.length === 0) return 0;
+
+  // Batch delete messages then threads
+  const placeholders = ids.map(() => "?").join(",");
+  const idValues = ids.map((r) => r.id);
+  await db
+    .prepare(`DELETE FROM qa_messages WHERE thread_id IN (${placeholders})`)
+    .bind(...idValues)
+    .run();
+  await db
+    .prepare(`DELETE FROM qa_threads WHERE id IN (${placeholders})`)
+    .bind(...idValues)
+    .run();
+
+  return ids.length;
 }

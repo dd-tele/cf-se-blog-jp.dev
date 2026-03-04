@@ -11,6 +11,9 @@ import {
   getFlaggedMessages,
   updateThreadStatus,
   saveMessage,
+  deleteThread,
+  deleteMessage,
+  deleteExpiredActiveThreads,
 } from "~/lib/chat.server";
 import { writeAuditLog } from "~/lib/audit.server";
 
@@ -25,6 +28,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const status = url.searchParams.get("status") ?? "all";
   const threadId = url.searchParams.get("thread");
 
+  // Auto-expire: delete active threads older than 4 weeks
+  const expiredCount = await deleteExpiredActiveThreads(db);
+
   const threads = await listThreads(db, { status, limit: 30 });
   const flagged = await getFlaggedMessages(db, 20);
 
@@ -38,7 +44,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     activeThread = { id: threadId, messages };
   }
 
-  return { user, threads, flagged, activeThread, currentStatus: status };
+  return { user, threads, flagged, activeThread, currentStatus: status, expiredCount };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -70,11 +76,33 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
   }
 
+  if (intent === "delete-thread") {
+    const threadId = formData.get("threadId") as string;
+    if (threadId) {
+      await deleteThread(db, threadId);
+      writeAuditLog(db, { userId: user.id, action: "thread.delete", resourceType: "thread", resourceId: threadId }).catch(() => {});
+    }
+    // Redirect to list (clear thread param)
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `/admin/qa?status=${new URL(request.url).searchParams.get("status") ?? "all"}` },
+    });
+  }
+
+  if (intent === "delete-message") {
+    const messageId = formData.get("messageId") as string;
+    const threadId = formData.get("threadId") as string;
+    if (messageId && threadId) {
+      await deleteMessage(db, messageId, threadId);
+      writeAuditLog(db, { userId: user.id, action: "message.delete", resourceType: "message", resourceId: messageId }).catch(() => {});
+    }
+  }
+
   return { success: true };
 }
 
 export default function AdminQA() {
-  const { user, threads, flagged, activeThread, currentStatus } =
+  const { user, threads, flagged, activeThread, currentStatus, expiredCount } =
     useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const [searchParams] = useSearchParams();
@@ -122,7 +150,14 @@ export default function AdminQA() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Q&A 管理</h1>
+        <div className="mb-6 flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">Q&A 管理</h1>
+          {expiredCount > 0 && (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+              {expiredCount} 件の期限切れスレッドを自動削除しました
+            </span>
+          )}
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left: Thread list */}
@@ -240,6 +275,24 @@ export default function AdminQA() {
                         フラグ
                       </button>
                     </Form>
+                    <Form
+                      method="post"
+                      onSubmit={(e) => {
+                        if (!confirm("このスレッドとすべてのメッセージを削除しますか？")) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      <input type="hidden" name="intent" value="delete-thread" />
+                      <input type="hidden" name="threadId" value={activeThread.id} />
+                      <button
+                        type="submit"
+                        disabled={isBusy}
+                        className="rounded-md bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-900 disabled:opacity-50"
+                      >
+                        スレッド削除
+                      </button>
+                    </Form>
                   </div>
                 </div>
 
@@ -281,8 +334,28 @@ export default function AdminQA() {
                           )}
                         </div>
                         <div className="whitespace-pre-wrap">{msg.content}</div>
-                        <div className="mt-1 text-[10px] text-gray-400">
-                          {msg.createdAt}
+                        <div className="mt-1 flex items-center gap-2 text-[10px] text-gray-400">
+                          <span>{msg.createdAt}</span>
+                          <Form
+                            method="post"
+                            className="inline"
+                            onSubmit={(e) => {
+                              if (!confirm("このメッセージを削除しますか？")) {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
+                            <input type="hidden" name="intent" value="delete-message" />
+                            <input type="hidden" name="messageId" value={msg.id} />
+                            <input type="hidden" name="threadId" value={activeThread.id} />
+                            <button
+                              type="submit"
+                              disabled={isBusy}
+                              className="text-red-400 hover:text-red-600 disabled:opacity-50"
+                            >
+                              削除
+                            </button>
+                          </Form>
                         </div>
                       </div>
                     </div>

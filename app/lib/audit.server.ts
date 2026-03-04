@@ -13,6 +13,8 @@ export type AuditAction =
   | "chat.reply"
   | "thread.resolve"
   | "thread.flag"
+  | "thread.delete"
+  | "message.delete"
   | "ai.summary"
   | "ai.draft"
   | "ai.trend_report"
