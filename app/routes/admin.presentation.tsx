@@ -98,16 +98,14 @@ export default function AdminPresentation() {
 
       <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
         {/* ───────────────── Slide 1: Title ───────────────── */}
-        <section className="slide mb-16 rounded-3xl bg-gradient-to-br from-brand-600 via-blue-600 to-indigo-700 p-12 text-white shadow-xl sm:p-16">
-          <p className="mb-4 text-sm font-medium uppercase tracking-widest text-blue-200">
+        <section className="slide mb-16 rounded-3xl bg-gradient-to-br from-[#FBAD41] via-[#F6821F] to-[#E04E16] p-12 text-white shadow-xl sm:p-16">
+          <p className="mb-4 text-sm font-medium uppercase tracking-widest text-white/70">
             Cloudflare Solution Engineering
           </p>
           <h1 className="mb-6 text-4xl font-extrabold leading-tight sm:text-5xl">
-            <span className="bg-gradient-to-r from-[#FBAD41] via-[#F6821F] to-[#F48120] bg-clip-text text-transparent">
-              Solution Blog Platform
-            </span>
+            Solution Blog Platform
           </h1>
-          <p className="mb-8 max-w-2xl text-lg leading-relaxed text-blue-100">
+          <p className="mb-8 max-w-2xl text-lg leading-relaxed text-white/85">
             SE が持つ技術ナレッジを、AI の力で効率よく記事化し、
             チーム全体の技術力とお客様への価値を高めるプラットフォーム。
           </p>
@@ -125,7 +123,7 @@ export default function AdminPresentation() {
           <div className="grid gap-6 sm:grid-cols-3">
             <ProblemCard
               number={1}
-              problem="ナレッジが個人に閉じている"
+              problem="Cloudflare SE や導入を手動したエンジニアたちのリアルが閉じている"
               solution="ブログとして公開し、チーム全体で共有。検索・推薦で再利用性を最大化。"
             />
             <ProblemCard
