@@ -5,7 +5,7 @@ import { ulid } from "~/lib/ulid";
 import { generateEmbedding } from "~/lib/ai.server";
 
 // ─── Constants ──────────────────────────────────────────────
-const TEXT_MODEL = "@cf/meta/llama-3.1-70b-instruct";
+const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODERATION_MODEL = "@cf/meta/llama-guard-3-8b";
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_MESSAGES_PER_MINUTE = 10;
@@ -187,7 +187,7 @@ export async function getRAGContext(
   query: string
 ): Promise<string> {
   // Always include the current post content as primary context
-  const postExcerpt = postContent.replace(/<[^>]+>/g, "").slice(0, 4000);
+  const postExcerpt = postContent.replace(/<[^>]+>/g, "").slice(0, 8000);
 
   // If Vectorize is available, also search for related content
   let vectorContext = "";
@@ -218,15 +218,20 @@ export async function getRAGContext(
 export function buildChatSystemPrompt(postTitle: string, context: string): string {
   return `あなたは Cloudflare Solution Blog の記事「${postTitle}」に関する Q&A アシスタントです。
 
-以下のルールに従ってください:
-1. 記事の内容とコンテキストに基づいて正確に回答してください
-2. 記事に書かれていない内容については「この記事では触れられていませんが、Cloudflare のドキュメント (https://developers.cloudflare.com/) をご確認ください」と案内してください
-3. 日本語で丁寧に回答してください
-4. 技術的に不正確な情報は提供しないでください
-5. 回答は簡潔に、必要に応じてコード例を含めてください
-6. 最大 500 文字程度で回答してください
+## 最重要ルール
+- 回答は必ず「記事コンテキスト」に記載された内容に基づいてください。
+- 記事の文面を注意深く読み、著者が述べている具体的な経験・手順・設定内容から推論してください。
+- 一般的な技術知識だけで回答しないでください。記事に書かれている固有の情報（手順、設定値、苦労した点、工夫）を引用・参照して回答してください。
+- 記事に明示的に書かれていない場合でも、記事の文脈から合理的に推測できることは「記事の内容から推測すると」と前置きして回答してください。
+- 記事から全く読み取れない内容のみ「この記事では触れられていませんが、Cloudflare のドキュメント (https://developers.cloudflare.com/) をご確認ください」と案内してください。
 
-記事コンテキスト:
+## 回答スタイル
+- 日本語で丁寧に回答
+- 技術的に不正確な情報は提供しない
+- 簡潔に、必要に応じてコード例や設定例を含める
+- 最大 800 文字程度
+
+## 記事コンテキスト
 ${context}`;
 }
 
