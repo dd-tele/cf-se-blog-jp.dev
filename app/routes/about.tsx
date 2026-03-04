@@ -68,123 +68,156 @@ export default function AboutPage() {
         <section className="mb-20">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">アーキテクチャ概要</h2>
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <svg viewBox="0 0 1000 420" className="w-full" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 1020 500" className="w-full" xmlns="http://www.w3.org/2000/svg">
               {/* Background */}
-              <rect width="1000" height="420" fill="#fafafa" rx="12" />
+              <rect width="1020" height="500" fill="#fafafa" rx="12" />
 
-              {/* User */}
+              {/* ── Lane backgrounds ── */}
+              {/* Public lane */}
+              <rect x="10" y="50" width="1000" height="175" rx="10" fill="#3b82f6" fillOpacity="0.03" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="6" />
+              <text x="24" y="70" fill="#93c5fd" fontSize="9" fontWeight="600">PUBLIC</text>
+              {/* Authenticated lane */}
+              <rect x="10" y="275" width="1000" height="195" rx="10" fill="#f97316" fillOpacity="0.03" stroke="#f97316" strokeWidth="0.5" strokeDasharray="6" />
+              <text x="24" y="295" fill="#fdba74" fontSize="9" fontWeight="600">AUTHENTICATED</text>
+
+              {/* ── Users (left column) ── */}
+              {/* General user */}
               <g>
-                <rect x="30" y="170" width="100" height="80" rx="12" fill="#1e293b" />
-                <text x="80" y="205" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="600">ブラウザ</text>
-                <text x="80" y="225" textAnchor="middle" fill="#94a3b8" fontSize="9">ユーザー</text>
+                <rect x="25" y="100" width="105" height="65" rx="10" fill="#1e293b" />
+                <text x="77" y="127" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="600">一般ユーザー</text>
+                <text x="77" y="145" textAnchor="middle" fill="#94a3b8" fontSize="8">記事閲覧 / 検索 / Q&A</text>
+              </g>
+              {/* SE / Admin */}
+              <g>
+                <rect x="25" y="340" width="105" height="65" rx="10" fill="#1e293b" />
+                <text x="77" y="367" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="600">SE / Admin</text>
+                <text x="77" y="385" textAnchor="middle" fill="#94a3b8" fontSize="8">投稿管理 / 管理画面</text>
               </g>
 
-              {/* Arrow: User → Access */}
-              <line x1="130" y1="210" x2="175" y2="210" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
+              {/* ── Arrows: Users → WAF ── */}
+              <line x1="130" y1="132" x2="180" y2="132" stroke="#93c5fd" strokeWidth="2" markerEnd="url(#arrowBlue)" />
+              <line x1="130" y1="372" x2="180" y2="372" stroke="#fdba74" strokeWidth="2" markerEnd="url(#arrowOrange)" />
+
+              {/* ── WAF + Bot Management (shared, tall) ── */}
+              <g>
+                <rect x="180" y="80" width="125" height="330" rx="12" fill="#ef4444" fillOpacity="0.06" stroke="#ef4444" strokeWidth="1.5" />
+                <text x="242" y="105" textAnchor="middle" fill="#dc2626" fontSize="12" fontWeight="700">WAF</text>
+                <text x="242" y="122" textAnchor="middle" fill="#b91c1c" fontSize="8">OWASP Top 10</text>
+                <text x="242" y="136" textAnchor="middle" fill="#b91c1c" fontSize="8">カスタムルール</text>
+                <rect x="195" y="148" width="95" height="22" rx="6" fill="#fef2f2" stroke="#fecaca" strokeWidth="1" />
+                <text x="242" y="163" textAnchor="middle" fill="#dc2626" fontSize="8" fontWeight="600">Bot Management</text>
+                <text x="242" y="250" textAnchor="middle" fill="#991b1b" fontSize="7" fontWeight="500">全トラフィック</text>
+                <text x="242" y="262" textAnchor="middle" fill="#991b1b" fontSize="7" fontWeight="500">適用</text>
+              </g>
+
+              {/* ── PUBLIC PATH: WAF → Pages (direct) ── */}
+              <line x1="305" y1="132" x2="490" y2="190" stroke="#93c5fd" strokeWidth="2" markerEnd="url(#arrowBlue)" />
+              {/* Route labels on public path */}
+              <g>
+                <rect x="340" y="100" width="130" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="405" y="116" textAnchor="middle" fill="#1d4ed8" fontSize="8" fontWeight="600">Public ルート</text>
+                <text x="405" y="129" textAnchor="middle" fill="#3b82f6" fontSize="7">/ &nbsp; /posts/* &nbsp; /about &nbsp; /search</text>
+                <text x="405" y="140" textAnchor="middle" fill="#3b82f6" fontSize="7">/api/v1/chat &nbsp; /api/health</text>
+              </g>
+
+              {/* ── AUTHENTICATED PATH: WAF → CF Access → Pages ── */}
+              <line x1="305" y1="372" x2="340" y2="372" stroke="#fdba74" strokeWidth="2" markerEnd="url(#arrowOrange)" />
 
               {/* CF Access */}
               <g>
-                <rect x="175" y="160" width="120" height="100" rx="12" fill="#f97316" fillOpacity="0.1" stroke="#f97316" strokeWidth="1.5" />
-                <text x="235" y="195" textAnchor="middle" fill="#ea580c" fontSize="11" fontWeight="700">CF Access</text>
-                <text x="235" y="212" textAnchor="middle" fill="#9a3412" fontSize="9">Zero Trust 認証</text>
-                <text x="235" y="226" textAnchor="middle" fill="#9a3412" fontSize="9">IdP 連携 (Google)</text>
-                <text x="235" y="246" textAnchor="middle" fill="#9a3412" fontSize="8">JWT 検証</text>
+                <rect x="340" y="325" width="125" height="100" rx="12" fill="#f97316" fillOpacity="0.1" stroke="#f97316" strokeWidth="1.5" />
+                <text x="402" y="352" textAnchor="middle" fill="#ea580c" fontSize="11" fontWeight="700">CF Access</text>
+                <text x="402" y="369" textAnchor="middle" fill="#9a3412" fontSize="8">Zero Trust 認証</text>
+                <text x="402" y="383" textAnchor="middle" fill="#9a3412" fontSize="8">IdP 連携 (Google)</text>
+                <text x="402" y="397" textAnchor="middle" fill="#9a3412" fontSize="8">JWT 検証</text>
+                <text x="402" y="415" textAnchor="middle" fill="#9a3412" fontSize="7">/portal/* &nbsp; /admin/*</text>
               </g>
 
-              {/* Arrow: Access → WAF */}
-              <line x1="295" y1="210" x2="325" y2="210" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
+              {/* Arrow: CF Access → Pages */}
+              <line x1="465" y1="372" x2="490" y2="280" stroke="#fdba74" strokeWidth="2" markerEnd="url(#arrowOrange)" />
 
-              {/* WAF + Bot Management */}
+              {/* ── CF Pages + Workers (center) ── */}
               <g>
-                <rect x="325" y="155" width="120" height="110" rx="12" fill="#ef4444" fillOpacity="0.08" stroke="#ef4444" strokeWidth="1.5" />
-                <text x="385" y="180" textAnchor="middle" fill="#dc2626" fontSize="11" fontWeight="700">WAF</text>
-                <text x="385" y="197" textAnchor="middle" fill="#b91c1c" fontSize="8">OWASP Top 10 防御</text>
-                <text x="385" y="211" textAnchor="middle" fill="#b91c1c" fontSize="8">カスタムルール</text>
-                <rect x="340" y="220" width="90" height="24" rx="6" fill="#fef2f2" stroke="#fecaca" strokeWidth="1" />
-                <text x="385" y="236" textAnchor="middle" fill="#dc2626" fontSize="8" fontWeight="600">Bot Management</text>
-                <text x="385" y="255" textAnchor="middle" fill="#b91c1c" fontSize="7">自動化攻撃検知・軽減</text>
+                <rect x="490" y="130" width="195" height="220" rx="12" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.5" />
+                <text x="587" y="155" textAnchor="middle" fill="#1d4ed8" fontSize="12" fontWeight="700">Cloudflare Pages</text>
+                <rect x="508" y="166" width="160" height="26" rx="6" fill="#dbeafe" />
+                <text x="588" y="183" textAnchor="middle" fill="#1e40af" fontSize="9" fontWeight="600">Remix (SSR / UI)</text>
+                <rect x="508" y="198" width="160" height="26" rx="6" fill="#ff6b1a" fillOpacity="0.15" stroke="#ff6b1a" strokeWidth="1" />
+                <text x="588" y="215" textAnchor="middle" fill="#c2410c" fontSize="9" fontWeight="700">Hono (API Layer)</text>
+                <rect x="508" y="230" width="76" height="22" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="546" y="245" textAnchor="middle" fill="#1e40af" fontSize="7">streamSSE</text>
+                <rect x="592" y="230" width="76" height="22" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="630" y="245" textAnchor="middle" fill="#1e40af" fontSize="7">Middleware</text>
+                <rect x="508" y="258" width="160" height="22" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="588" y="273" textAnchor="middle" fill="#1e40af" fontSize="7">CORS / Auth / Logger</text>
+                <rect x="508" y="286" width="160" height="22" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="588" y="301" textAnchor="middle" fill="#1e40af" fontSize="7">Tailwind CSS + Typography</text>
+                {/* Merge indicator */}
+                <rect x="508" y="314" width="160" height="28" rx="6" fill="#f0fdf4" stroke="#86efac" strokeWidth="1" />
+                <text x="588" y="332" textAnchor="middle" fill="#166534" fontSize="7" fontWeight="600">Public + Protected ルート統合</text>
               </g>
 
-              {/* Arrow: WAF → Pages */}
-              <line x1="445" y1="210" x2="475" y2="210" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
+              {/* ── Arrows: Pages → Backend Services ── */}
+              <line x1="685" y1="190" x2="740" y2="120" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
+              <line x1="685" y1="220" x2="740" y2="210" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
+              <line x1="685" y1="260" x2="740" y2="305" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
+              <line x1="685" y1="290" x2="740" y2="395" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow)" />
 
-              {/* CF Pages + Workers */}
+              {/* ── D1 Database ── */}
               <g>
-                <rect x="475" y="110" width="200" height="200" rx="12" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.5" />
-                <text x="575" y="135" textAnchor="middle" fill="#1d4ed8" fontSize="12" fontWeight="700">Cloudflare Pages</text>
-                <rect x="495" y="148" width="160" height="28" rx="6" fill="#dbeafe" />
-                <text x="575" y="167" textAnchor="middle" fill="#1e40af" fontSize="10" fontWeight="600">Remix (SSR / UI)</text>
-                <rect x="495" y="184" width="160" height="28" rx="6" fill="#ff6b1a" fillOpacity="0.15" stroke="#ff6b1a" strokeWidth="1" />
-                <text x="575" y="203" textAnchor="middle" fill="#c2410c" fontSize="10" fontWeight="700">Hono (API Layer)</text>
-                <rect x="495" y="220" width="76" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
-                <text x="533" y="236" textAnchor="middle" fill="#1e40af" fontSize="8">streamSSE</text>
-                <rect x="579" y="220" width="76" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
-                <text x="617" y="236" textAnchor="middle" fill="#1e40af" fontSize="8">Middleware</text>
-                <rect x="495" y="252" width="160" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
-                <text x="575" y="268" textAnchor="middle" fill="#1e40af" fontSize="8">CORS / Auth / Logger</text>
-                <rect x="495" y="284" width="160" height="20" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
-                <text x="575" y="298" textAnchor="middle" fill="#1e40af" fontSize="8">Tailwind CSS + Typography</text>
+                <rect x="740" y="75" width="125" height="70" rx="10" fill="#8b5cf6" fillOpacity="0.1" stroke="#8b5cf6" strokeWidth="1.5" />
+                <text x="802" y="100" textAnchor="middle" fill="#6d28d9" fontSize="10" fontWeight="700">D1 (SQLite)</text>
+                <text x="802" y="116" textAnchor="middle" fill="#7c3aed" fontSize="8">記事 / ユーザー</text>
+                <text x="802" y="130" textAnchor="middle" fill="#7c3aed" fontSize="8">テンプレート / カテゴリ</text>
               </g>
-
-              {/* Arrow: Pages → D1 */}
-              <line x1="675" y1="180" x2="730" y2="120" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
-              {/* Arrow: Pages → R2 */}
-              <line x1="675" y1="210" x2="730" y2="210" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
-              {/* Arrow: Pages → AI */}
-              <line x1="675" y1="240" x2="730" y2="300" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrow)" />
-              {/* Arrow: Pages → KV */}
-              <line x1="675" y1="265" x2="730" y2="375" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow)" />
-
-              {/* D1 Database */}
+              {/* Drizzle ORM label */}
+              <line x1="865" y1="105" x2="878" y2="105" stroke="#c4b5fd" strokeWidth="1" />
               <g>
-                <rect x="730" y="70" width="130" height="70" rx="10" fill="#8b5cf6" fillOpacity="0.1" stroke="#8b5cf6" strokeWidth="1.5" />
-                <text x="795" y="97" textAnchor="middle" fill="#6d28d9" fontSize="11" fontWeight="700">D1 (SQLite)</text>
-                <text x="795" y="114" textAnchor="middle" fill="#7c3aed" fontSize="9">記事 / ユーザー</text>
-                <text x="795" y="128" textAnchor="middle" fill="#7c3aed" fontSize="9">テンプレート / カテゴリ</text>
+                <rect x="878" y="92" width="72" height="24" rx="6" fill="#f3e8ff" stroke="#c4b5fd" strokeWidth="1" />
+                <text x="914" y="108" textAnchor="middle" fill="#6d28d9" fontSize="8" fontWeight="600">Drizzle ORM</text>
               </g>
 
-              {/* R2 Storage */}
+              {/* ── R2 Storage ── */}
               <g>
-                <rect x="730" y="170" width="130" height="70" rx="10" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="1.5" />
-                <text x="795" y="197" textAnchor="middle" fill="#047857" fontSize="11" fontWeight="700">R2 (Storage)</text>
-                <text x="795" y="214" textAnchor="middle" fill="#059669" fontSize="9">画像アップロード</text>
-                <text x="795" y="228" textAnchor="middle" fill="#059669" fontSize="9">メディア管理</text>
+                <rect x="740" y="175" width="125" height="65" rx="10" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="1.5" />
+                <text x="802" y="200" textAnchor="middle" fill="#047857" fontSize="10" fontWeight="700">R2 (Storage)</text>
+                <text x="802" y="216" textAnchor="middle" fill="#059669" fontSize="8">画像アップロード</text>
+                <text x="802" y="230" textAnchor="middle" fill="#059669" fontSize="8">メディア管理</text>
               </g>
 
-              {/* Workers AI */}
+              {/* ── Workers AI ── */}
               <g>
-                <rect x="730" y="270" width="130" height="70" rx="10" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1.5" />
-                <text x="795" y="297" textAnchor="middle" fill="#b45309" fontSize="11" fontWeight="700">Workers AI</text>
-                <text x="795" y="314" textAnchor="middle" fill="#d97706" fontSize="9">Llama 3.3 70B</text>
-                <text x="795" y="328" textAnchor="middle" fill="#d97706" fontSize="9">記事ドラフト生成</text>
+                <rect x="740" y="270" width="125" height="70" rx="10" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1.5" />
+                <text x="802" y="295" textAnchor="middle" fill="#b45309" fontSize="10" fontWeight="700">Workers AI</text>
+                <text x="802" y="311" textAnchor="middle" fill="#d97706" fontSize="8">Llama 3.3 70B</text>
+                <text x="802" y="327" textAnchor="middle" fill="#d97706" fontSize="8">ドラフト / Chat Q&A</text>
               </g>
 
-              {/* KV */}
+              {/* ── KV ── */}
               <g>
-                <rect x="730" y="355" width="130" height="50" rx="10" fill="#64748b" fillOpacity="0.1" stroke="#64748b" strokeWidth="1.5" />
-                <text x="795" y="378" textAnchor="middle" fill="#475569" fontSize="11" fontWeight="700">KV</text>
-                <text x="795" y="395" textAnchor="middle" fill="#64748b" fontSize="9">セッション / キャッシュ</text>
+                <rect x="740" y="370" width="125" height="50" rx="10" fill="#64748b" fillOpacity="0.1" stroke="#64748b" strokeWidth="1.5" />
+                <text x="802" y="392" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="700">KV</text>
+                <text x="802" y="408" textAnchor="middle" fill="#64748b" fontSize="8">セッション / キャッシュ</text>
               </g>
 
-              {/* Vectorize (connected to AI) */}
-              <line x1="860" y1="305" x2="885" y2="305" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow)" />
+              {/* ── Vectorize ── */}
+              <line x1="865" y1="305" x2="890" y2="305" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow)" />
               <g>
-                <rect x="885" y="280" width="100" height="50" rx="10" fill="#ec4899" fillOpacity="0.1" stroke="#ec4899" strokeWidth="1.5" />
-                <text x="935" y="302" textAnchor="middle" fill="#be185d" fontSize="10" fontWeight="700">Vectorize</text>
-                <text x="935" y="318" textAnchor="middle" fill="#db2777" fontSize="8">関連記事検索</text>
+                <rect x="890" y="280" width="100" height="50" rx="10" fill="#ec4899" fillOpacity="0.1" stroke="#ec4899" strokeWidth="1.5" />
+                <text x="940" y="302" textAnchor="middle" fill="#be185d" fontSize="9" fontWeight="700">Vectorize</text>
+                <text x="940" y="318" textAnchor="middle" fill="#db2777" fontSize="7">関連記事 / RAG</text>
               </g>
 
-              {/* Drizzle label on D1 */}
-              <g>
-                <rect x="870" y="85" width="80" height="28" rx="6" fill="#f3e8ff" stroke="#c4b5fd" strokeWidth="1" />
-                <text x="910" y="104" textAnchor="middle" fill="#6d28d9" fontSize="9" fontWeight="600">Drizzle ORM</text>
-              </g>
-              <line x1="860" y1="100" x2="870" y2="100" stroke="#c4b5fd" strokeWidth="1" />
-
-              {/* Arrow marker */}
+              {/* ── Arrow markers ── */}
               <defs>
                 <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
                   <path d="M0,0 L8,3 L0,6" fill="#94a3b8" />
+                </marker>
+                <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <path d="M0,0 L8,3 L0,6" fill="#93c5fd" />
+                </marker>
+                <marker id="arrowOrange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <path d="M0,0 L8,3 L0,6" fill="#fdba74" />
                 </marker>
               </defs>
             </svg>
