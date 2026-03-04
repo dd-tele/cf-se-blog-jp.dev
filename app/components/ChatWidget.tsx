@@ -85,25 +85,30 @@ export function ChatWidget({ postId, postTitle }: Props) {
 
       const decoder = new TextDecoder();
       let accumulated = "";
+      let lineBuf = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6);
+        lineBuf += chunk;
+        const parts = lineBuf.split("\n");
+        // Keep last (potentially incomplete) line in buffer
+        lineBuf = parts.pop() || "";
+        for (const line of parts) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const payload = trimmed.slice(6);
           if (payload === "[DONE]") continue;
           try {
             const parsed = JSON.parse(payload);
+            // Only use "response" field; ignore padding ("p") and other fields
             if (parsed.response) {
               accumulated += parsed.response;
               setStreamingContent(accumulated);
             }
           } catch {
-            accumulated += payload;
-            setStreamingContent(accumulated);
+            // Incomplete JSON — ignore, will be completed in next chunk
           }
         }
       }
@@ -128,7 +133,7 @@ export function ChatWidget({ postId, postTitle }: Props) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey && !isComposingRef.current) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !isComposingRef.current) {
       e.preventDefault();
       handleSend();
     }
@@ -236,7 +241,7 @@ export function ChatWidget({ postId, postTitle }: Props) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onCompositionStart={() => { isComposingRef.current = true; }}
-                onCompositionEnd={() => { isComposingRef.current = false; }}
+                onCompositionEnd={() => { setTimeout(() => { isComposingRef.current = false; }, 50); }}
                 placeholder="質問を入力..."
                 disabled={isStreaming}
                 className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
