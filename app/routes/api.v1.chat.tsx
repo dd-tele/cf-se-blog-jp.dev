@@ -125,7 +125,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   // 8. Build system prompt
   const systemPrompt = buildChatSystemPrompt(post.title, ragContext);
 
-  // 9. Generate streaming response
+  // 9. Generate streaming response — read AI stream on server,
+  //    emit clean SSE to client, and save full response to DB.
   try {
     const aiStream = await generateChatResponseStream(
       ai,
@@ -134,16 +135,63 @@ export async function action({ request, context }: ActionFunctionArgs) {
       message
     );
 
-    // We need to tee the stream: one for the client, one for saving to DB
-    const [clientStream, dbStream] = aiStream.tee();
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    let fullResponse = "";
 
-    // Fire-and-forget: collect full response and save to DB
-    collectAndSave(dbStream, db, threadId).catch((e) =>
-      console.error("Failed to save AI response:", e)
-    );
+    const outputStream = new ReadableStream({
+      async start(controller) {
+        const reader = (aiStream as ReadableStream).getReader();
+        let lineBuf = "";
 
-    // Return SSE stream to client
-    return new Response(clientStream, {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value as ArrayBuffer, { stream: true });
+            lineBuf += chunk;
+            const parts = lineBuf.split("\n");
+            lineBuf = parts.pop() || "";
+
+            for (const part of parts) {
+              const trimmed = part.trim();
+              if (!trimmed.startsWith("data: ")) continue;
+              const payload = trimmed.slice(6);
+              if (payload === "[DONE]") continue;
+              try {
+                const parsed = JSON.parse(payload);
+                if (parsed.response) {
+                  fullResponse += parsed.response;
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ text: parsed.response })}\n\n`)
+                  );
+                }
+              } catch {
+                // Incomplete JSON — skip, will be completed in next chunk
+              }
+            }
+          }
+
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        } catch (e) {
+          console.error("Stream transform error:", e);
+          controller.close();
+        }
+
+        // Save complete AI response to DB
+        if (fullResponse.trim()) {
+          saveMessage(db, threadId, {
+            role: "ai",
+            content: fullResponse,
+            metadata: { model: "@cf/meta/llama-3.1-70b-instruct" },
+          }).catch((e) => console.error("Failed to save AI response:", e));
+        }
+      },
+    });
+
+    return new Response(outputStream, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -156,51 +204,5 @@ export async function action({ request, context }: ActionFunctionArgs) {
       { error: "回答の生成中にエラーが発生しました。しばらくしてから再度お試しください。" },
       { status: 500 }
     );
-  }
-}
-
-// Collect streamed chunks and save the full AI response to D1
-async function collectAndSave(
-  stream: ReadableStream,
-  db: D1Database,
-  threadId: string
-) {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let fullResponse = "";
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const text = decoder.decode(value, { stream: true });
-      // Parse SSE data lines to extract content
-      const lines = text.split("\n");
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const data = line.slice(6);
-          if (data === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.response) {
-              fullResponse += parsed.response;
-            }
-          } catch {
-            // Not JSON, might be raw text
-            fullResponse += data;
-          }
-        }
-      }
-    }
-  } catch {
-    // Stream may have errored
-  }
-
-  if (fullResponse.trim()) {
-    await saveMessage(db, threadId, {
-      role: "ai",
-      content: fullResponse,
-      metadata: { model: "@cf/meta/llama-3.1-8b-instruct" },
-    });
   }
 }

@@ -93,7 +93,6 @@ export function ChatWidget({ postId, postTitle }: Props) {
         const chunk = decoder.decode(value, { stream: true });
         lineBuf += chunk;
         const parts = lineBuf.split("\n");
-        // Keep last (potentially incomplete) line in buffer
         lineBuf = parts.pop() || "";
         for (const line of parts) {
           const trimmed = line.trim();
@@ -102,13 +101,12 @@ export function ChatWidget({ postId, postTitle }: Props) {
           if (payload === "[DONE]") continue;
           try {
             const parsed = JSON.parse(payload);
-            // Only use "response" field; ignore padding ("p") and other fields
-            if (parsed.response) {
-              accumulated += parsed.response;
+            if (parsed.text) {
+              accumulated += parsed.text;
               setStreamingContent(accumulated);
             }
           } catch {
-            // Incomplete JSON — ignore, will be completed in next chunk
+            // Skip incomplete JSON
           }
         }
       }
