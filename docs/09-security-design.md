@@ -1,14 +1,16 @@
 # 09 - セキュリティ設計
 
+> **実装状況:** Cloudflare Access (Zero Trust) による認証、WAF Managed Rules、DDoS 保護、DNSSEC/TLS は有効。Turnstile、Bot Management、カスタム Rate Limiting、AI Gateway、Llama Guard によるコンテンツモデレーションは未実装（将来拡張として設計）。アプリ層では DOMPurify による XSS 対策を実施済み。
+
 ## 1. セキュリティ設計方針
 
 **原則:** Cloudflare のセキュリティサービスをフル活用し、プラットフォーム自体が Cloudflare セキュリティのショーケースとなる。
 
 **防御の深層化 (Defense in Depth):**
-- エッジ層（Cloudflare Network）
-- アプリケーション層（Workers / Pages）
+- エッジ層（Cloudflare Network — DDoS, WAF, TLS）
+- アプリケーション層（Workers / Pages — DOMPurify, CSRF 対策）
 - データ層（D1 / R2 / KV）
-- AI 層（AI Gateway / Content Moderation）
+- 認証層（Cloudflare Access — Zero Trust / JWT）
 
 ---
 

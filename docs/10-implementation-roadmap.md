@@ -1,17 +1,19 @@
 # 10 - 実装ロードマップ
 
+> **現在の状況（2026-03）:** Phase 1 (MVP) + Phase 2 の AI ドラフト生成が完了。下書き→公開ワークフロー、6テンプレート、AI ドラフト生成 (Llama 3.1 70B)、Vectorize 関連記事推薦、AI チャット Q&A (基本版)、About ページ が稼働中。
+
 ## 1. フェーズ概要
 
 ```
-Phase 1 (MVP)          Phase 2 (AI)           Phase 3 (Advanced)      Phase 4 (Scale)
-2-3 weeks              2-3 weeks              2-3 weeks               Ongoing
+Phase 1 (MVP) ✅        Phase 2 (AI) 🔶        Phase 3 (Advanced)      Phase 4 (Scale)
+完了                    一部完了               未着手                  未着手
 ─────────────────── → ─────────────────── → ─────────────────── → ───────────────
-・基盤構築              ・AI サマリー           ・AI チャット Q&A        ・パフォーマンス
-・Public Blog           ・Vectorize 検索       ・Durable Objects       ・アナリティクス
-・User Portal           ・AI Gateway           ・コンテンツモデレーション ・多言語対応
-・Admin Dashboard       ・テンプレート AI       ・管理者 Q&A 画面       ・コミュニティ機能
-・認証/認可             ・Queues 非同期処理    ・多層防御完成          ・外部連携
-・基本セキュリティ       ・トレンドレポート      ・Logpush              ・モバイルアプリ
+✅ 基盤構築             ✅ テンプレート AI      ・Durable Objects       ・パフォーマンス
+✅ Public Blog          ✅ AI ドラフト生成      ・コンテンツモデレーション ・アナリティクス
+✅ User Portal          ✅ Vectorize 検索      ・Queues 非同期処理     ・多言語対応
+✅ Admin Dashboard      🔶 AI チャット Q&A     ・AI Gateway            ・コミュニティ機能
+✅ 認証/認可 (Access)   ・AI サマリー自動生成   ・Logpush              ・外部連携
+✅ 基本セキュリティ      ・トレンドレポート      ・Turnstile
 ```
 
 ---
@@ -42,12 +44,12 @@ Phase 1 (MVP)          Phase 2 (AI)           Phase 3 (Advanced)      Phase 4 (S
 | 1.13 | CI/CD (GitHub Actions → Pages) | GitHub Actions | 🟡 | 0.5日 |
 
 **Phase 1 完了条件:**
-- [ ] ブログ記事の閲覧・検索（キーワード）が動作する
-- [ ] ユーザーがログインして記事を執筆・投稿できる
-- [ ] Admin が記事をレビュー・承認・公開できる（3回承認後は自動公開）
-- [ ] テンプレートの構造化入力フォームが動作する
-- [ ] 画像アップロードが動作する
-- [ ] WAF + Rate Limiting + Turnstile が有効
+- [x] ブログ記事の閲覧・検索（キーワード）が動作する
+- [x] ユーザーが Cloudflare Access でログインして記事を執筆・投稿できる
+- [x] 下書き保存 → ワンクリック公開が動作する
+- [x] テンプレートの構造化入力フォームが動作する
+- [x] 画像アップロード（R2）が動作する
+- [x] WAF Managed Rules + Cloudflare Access が有効
 
 ### 1.1 プロジェクト初期化
 

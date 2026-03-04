@@ -3,14 +3,13 @@ import { aiSummaries } from "~/db/schema";
 import { ulid } from "~/lib/ulid";
 
 // ─── AI Gateway helper ─────────────────────────────────────
-const AI_GATEWAY_ID = "cf-se-blog-gw";
-
-function gwOpts(): { gateway?: { id: string } } {
-  return { gateway: { id: AI_GATEWAY_ID } };
+// AI Gateway is not currently configured; pass empty options.
+function gwOpts(): Record<string, unknown> {
+  return {};
 }
 
 // ─── Text model helper ─────────────────────────────────────
-const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct" as const;
+const TEXT_MODEL = "@cf/meta/llama-3.1-70b-instruct" as const;
 const EMBED_MODEL = "@cf/baai/bge-base-en-v1.5" as const;
 
 const SUMMARY_SYSTEM_PROMPT = `あなたは Cloudflare の技術ブログを分析する AI アシスタントです。

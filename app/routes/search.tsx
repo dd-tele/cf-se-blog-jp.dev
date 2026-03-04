@@ -104,6 +104,9 @@ export default function SearchPage() {
             <Link to="/posts" className="text-sm text-gray-600 hover:text-gray-900">
               記事一覧
             </Link>
+            <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
+              このブログについて
+            </Link>
             {user ? (
               <Link
                 to="/portal"

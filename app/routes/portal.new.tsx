@@ -8,8 +8,6 @@ import { redirect } from "@remix-run/cloudflare";
 import { useRef } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { createPost, getAllCategories, ensureUser } from "~/lib/posts.server";
-import { generatePostSummary } from "~/lib/ai.server";
-import { indexPost } from "~/lib/vectorize.server";
 import { ImageUploader } from "~/components/ImageUploader";
 
 export const meta: MetaFunction = () => [
@@ -50,25 +48,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       user
     );
 
-    if (result.autoApproved) {
-      const ai = context.cloudflare.env.AI;
-      if (ai) {
-        // Fire-and-forget AI summary generation
-        generatePostSummary(ai, db, result.id, title, content).catch(
-          (e) => console.error("AI summary failed:", e)
-        );
-        // Fire-and-forget Vectorize indexing
-        const vectorize = context.cloudflare.env.VECTORIZE;
-        if (vectorize) {
-          const tags: string[] = tagsJson ? JSON.parse(tagsJson) : [];
-          indexPost(ai, vectorize, { id: result.id, title, content, tags }).catch(
-            (e) => console.error("Vectorize indexing failed:", e)
-          );
-        }
-      }
-      return redirect(`/posts/${result.slug}`);
-    }
-    return redirect(`/portal?submitted=true`);
+    return redirect(`/portal/edit/${result.id}?saved=draft`);
   } catch (e: any) {
     return { error: e.message || "記事の作成に失敗しました" };
   }
@@ -105,9 +85,9 @@ export default function NewPost() {
               Cloudflare Solution Blog
             </Link>
             <span className="text-sm text-gray-400">|</span>
-            <span className="text-sm font-medium text-gray-600">
-              新しい記事
-            </span>
+            <Link to="/portal" className="text-sm text-gray-500 hover:text-gray-700">
+              ← ダッシュボード
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500">{user.displayName}</span>
@@ -220,17 +200,6 @@ export default function NewPost() {
             </p>
           </div>
 
-          {/* Auto-approval info */}
-          <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
-            {user.role === "admin" ? (
-              <span>Admin ユーザーのため、記事は自動的に公開されます。</span>
-            ) : (
-              <span>
-                投稿後、管理者の承認を経て公開されます。承認済み記事が3件以上になると自動公開になります。
-              </span>
-            )}
-          </div>
-
           {/* Submit */}
           <div className="flex items-center justify-between border-t pt-6">
             <Link
@@ -244,7 +213,7 @@ export default function NewPost() {
               disabled={isSubmitting}
               className="rounded-lg bg-brand-500 px-8 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50 transition-colors"
             >
-              {isSubmitting ? "送信中..." : "記事を投稿する"}
+              {isSubmitting ? "保存中..." : "下書き保存"}
             </button>
           </div>
         </Form>

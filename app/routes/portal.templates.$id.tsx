@@ -81,17 +81,84 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
   const userPrompt = buildUserPrompt(inputs, fields, companyName);
   const startTime = Date.now();
 
+  // Shared style preamble for all templates — enterprise case study tech blog tone
+  const stylePreamble = `## 文体・トーンの指示（最重要）
+あなたは企業の SE またはインフラ／開発チームのエンジニアとして、**自社（またはクライアント企業）が抱えていたビジネス課題・技術課題に対し、Cloudflare を活用してどのようにアプローチし解決したか**を読者に共有する立場で書いてください。
+単なる初心者の体験記ではなく、企業環境における目的意識のある導入事例として記述してください。
+
+### 禁止表現
+- 提案書・営業資料トーン: 「〜が可能です」「〜を推奨します」「〜のメリットがあります」「〜をご検討ください」
+- 初心者日記トーン: 「〜を触ってみた」「とりあえず〜してみた」
+
+### 品質ガードレール（厳守）
+1. **日本語のみで出力する**: 英語の技術用語（Cloudflare, Access, Tunnel, VPN, IdP, Azure AD 等の固有名詞）はそのまま使用して良いが、アラビア語・マレー語・その他の非日本語の単語を絶対に混入させないこと。不明な単語はカタカナ表記にする。
+2. **セクション冒頭の遷移表現を多様にする**: 「〜は以下のようになっています」「〜は以下の通りです」を繰り返し使わない。各セクションごとに異なる導入文を工夫する。例:「ここからは〜について詳しく見ていきます」「次に取り組んだのが〜です」「〜の観点で整理すると」など。
+3. **セクション間で同じ内容を重複させない**: 一度言及した事実や数値を別のセクションでそのまま繰り返さない。再度触れる場合は「先述の通り」と簡潔に参照し、新しい視点や考察を加える。
+4. **「〜を考慮しました」だけで終わらせない**: 何をどのように考慮し、具体的にどういう判断・対策を行ったのかまで踏み込んで書く。
+
+### 文章構成の指示（非常に重要）
+ユーザーの入力は箇条書きやメモ形式で提供されますが、**入力をそのままコピーして出力しないでください**。
+以下のルールに従って、入力内容を咀嚼し、読み応えのある文章に再構成してください:
+
+1. **行間を読んで文脈を補完する**: 箇条書きの裏にある「なぜそうしたのか」「どういう判断があったのか」を推測し、文章として肉付けする。
+   - 例（入力）: 「・VPN 同時接続数が上限に達し接続できない社員が発生」
+   - 例（出力）: 「リモートワークの全社導入に伴い VPN の同時接続数が急増し、業務のピーク時間帯にはライセンス上限に達して接続できない社員が続出するようになりました。特に月曜朝の全社ミーティング前後は深刻で、業務開始が 30 分以上遅れるケースも珍しくありませんでした。」
+
+2. **事実は絶対に省略・削除しない**: ユーザーが入力した情報（数値、固有名詞、手順、ポリシー例など）はすべて記事に含める。ただし、羅列ではなく文脈の中に組み込む。
+
+3. **箇条書きと文章を適切に使い分ける**:
+   - 設定手順、ポリシー一覧、スペック比較 → 箇条書きや表が適切
+   - 導入背景、課題説明、設計判断の理由、成果の解説 → 散文（地の文）で書く
+   - 箇条書きの前後には必ず導入文や補足文を添え、箇条書きだけが続く構成を避ける
+
+4. **セクション間のつながりを意識する**: 各セクションの冒頭で前セクションとの関係を一文で示す（例:「要件が固まったところで、次に具体的なソリューションの選定に入りました。」）
+
+5. **各セクションの末尾にまとめ・考察を入れる**: 箇条書きや手順の羅列で終わらず、以下の要素を末尾に散文で補足する:
+   - そのセクションの内容から推測される**背景や意図の総括**（例:「こうした段階的な展開を選んだのは、万が一の切り戻しリスクを最小化するためでした。」）
+   - 振り返って感じた**改善点や残課題**（例:「振り返ると、PoC 段階でもう少しエッジケースのテストを増やしておくべきでした。」）
+   - 今後**取り組むべき課題や展望**（例:「現在はアクセスログの分析を手動で行っていますが、今後は SIEM 連携による自動アラートの導入を計画しています。」）
+
+6. **記事全体の末尾「まとめ」セクションを充実させる**: 単に導入内容を箇条書きで繰り返すのではなく、以下を含む読み応えのあるまとめを書く:
+   - 導入全体を通じて得られた**学びや教訓**
+   - 入力内容の要素から推測される**組織的・技術的なインパクトの総括**
+   - 同様の課題を持つ読者への**実践的なアドバイス**
+   - 今後の**改善計画や発展の方向性**
+
+### 推奨表現・テックブログ常套句
+- 導入背景: 「自社では〜という課題を抱えていました」「〜の要件を満たす必要がありました」
+- 選定理由: 「複数の選択肢を検討した結果、〜という理由で Cloudflare の〜を採用しました」
+- 実装過程: 「本記事では、〜を導入した際の設計判断と実装手順を紹介します」「設定手順は以下の通りです」
+- 技術的判断: 「〜という要件があったため、〜の構成を選択しました」「〜を考慮し、〜の方式を採用しています」
+- つまずき: 「導入時に注意が必要だった点として〜」「当初は〜で想定通りに動作しなかったため、〜に変更しました」
+- 成果: 「結果として〜が改善しました」「レイテンシが〜ms から〜ms に短縮されました」「運用負荷が大幅に軽減されました」
+- 展望: 「今後は〜への展開も検討しています」
+
+### タイトル生成ルール
+- 記事の **1行目に必ず「# タイトル」形式の見出しを出力する**。
+- ユーザーがタイトルを入力している場合でも、内容に即した正式なテックブログ記事タイトルに整形・改善すること。
+- ラフな入力（例:「キャッシュ除外のやつ」）→ 読者に内容が伝わるタイトルに変換（例:「Cache Rules を活用した API パスのキャッシュ除外設定」）。
+- タイトルは簡潔かつ具体的に。30〜60文字程度を目安とする。
+
+### 文体ルール
+- 文末は「です・ます」調で統一
+- 一人称は状況に応じて省略、または「弊社」「自社チーム」「筆者」を使用
+- 会社名が提供されている場合は適宜使用する
+- 見出しは体言止め（例:「導入背景」「アーキテクチャ設計」「動作検証」）を基本とする
+
+`;
+
   try {
     // Call Workers AI
+    const systemPrompt = stylePreamble + template.aiPromptTemplate;
     const aiResponse: any = await ai.run(
-      "@cf/meta/llama-3.1-8b-instruct" as any,
+      "@cf/meta/llama-3.1-70b-instruct" as any,
       {
         messages: [
-          { role: "system", content: template.aiPromptTemplate },
+          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 4096,
-        temperature: 0.7,
+        max_tokens: 8192,
+        temperature: 0.4,
       }
     );
 
@@ -102,12 +169,9 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
       return { error: "AI からの応答が空でした。もう一度お試しください。" };
     }
 
-    // Use custom title if provided, otherwise extract from generated markdown
-    let title = customTitle;
-    if (!title) {
-      const titleMatch = generatedContent.match(/^#\s+(.+)$/m);
-      title = titleMatch ? titleMatch[1].trim() : template.name;
-    }
+    // Extract AI-generated title from first heading, fall back to user input
+    const titleMatch = generatedContent.match(/^#\s+(.+)$/m);
+    let title = titleMatch ? titleMatch[1].trim() : (customTitle || template.name);
 
     // Create draft post
     const result = await createPost(
@@ -130,7 +194,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
       post_id: result.id,
       input_data_json: JSON.stringify(inputs),
       generated_content: generatedContent,
-      model_used: "@cf/meta/llama-3.1-8b-instruct",
+      model_used: "@cf/meta/llama-3.1-70b-instruct",
       latency_ms: latencyMs,
       status: "completed",
       created_at: now,
@@ -151,7 +215,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
         user_id: user.id,
         template_id: template.id,
         input_data_json: JSON.stringify(inputs),
-        model_used: "@cf/meta/llama-3.1-8b-instruct",
+        model_used: "@cf/meta/llama-3.1-70b-instruct",
         latency_ms: latencyMs,
         status: "failed",
         created_at: now,

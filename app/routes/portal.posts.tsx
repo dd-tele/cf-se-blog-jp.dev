@@ -18,9 +18,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   draft: { label: "下書き", className: "bg-gray-100 text-gray-700" },
-  pending_review: { label: "審査中", className: "bg-yellow-100 text-yellow-700" },
   published: { label: "公開", className: "bg-green-100 text-green-700" },
-  rejected: { label: "差戻し", className: "bg-red-100 text-red-700" },
   archived: { label: "アーカイブ", className: "bg-gray-100 text-gray-500" },
 };
 
@@ -36,7 +34,9 @@ export default function PortalPosts() {
               Cloudflare Solution Blog
             </Link>
             <span className="text-sm text-gray-400">|</span>
-            <span className="text-sm font-medium text-gray-600">マイ記事</span>
+            <Link to="/portal" className="text-sm text-gray-500 hover:text-gray-700">
+              ← ダッシュボード
+            </Link>
           </div>
           <Link
             to="/portal/new"
@@ -55,9 +55,7 @@ export default function PortalPosts() {
           {[
             { value: "all", label: "すべて" },
             { value: "draft", label: "下書き" },
-            { value: "pending_review", label: "審査中" },
             { value: "published", label: "公開" },
-            { value: "rejected", label: "差戻し" },
           ].map((f) => (
             <Link
               key={f.value}

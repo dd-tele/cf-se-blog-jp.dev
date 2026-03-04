@@ -111,6 +111,12 @@ export default function PostDetail() {
             >
               記事一覧
             </Link>
+            <Link
+              to="/about"
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              このブログについて
+            </Link>
             {user ? (
               <Link
                 to="/portal"
@@ -131,6 +137,10 @@ export default function PostDetail() {
       </header>
 
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <Link to="/posts" className="mb-6 inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+          ← 事例一覧に戻る
+        </Link>
+
         {/* Status banner for non-published */}
         {post.status !== "published" && (
           <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">

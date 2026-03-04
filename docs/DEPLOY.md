@@ -93,7 +93,7 @@ pages_build_output_dir = "./build/client"
 ENVIRONMENT = "production"
 SITE_NAME = "Cloudflare Solution Blog"
 SITE_URL = "https://cf-se-blog-jp.dev"
-AI_GATEWAY_ID = "cf-se-blog-gw"          # ← Step 1.5 で作成した場合
+# AI_GATEWAY_ID = "cf-se-blog-gw"        # 現在未使用
 
 [[d1_databases]]
 binding = "DB"
@@ -129,11 +129,19 @@ index_name = "cf-se-blog-vectors"
 ## Step 3: D1 マイグレーション実行（リモート）
 
 ```bash
+wrangler d1 migrations apply cf-se-blog-db --remote
+```
+
+または個別に実行:
+```bash
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0001_init.sql
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0002_seed_categories.sql
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0003_seed_templates.sql
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0004_update_template_fields.sql
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0005_badges.sql
+wrangler d1 execute cf-se-blog-db --remote --file=migrations/0006_user_password.sql
+wrangler d1 execute cf-se-blog-db --remote --file=migrations/0007_update_template_prompts.sql
+wrangler d1 execute cf-se-blog-db --remote --file=migrations/0008_fix_tldr_label.sql
 ```
 
 実行後、確認:
@@ -141,7 +149,7 @@ wrangler d1 execute cf-se-blog-db --remote --file=migrations/0005_badges.sql
 wrangler d1 execute cf-se-blog-db --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
 ```
 
-期待される出力テーブル: `ai_draft_requests`, `ai_summaries`, `audit_logs`, `categories`, `notification_settings`, `posts`, `qa_messages`, `qa_threads`, `templates`, `user_badges`, `users`
+期待される出力テーブル: `ai_draft_requests`, `ai_summaries`, `audit_logs`, `categories`, `posts`, `qa_messages`, `qa_threads`, `templates`, `user_badges`, `users`
 
 ---
 
@@ -276,36 +284,29 @@ Dashboard → `cf-se-blog-jp.dev` ゾーンで以下を設定:
 
 ログイン後:
 ```
-✅ /portal        → ダッシュボード（統計 + バッジ）
-✅ /portal/new    → 記事作成
-✅ /admin         → 管理画面（admin ロールのみ）
-✅ /admin/qa      → Q&A 管理
+✅ /portal              → ダッシュボード（統計 + クイックアクション）
+✅ /portal/new          → 新規記事作成
+✅ /portal/posts        → マイ記事一覧
+✅ /portal/templates    → テンプレート一覧
+✅ /admin               → 管理画面（admin ロールのみ）
+✅ /about               → このブログについて（技術構成ページ）
 ```
 
 ---
 
-## Step 9: 本番用認証の切替（重要）
+## Step 9: Cloudflare Access 認証（設定済み）
 
-現在のログイン画面はローカル開発用のモック認証です。
-本番では以下のいずれかに切り替える必要があります:
+本番環境では **Cloudflare Access (Zero Trust)** で認証を構成済みです。
 
-| 方式 | 推奨度 | 説明 |
-|---|---|---|
-| **Cloudflare Access** | ⭐⭐⭐ | Zero Trust でメール / IdP 認証。Pages 統合が簡単 |
-| **OAuth (Google/GitHub)** | ⭐⭐ | ソーシャルログイン。実装追加が必要 |
-| **email + password** | ⭐ | 自前実装。セキュリティ負荷が高い |
+| 項目 | 値 |
+|---|---|
+| **チーム名** | `cf-se-blog-jp` |
+| **チームURL** | `cf-se-blog-jp.cloudflareaccess.com` |
+| **保護パス** | `/portal/*`, `/admin/*`, `/auth/*` |
+| **IdP** | Google Workspace |
+| **ポリシー** | Emails ending in `@cloudflare.com` |
 
-**推奨: Cloudflare Access (Zero Trust)**
-
-```
-Dashboard → Zero Trust → Access → Applications → Add an Application
-- Type: Self-hosted
-- Application domain: cf-se-blog-jp.dev
-- Path: /portal*, /admin*, /auth/*
-- Policy: Allow — Emails ending in @your-company.com
-```
-
-この切替は別途お知らせください。
+ローカル開発時は Access が無効化され、モックログインが表示されます（`CLOUDFLARE_ACCESS_TEAM` 環境変数未設定時）。
 
 ---
 

@@ -13,25 +13,16 @@
 
 ---
 
-## 2. テンプレート一覧
+## 2. テンプレート一覧（実装済み）
 
 | ID | テンプレート名 | カテゴリ | 難易度 | 目安時間 |
 |---|---|---|---|---|
-| T-APP-01 | Application Services 設定ガイド | Application | 初級 | 30分 |
-| T-APP-02 | WAF / Bot Management 活用事例 | Application | 中級 | 45分 |
-| T-APP-03 | パフォーマンス最適化レポート | Application | 中級 | 45分 |
-| T-ZT-01 | Zero Trust 導入ステップバイステップ | ZT/SASE | 初級 | 40分 |
-| T-ZT-02 | SASE アーキテクチャ設計記 | ZT/SASE | 上級 | 60分 |
-| T-ZT-03 | ゼロトラスト移行体験記 | ZT/SASE | 中級 | 45分 |
-| T-DEV-01 | Workers / Pages チュートリアル | Dev Platform | 初級 | 30分 |
-| T-DEV-02 | フルスタックアプリ構築記 | Dev Platform | 上級 | 60分 |
-| T-DEV-03 | Workers AI / AI Gateway 活用 | Dev Platform | 中級 | 45分 |
-| T-EMAIL-01 | Email Security 設定ガイド | Email Security | 初級 | 30分 |
-| T-EMAIL-02 | メールセキュリティ強化事例 | Email Security | 中級 | 40分 |
-| T-NET-01 | Network Services 構成ガイド | Network | 中級 | 45分 |
-| T-GEN-01 | Cloudflare Tips & Tricks | その他 | 初級 | 20分 |
-| T-GEN-02 | 比較・検証レポート | その他 | 中級 | 50分 |
-| T-GEN-03 | イベント・登壇レポート | その他 | 初級 | 25分 |
+| t-zt-01 | Zero Trust 導入ガイド | Zero Trust / SASE | 初級 | 40分 |
+| t-dev-01 | Workers / Pages 開発記 | Developer Platform | 中級 | 45分 |
+| t-perf-01 | パフォーマンス最適化 | Application Services | 中級 | 45分 |
+| t-sec-01 | セキュリティ対策 | Application Services | 中級 | 45分 |
+| t-net-01 | ネットワーク構成 | Network Services | 上級 | 60分 |
+| t-gen-01 | Cloudflare Tips & Tricks | その他 | 初級 | 20分 |
 
 ---
 
@@ -47,8 +38,8 @@
 2. 必須項目・追記・画像をフォームに入力
 3. [AI で下書きを生成] をクリック
 4. Workers AI が完全な Markdown ブログ記事を生成
-5. リッチエディタで自由に編集・加筆・削除
-6. 公開 or レビュー提出
+5. Markdown エディタで自由に編集・画像追加
+6. 下書き保存 or ワンクリック公開
 ```
 
 **メリット:**

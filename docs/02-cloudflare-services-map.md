@@ -22,30 +22,20 @@
 - Git 連携による自動 CI/CD（GitHub → Pages）
 - Preview URL による記事プレビュー
 
-### 2.2 Cloudflare Workers
-| 項目 | 詳細 |
-|---|---|
-| **用途** | Pages Functions では対応しきれない独立 API、Cron Triggers |
-| **主要 Worker** | `ai-summary-worker`、`chat-worker`、`search-indexer-worker` |
-| **プラン** | Workers Paid（CPU 時間 50ms 超対応） |
+### 2.2 Workers (Pages Functions)
 
-**Workers 一覧:**
+本プラットフォームでは独立した Workers は使用せず、全バックエンドロジックを **Remix の loader/action (Pages Functions)** で実装しています。
 
-| Worker 名 | トリガー | 役割 |
+| 機能 | 実装場所 | 説明 |
 |---|---|---|
-| `ai-summary-worker` | Queue Consumer | 記事公開時に AI サマリー生成 |
-| `search-indexer-worker` | Queue Consumer | 記事を Vectorize にインデックス |
-| `chat-worker` | HTTP + WebSocket | Durable Objects ベースのチャット |
-| `cron-analytics-worker` | Cron Trigger (daily) | 日次 AI インサイトレポート生成 |
-| `image-optimizer-worker` | R2 Event Notification | 画像アップロード後処理 |
+| Blog CRUD | `portal.edit.$id.tsx` action | 記事の作成・編集・削除・公開 |
+| AI ドラフト生成 | `portal.templates.$id.tsx` action | テンプレート入力 → Workers AI 呼び出し |
+| 画像アップロード | `portal.edit.$id.tsx` action | R2 へのアップロード + Markdown 挿入 |
+| 認証 | `auth.login.tsx` / `auth.server.ts` | Access JWT 検証 + KV セッション |
+| 検索 | `search.tsx` loader | D1 全文検索 |
+| AI チャット | `ChatWidget` component + action | 記事コンテキストベースの Q&A |
 
-### 2.3 Durable Objects
-| 項目 | 詳細 |
-|---|---|
-| **用途** | AI チャットセッション状態管理 |
-| **クラス** | `ChatRoom` — 記事ごとのチャットルーム |
-| **機能** | WebSocket 接続管理、会話履歴保持、レート制限 |
-| **永続化** | Transactional Storage（DO 内蔵ストレージ） |
+> **注:** Durable Objects、Queues、Cron Triggers は現在未使用。将来的な拡張で導入を検討。
 
 ---
 
@@ -56,25 +46,25 @@
 |---|---|
 | **用途** | メインリレーショナルデータベース |
 | **DB名** | `cf-se-blog-db` |
-| **データ** | 記事、ユーザー、カテゴリ、テンプレート、Q&A ログ、AI サマリー |
+| **データ** | 記事、ユーザー、カテゴリ、テンプレート、AI ドラフトリクエスト、Q&A、監査ログ |
 | **バックアップ** | D1 自動バックアップ + Time Travel（30日） |
 
 **主要テーブル:**
 - `users` — ユーザー情報・ロール
-- `posts` — ブログ記事
-- `categories` — カテゴリマスタ
-- `templates` — ブログテンプレート
+- `posts` — ブログ記事（status: draft / published）
+- `categories` — カテゴリマスタ（6カテゴリ）
+- `templates` — ブログテンプレート（6テンプレート）
+- `ai_draft_requests` — AI ドラフト生成リクエスト・履歴
+- `ai_summaries` — AI 生成サマリー
 - `qa_threads` — Q&A スレッド
 - `qa_messages` — Q&A メッセージ
-- `ai_summaries` — AI 生成サマリー
-- `ai_insights` — AI インサイトレポート
 - `audit_logs` — 操作監査ログ
 
 ### 3.2 KV (Key-Value Store)
 | 項目 | 詳細 |
 |---|---|
 | **用途** | セッション管理、レンダリングキャッシュ、下書き自動保存 |
-| **Namespace** | `SESSIONS`、`PAGE_CACHE`、`DRAFTS`、`RATE_LIMITS` |
+| **Namespace** | `SESSIONS`、`PAGE_CACHE`、`DRAFTS` |
 
 **KV キー設計:**
 ```
@@ -83,13 +73,9 @@ SESSIONS:
 
 PAGE_CACHE:
   cache:post:{slug}          → { html, etag, cachedAt }
-  cache:category:{category}  → { html, cachedAt }
 
 DRAFTS:
   draft:{userId}:{postId}    → { content, savedAt }  (TTL: 30日)
-
-RATE_LIMITS:
-  ratelimit:chat:{ip}        → { count, windowStart }
 ```
 
 ### 3.3 R2 (Object Storage)
@@ -104,30 +90,18 @@ RATE_LIMITS:
 ### 3.4 Vectorize
 | 項目 | 詳細 |
 |---|---|
-| **用途** | ブログ記事のセマンティック検索 & AI チャットのコンテキスト検索 |
-| **インデックス名** | `blog-content-index` |
-| **次元数** | 768 (BGE-base) or 1536 (OpenAI compatible) |
+| **用途** | ブログ記事のセマンティック検索 & 関連記事推薦 |
+| **インデックス名** | `cf-se-blog-vectors` |
+| **次元数** | 768 (`@cf/baai/bge-base-en-v1.5`) |
 | **メトリクス** | Cosine Similarity |
 | **メタデータ** | postId, category, author, publishedAt |
 
 **インデックス戦略:**
-- 記事公開時に Queues 経由で非同期インデックス
-- 記事本文をチャンク分割（500トークン/チャンク、100トークンオーバーラップ）
-- タイトル・カテゴリ・タグをメタデータとして付与
+- 記事公開時にベクトルを生成・保存
+- 記事本文を Embedding し、類似記事を `findRelatedPosts()` で取得
 - 記事更新時は旧ベクトルを削除して再インデックス
 
-### 3.5 Queues
-| 項目 | 詳細 |
-|---|---|
-| **用途** | 非同期バックグラウンド処理 |
-| **キュー名** | 役割 |
-
-| Queue 名 | Producer | Consumer | 用途 |
-|---|---|---|---|
-| `post-published` | Blog API | `ai-summary-worker` | AI サマリー生成 |
-| `post-index` | Blog API | `search-indexer-worker` | Vectorize インデックス |
-| `chat-log` | Chat Worker | Pages Function | Q&A ログ永続化 |
-| `content-moderation` | Chat/Blog API | Moderation Worker | コンテンツ審査 |
+> **注:** Queues は現在未使用。インデックスは同期的に処理。
 
 ---
 
@@ -141,25 +115,13 @@ RATE_LIMITS:
 
 **使用モデル:**
 
-| モデル | 用途 | 入出力 |
-|---|---|---|
-| `@cf/meta/llama-3.1-70b-instruct` | チャット Q&A 応答 | テキスト → テキスト |
-| `@cf/meta/llama-3.1-8b-instruct` | サマリー生成（コスト最適化） | テキスト → テキスト |
-| `@cf/baai/bge-large-en-v1.5` | テキスト Embedding | テキスト → ベクトル |
-| `@cf/meta/llama-guard-3-8b` | コンテンツモデレーション | テキスト → 安全性判定 |
+| モデル | 用途 | 入出力 | パラメータ |
+|---|---|---|---|
+| `@cf/meta/llama-3.1-70b-instruct` | AI ドラフト生成・チャット Q&A 応答 | テキスト → テキスト | temperature: 0.4, max_tokens: 8192 |
+| `@cf/baai/bge-base-en-v1.5` | テキスト Embedding | テキスト → ベクトル (768次元) | — |
 
-### 4.2 AI Gateway
-| 項目 | 詳細 |
-|---|---|
-| **用途** | AI API のプロキシ・レート制限・ログ・キャッシュ |
-| **ゲートウェイ名** | `cf-se-blog-ai` |
-
-**AI Gateway の機能活用:**
-- **Rate Limiting**: ユーザーあたりのチャットリクエスト制限（10 req/min）
-- **Caching**: 同一質問へのキャッシュ応答（コスト削減）
-- **Logging**: 全 AI リクエスト/レスポンスのログ（管理画面で閲覧可能）
-- **Fallback**: プライマリモデル障害時のフォールバック設定
-- **Cost Tracking**: AI 利用コストの追跡・可視化
+> **注:** AI Gateway は現在未使用。Workers AI への直接呼び出しで運用中。
+> 将来的に Rate Limiting やコスト追跡が必要になった場合に導入を検討。
 
 ---
 
@@ -168,51 +130,39 @@ RATE_LIMITS:
 ### 5.1 Cloudflare Zero Trust / Access
 | 項目 | 詳細 |
 |---|---|
-| **用途** | 管理者・SE の認証 |
-| **IdP 連携** | Google Workspace / Okta / Azure AD |
-| **ポリシー** | `/admin/*` → Admin グループのみ、`/portal/*` → 認証済みユーザー |
-| **セッション** | 24時間 + リフレッシュ |
+| **用途** | ポータル・管理画面の認証 |
+| **チーム名** | `cf-se-blog-jp` |
+| **チームURL** | `cf-se-blog-jp.cloudflareaccess.com` |
+| **IdP 連携** | Google Workspace |
+| **ポリシー** | `/portal/*`, `/admin/*`, `/auth/*` → 認証済みユーザー |
+| **セッション** | JWT ベース → KV (`SESSIONS`) で管理 |
 
 **Access Policy 設計:**
 
 | アプリケーション | パス | ポリシー |
 |---|---|---|
-| Admin Dashboard | `/admin/*` | Include: Email ends with `@cloudflare.com` AND Group: `SE-Admin` |
-| SE Portal | `/portal/*` (SE functions) | Include: Email ends with `@cloudflare.com` AND Group: `SE-Team` |
-| User Portal | `/portal/*` | Include: Everyone (with login) |
+| Blog Portal | `/portal/*`, `/admin/*`, `/auth/*` | Include: Emails ending in `@cloudflare.com` |
+
+**認証フロー:**
+1. ユーザーが `/portal` にアクセス
+2. Cloudflare Access がログイン画面を表示（IdP 連携）
+3. 認証成功 → JWT (`Cf-Access-Jwt-Assertion`) がヘッダーに付与
+4. アプリ側で JWT を検証 → ユーザー情報を D1 に upsert
+5. セッション ID を KV に保存、Cookie で管理
 
 ### 5.2 WAF (Web Application Firewall)
 | 項目 | 詳細 |
 |---|---|
 | **用途** | L7 攻撃防御 |
-| **ルールセット** | Cloudflare Managed Rules + OWASP Core Rule Set |
-| **カスタムルール** | XSS 対策強化（ブログ投稿のサニタイズ補強） |
+| **ルールセット** | Cloudflare Managed Rules |
 
-### 5.3 Turnstile
-| 項目 | 詳細 |
+### 5.3 コンテンツセキュリティ
+| 対策 | 実装 |
 |---|---|
-| **用途** | ボット防止（チャット、記事投稿、コメント） |
-| **モード** | Managed（通常）+ Invisible（チャット連続投稿時） |
-| **適用箇所** | ログイン、記事投稿、チャット送信、検索 |
+| **XSS 防御** | DOMPurify で Markdown HTML をサニタイズ |
+| **CSRF** | Remix の action は POST メソッド + Cookie セッション検証 |
 
-### 5.4 Rate Limiting
-| 項目 | 詳細 |
-|---|---|
-| **用途** | API エンドポイントの保護 |
-
-| エンドポイント | 制限 | ウィンドウ |
-|---|---|---|
-| `POST /api/v1/chat` | 10 req | 1 min |
-| `POST /api/v1/posts` | 5 req | 1 min |
-| `POST /api/v1/upload` | 10 req | 1 min |
-| `GET /api/v1/search` | 30 req | 1 min |
-| `POST /api/v1/ai/*` | 20 req | 1 min |
-
-### 5.5 Bot Management
-| 項目 | 詳細 |
-|---|---|
-| **用途** | スクレイピング・自動投稿防止 |
-| **スコア閾値** | < 30 → Block、30-50 → Challenge、> 50 → Allow |
+> **注:** Turnstile、Bot Management、Rate Limiting は現在未実装。トラフィック増加時に導入を検討。
 
 ---
 

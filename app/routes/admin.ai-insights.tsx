@@ -3,11 +3,12 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/cloudflare";
-import { useLoaderData, Link, Form, useNavigation } from "@remix-run/react";
+import { useLoaderData, useActionData, Link, Form, useNavigation } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
-import { aiSummaries, aiDraftRequests, posts } from "~/db/schema";
-import { sql, desc, eq, count } from "drizzle-orm";
+import { generateTrendReport } from "~/lib/ai.server";
+import { aiSummaries, aiDraftRequests, posts, categories } from "~/db/schema";
+import { sql, desc, eq, count, and, gte } from "drizzle-orm";
 
 export const meta: MetaFunction = () => [
   { title: "AI インサイト — Cloudflare Solution Blog" },
@@ -91,15 +92,62 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const intent = formData.get("intent") as string;
 
   if (intent === "generate-trend") {
-    // Proxy to trend report API
-    const url = new URL(request.url);
-    const apiUrl = `${url.origin}/api/v1/ai/trend-report`;
-    const res = await fetch(apiUrl, {
-      method: "POST",
-      headers: { cookie: request.headers.get("cookie") ?? "" },
+    const db = context.cloudflare.env.DB;
+    const ai = context.cloudflare.env.AI;
+    const cache = context.cloudflare.env.PAGE_CACHE;
+    const d = getDb(db);
+
+    // Get posts published in the last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace("T", " ")
+      .slice(0, 19);
+
+    const recentPosts = await d
+      .select({
+        title: posts.title,
+        categoryName: categories.name,
+        tagsJson: posts.tags_json,
+        publishedAt: posts.published_at,
+      })
+      .from(posts)
+      .leftJoin(categories, eq(posts.category_id, categories.id))
+      .where(
+        and(
+          eq(posts.status, "published"),
+          gte(posts.published_at, thirtyDaysAgo)
+        )
+      )
+      .orderBy(desc(posts.published_at))
+      .limit(50);
+
+    if (recentPosts.length === 0) {
+      return { error: "直近30日間に公開された記事がありません" };
+    }
+
+    const articles = recentPosts.map((p) => ({
+      title: p.title,
+      category: p.categoryName ?? "General",
+      tags: p.tagsJson ? JSON.parse(p.tagsJson).join(", ") : "",
+      publishedAt: p.publishedAt ?? "",
+    }));
+
+    const report = await generateTrendReport(ai, articles);
+    if (!report) {
+      return { error: "レポート生成に失敗しました" };
+    }
+
+    // Save to KV for caching
+    const cacheData = {
+      ...report,
+      generatedAt: new Date().toISOString(),
+      articleCount: recentPosts.length,
+    };
+    await cache.put("trend-report:latest", JSON.stringify(cacheData), {
+      expirationTtl: 86400,
     });
-    const data = await res.json();
-    return data;
+
+    return { report: cacheData };
   }
 
   return { error: "Unknown action" };
@@ -116,6 +164,7 @@ export default function AIInsights() {
     recentDrafts,
     trendReport,
   } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isGenerating = navigation.state === "submitting";
 
@@ -195,6 +244,12 @@ export default function AIInsights() {
               </button>
             </Form>
           </div>
+
+          {actionData && "error" in actionData && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {(actionData as any).error}
+            </div>
+          )}
 
           {trendReport ? (
             <div className="space-y-4">

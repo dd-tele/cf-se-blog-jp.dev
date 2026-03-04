@@ -18,16 +18,7 @@ export interface CreatePostInput {
 }
 
 export interface UpdatePostInput extends Partial<CreatePostInput> {
-  status?: "draft" | "pending_review";
-}
-
-// ─── Auto-approval threshold ──────────────────────────────
-const AUTO_APPROVE_THRESHOLD = 3;
-
-function shouldAutoApprove(user: SessionUser, approvedCount: number): boolean {
-  if (user.role === "admin") return true;
-  if (user.role === "se" && approvedCount >= AUTO_APPROVE_THRESHOLD) return true;
-  return false;
+  status?: "draft" | "published";
 }
 
 // ─── Queries ──────────────────────────────────────────────
@@ -176,11 +167,6 @@ export async function createPost(
   const slug = slugify(input.title) + "-" + id.slice(-6).toLowerCase();
   const readingTime = estimateReadingTime(input.content);
 
-  // Check auto-approval
-  const dbUser = await d.select().from(users).where(eq(users.id, user.id)).get();
-  const approvedCount = dbUser?.approved_post_count ?? 0;
-  const autoApproved = shouldAutoApprove(user, approvedCount);
-
   const now = new Date().toISOString().replace("T", " ").slice(0, 19);
 
   await d.insert(posts).values({
@@ -192,26 +178,37 @@ export async function createPost(
     cover_image_url: input.coverImageUrl,
     author_id: user.id,
     category_id: input.categoryId || null,
-    status: autoApproved ? "published" : "pending_review",
-    auto_approved: autoApproved,
+    status: "draft",
     tags_json: input.tagsJson,
     meta_title: input.metaTitle || input.title,
     meta_description: input.metaDescription || input.content.slice(0, 160),
     reading_time_minutes: readingTime,
-    published_at: autoApproved ? now : null,
     created_at: now,
     updated_at: now,
   });
 
-  // If auto-approved, increment the user's approved count
-  if (autoApproved && dbUser) {
-    await d
-      .update(users)
-      .set({ approved_post_count: approvedCount + 1, updated_at: now })
-      .where(eq(users.id, user.id));
+  return { id, slug };
+}
+
+export async function publishPost(db: D1Database, postId: string, user: SessionUser) {
+  const d = getDb(db);
+  const existing = await getPostById(db, postId);
+  if (!existing) throw new Error("Post not found");
+  if (existing.author_id !== user.id && user.role !== "admin") {
+    throw new Error("Forbidden");
   }
 
-  return { id, slug, autoApproved };
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+  await d
+    .update(posts)
+    .set({
+      status: "published",
+      published_at: now,
+      updated_at: now,
+    })
+    .where(eq(posts.id, postId));
+
+  return { id: postId, slug: existing.slug };
 }
 
 export async function updatePost(
@@ -263,7 +260,7 @@ export async function deletePost(db: D1Database, postId: string, user: SessionUs
 
 // ─── Admin ────────────────────────────────────────────────
 
-export async function getPendingPosts(db: D1Database) {
+export async function getAllDraftPosts(db: D1Database) {
   const d = getDb(db);
   return await d
     .select({
@@ -277,62 +274,13 @@ export async function getPendingPosts(db: D1Database) {
       categoryName: categories.name,
       status: posts.status,
       createdAt: posts.created_at,
+      updatedAt: posts.updated_at,
     })
     .from(posts)
     .leftJoin(users, eq(posts.author_id, users.id))
     .leftJoin(categories, eq(posts.category_id, categories.id))
-    .where(eq(posts.status, "pending_review"))
-    .orderBy(posts.created_at);
-}
-
-export async function approvePost(db: D1Database, postId: string, reviewerId: string) {
-  const d = getDb(db);
-  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
-
-  const post = await getPostById(db, postId);
-  if (!post) throw new Error("Post not found");
-
-  await d
-    .update(posts)
-    .set({
-      status: "published",
-      published_at: now,
-      reviewed_by: reviewerId,
-      reviewed_at: now,
-      updated_at: now,
-    })
-    .where(eq(posts.id, postId));
-
-  // Increment author's approved count
-  const author = await d.select().from(users).where(eq(users.id, post.author_id)).get();
-  if (author) {
-    await d
-      .update(users)
-      .set({
-        approved_post_count: (author.approved_post_count ?? 0) + 1,
-        updated_at: now,
-      })
-      .where(eq(users.id, post.author_id));
-  }
-
-  return { success: true };
-}
-
-export async function rejectPost(db: D1Database, postId: string, reviewerId: string) {
-  const d = getDb(db);
-  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
-
-  await d
-    .update(posts)
-    .set({
-      status: "rejected",
-      reviewed_by: reviewerId,
-      reviewed_at: now,
-      updated_at: now,
-    })
-    .where(eq(posts.id, postId));
-
-  return { success: true };
+    .where(eq(posts.status, "draft"))
+    .orderBy(desc(posts.updated_at));
 }
 
 // ─── User management (admin) ──────────────────────────────

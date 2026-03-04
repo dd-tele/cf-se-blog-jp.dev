@@ -17,6 +17,7 @@ import {
   getPostById,
   updatePost,
   deletePost,
+  publishPost,
   getAllCategories,
 } from "~/lib/posts.server";
 import { ImageUploader } from "~/components/ImageUploader";
@@ -74,7 +75,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
   }
 
   try {
-    const result = await updatePost(
+    await updatePost(
       db,
       postId,
       {
@@ -82,15 +83,15 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
         content,
         categoryId,
         tagsJson,
-        status: status as "draft" | "pending_review" | undefined,
       },
       user
     );
 
-    if (intent === "submit") {
-      return redirect("/portal/posts?status=pending_review");
+    if (intent === "publish") {
+      const published = await publishPost(db, postId, user);
+      return redirect(`/posts/${published.slug}`);
     }
-    return { success: true, message: "保存しました" };
+    return { success: true, message: "下書きを保存しました" };
   } catch (e: any) {
     return { error: e.message || "更新に失敗しました" };
   }
@@ -129,27 +130,19 @@ export default function EditPost() {
               Cloudflare Solution Blog
             </Link>
             <span className="text-sm text-gray-400">|</span>
-            <span className="text-sm font-medium text-gray-600">記事を編集</span>
+            <Link to="/portal/posts" className="text-sm text-gray-500 hover:text-gray-700">
+              ← マイ記事
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 post.status === "published"
                   ? "bg-green-100 text-green-700"
-                  : post.status === "pending_review"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : post.status === "rejected"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-gray-100 text-gray-700"
+                  : "bg-gray-100 text-gray-700"
               }`}
             >
-              {post.status === "published"
-                ? "公開中"
-                : post.status === "pending_review"
-                  ? "審査中"
-                  : post.status === "rejected"
-                    ? "差戻し"
-                    : "下書き"}
+              {post.status === "published" ? "公開中" : "下書き"}
             </span>
           </div>
         </div>
@@ -267,27 +260,28 @@ export default function EditPost() {
             </Form>
 
             <div className="flex gap-3">
-              {(post.status === "draft" || post.status === "rejected") && (
-                <>
-                  <button
-                    type="submit"
-                    name="intent"
-                    value="save"
-                    disabled={isSubmitting}
-                    className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                  >
-                    下書き保存
-                  </button>
-                  <button
-                    type="submit"
-                    name="intent"
-                    value="submit"
-                    disabled={isSubmitting}
-                    className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
-                  >
-                    レビューに提出
-                  </button>
-                </>
+              <button
+                type="submit"
+                name="intent"
+                value="save"
+                disabled={isSubmitting}
+                className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                下書き保存
+              </button>
+              {post.status !== "published" && (
+                <button
+                  type="submit"
+                  name="intent"
+                  value="publish"
+                  disabled={isSubmitting}
+                  onClick={(e) => {
+                    if (!confirm("この記事を公開しますか？")) e.preventDefault();
+                  }}
+                  className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
+                >
+                  公開する
+                </button>
               )}
               {post.status === "published" && (
                 <button
@@ -299,11 +293,6 @@ export default function EditPost() {
                 >
                   更新
                 </button>
-              )}
-              {post.status === "pending_review" && (
-                <span className="flex items-center text-sm text-yellow-600">
-                  審査中のため編集できません
-                </span>
               )}
             </div>
           </div>

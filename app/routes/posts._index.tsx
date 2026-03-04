@@ -55,6 +55,9 @@ export default function PostsIndex() {
             {siteName}
           </Link>
           <nav className="flex items-center gap-4">
+            <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
+              このブログについて
+            </Link>
             {user ? (
               <Link
                 to="/portal"
@@ -147,47 +150,44 @@ export default function PostsIndex() {
               <Link
                 key={post.id}
                 to={`/posts/${post.slug}`}
-                className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md"
+                className="group flex flex-col rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-md"
               >
-                {post.coverImageUrl ? (
-                  <div className="aspect-video overflow-hidden bg-gray-100">
-                    <img
-                      src={post.coverImageUrl}
-                      alt={post.title}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-                    <span className="text-lg font-bold text-gray-300">Case Study</span>
-                  </div>
-                )}
-                <div className="p-4">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   {post.categoryName && (
-                    <span className="mb-2 inline-block rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
+                    <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                       {post.categoryName}
                     </span>
                   )}
-                  <h2 className="mb-2 text-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-brand-600">
-                    {post.title}
-                  </h2>
-                  {post.excerpt && (
-                    <p className="mb-3 text-sm text-gray-500 line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between text-xs text-gray-400">
-                    <span>{post.authorName}</span>
-                    <div className="flex items-center gap-2">
-                      {post.readingTimeMinutes && (
-                        <span>{post.readingTimeMinutes}分</span>
-                      )}
-                      {post.publishedAt && (
-                        <span>
-                          {new Date(post.publishedAt).toLocaleDateString("ja-JP")}
+                  {post.tagsJson && (() => {
+                    try {
+                      const tags: string[] = JSON.parse(post.tagsJson);
+                      return tags.slice(0, 3).map((tag) => (
+                        <span key={tag} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                          {tag}
                         </span>
-                      )}
-                    </div>
+                      ));
+                    } catch { return null; }
+                  })()}
+                </div>
+                <h2 className="mb-2 text-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-brand-600">
+                  {post.title}
+                </h2>
+                {post.excerpt && (
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-500 line-clamp-2">
+                    {post.excerpt}
+                  </p>
+                )}
+                <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-400">
+                  <span>{post.authorName}</span>
+                  <div className="flex items-center gap-2">
+                    {post.readingTimeMinutes && (
+                      <span>{post.readingTimeMinutes}分</span>
+                    )}
+                    {post.publishedAt && (
+                      <span>
+                        {new Date(post.publishedAt).toLocaleDateString("ja-JP")}
+                      </span>
+                    )}
                   </div>
                 </div>
               </Link>
