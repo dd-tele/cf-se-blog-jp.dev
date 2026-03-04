@@ -305,11 +305,11 @@ export default function AboutPage() {
           <h2 className="mb-8 text-2xl font-bold text-gray-900">記事作成フロー</h2>
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
-              <FlowStep step={1} title="テンプレート選択" desc="6種類のテンプレートから選択" icon="📋" />
-              <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" icon="✏️" />
-              <FlowStep step={3} title="AI ドラフト生成" desc="Llama 3.3 70B が記事化" icon="🤖" />
-              <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタで調整" icon="🖼️" />
-              <FlowStep step={5} title="公開" desc="ワンクリックで公開" icon="🚀" />
+              <FlowStep step={1} title="テンプレート選択" desc="6種類のテンプレートから選択" />
+              <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" />
+              <FlowStep step={3} title="AI ドラフト生成" desc="Llama 3.3 70B が記事化" />
+              <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタで調整" />
+              <FlowStep step={5} title="公開" desc="ワンクリックで公開" />
             </div>
           </div>
         </section>
@@ -518,7 +518,7 @@ export default function AboutPage() {
           <h2 className="mb-8 text-2xl font-bold text-gray-900">セキュリティ & インフラ</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-lg">🔒</div>
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-sm font-bold text-orange-700">Auth</div>
               <h3 className="mb-2 font-bold text-gray-900">認証・認可</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>Cloudflare Access による Zero Trust 認証</li>
@@ -528,7 +528,7 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg">🛡️</div>
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-sm font-bold text-red-700">WAF</div>
               <h3 className="mb-2 font-bold text-gray-900">WAF + Bot Management</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>カスタムドメインに WAF を適用</li>
@@ -538,7 +538,7 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-lg">🌐</div>
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">Edge</div>
               <h3 className="mb-2 font-bold text-gray-900">エッジコンピューティング</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>全コンポーネントが Cloudflare エッジで動作</li>
@@ -548,7 +548,7 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-lg">📊</div>
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-sm font-bold text-green-700">Ops</div>
               <h3 className="mb-2 font-bold text-gray-900">運用機能</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>RSS フィード自動生成</li>
@@ -558,7 +558,7 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-lg">🧩</div>
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-sm font-bold text-purple-700">DX</div>
               <h3 className="mb-2 font-bold text-gray-900">開発体験</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>TypeScript + Drizzle ORM でタイプセーフ</li>
@@ -675,13 +675,12 @@ function TechCard({
   );
 }
 
-function FlowStep({ step, title, desc, icon }: { step: number; title: string; desc: string; icon: string }) {
+function FlowStep({ step, title, desc }: { step: number; title: string; desc: string }) {
   return (
     <div className="flex flex-col items-center px-4 py-6 text-center">
-      <div className="mb-2 text-2xl">{icon}</div>
-      <div className="mb-1 flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white">
+      <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
         {step}
-      </div>
+      </span>
       <h4 className="mt-2 text-sm font-bold text-gray-900">{title}</h4>
       <p className="mt-1 text-xs text-gray-500">{desc}</p>
     </div>
