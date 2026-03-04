@@ -78,16 +78,38 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           // Create session and redirect (works for document requests)
           return createUserSession(sessionUser, returnTo);
         }
+        // JWT present but payload verification failed
+        console.error("[Access Auth] JWT verification returned null — aud/iss/exp mismatch?");
+        return {
+          mode: "error" as const,
+          error: "Cloudflare Access の JWT 検証に失敗しました。CF_ACCESS_AUD の設定を確認してください。",
+        };
       } catch (err) {
         if (err instanceof Response) throw err;
         console.error("[Access Auth] Error:", err);
+        return {
+          mode: "error" as const,
+          error: `認証エラー: ${err instanceof Error ? err.message : "Unknown error"}`,
+        };
       }
     }
 
-    // Access configured but no JWT — redirect to /portal to trigger Access auth
+    // No JWT yet — redirect to Access-protected path to trigger login,
+    // but only once to avoid redirect loops.
     const url = new URL(request.url);
-    const returnTo = url.searchParams.get("returnTo") || "/portal";
-    return redirect(returnTo);
+    const alreadyRedirected = url.searchParams.get("ar") === "1";
+    if (!alreadyRedirected) {
+      const returnTo = url.searchParams.get("returnTo") || "/portal";
+      // Redirect to Access-protected path; Access should intercept and show IdP login.
+      // After auth, Access redirects back here with CF_Authorization cookie.
+      return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}&ar=1`);
+    }
+
+    // Already redirected once and still no JWT — Access may not be protecting this path
+    return {
+      mode: "error" as const,
+      error: "Cloudflare Access の JWT が取得できません。Access Application のパス設定を確認してください。",
+    };
   }
 
   // Dev: show mock login
@@ -108,12 +130,39 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginPage() {
-  const { devUsers } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/portal";
 
-  // In production, the loader always redirects (either to /portal or after JWT auth).
-  // This component only renders in dev mode.
+  // Error mode — show Access configuration error
+  if (data.mode === "error") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Cloudflare Solution Blog
+            </h1>
+            <p className="mt-2 text-sm text-gray-500">認証エラー</p>
+          </div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {data.error}
+          </div>
+          <div className="mt-4 text-center">
+            <a
+              href="/"
+              className="text-sm text-brand-600 hover:text-brand-700 underline"
+            >
+              トップページに戻る
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Dev mode — show mock login
+  const devUsers = data.devUsers;
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
@@ -130,7 +179,7 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-3">
-          {devUsers.map((user) => (
+          {devUsers.map((user: typeof DEV_USERS[number]) => (
             <Form method="post" key={user.id}>
               <input type="hidden" name="userId" value={user.id} />
               <input type="hidden" name="returnTo" value={returnTo} />
