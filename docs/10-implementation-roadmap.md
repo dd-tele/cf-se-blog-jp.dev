@@ -1,6 +1,6 @@
 # 10 - 実装ロードマップ
 
-> **現在の状況（2026-03）:** Phase 1 (MVP) + Phase 2 の AI ドラフト生成が完了。下書き→公開ワークフロー、6テンプレート、AI ドラフト生成 (Llama 3.1 70B)、Vectorize 関連記事推薦、AI チャット Q&A (基本版)、About ページ が稼働中。
+> **現在の状況（2026-03）:** Phase 1 (MVP) + Phase 2 の AI ドラフト生成が完了。下書き→公開ワークフロー、6テンプレート、AI ドラフト生成 (Llama 3.3 70B)、Vectorize 関連記事推薦、AI チャット Q&A (Hono streamSSE)、About ページ が稼働中。API レイヤーを **Hono** フレームワークに移行済み。
 
 ## 1. フェーズ概要
 
@@ -11,8 +11,8 @@ Phase 1 (MVP) ✅        Phase 2 (AI) 🔶        Phase 3 (Advanced)      Phase 
 ✅ 基盤構築             ✅ テンプレート AI      ・Durable Objects       ・パフォーマンス
 ✅ Public Blog          ✅ AI ドラフト生成      ・コンテンツモデレーション ・アナリティクス
 ✅ User Portal          ✅ Vectorize 検索      ・Queues 非同期処理     ・多言語対応
-✅ Admin Dashboard      🔶 AI チャット Q&A     ・AI Gateway            ・コミュニティ機能
-✅ 認証/認可 (Access)   ・AI サマリー自動生成   ・Logpush              ・外部連携
+✅ Admin Dashboard      ✅ AI チャット Q&A     ・AI Gateway            ・コミュニティ機能
+✅ 認証/認可 (Access)   ✅ Hono API 移行       ・Logpush              ・外部連携
 ✅ 基本セキュリティ      ・トレンドレポート      ・Turnstile
 ```
 
@@ -61,6 +61,7 @@ npm create cloudflare@latest cf-se-blog -- --framework=remix
 cd cf-se-blog
 npm install drizzle-orm @tiptap/react @tiptap/starter-kit
 npm install tailwindcss @shadcn/ui lucide-react
+npm install hono                    # API フレームワーク
 npm install -D drizzle-kit wrangler
 
 # D1 データベース作成
@@ -116,59 +117,37 @@ binding = "AI"
 ```
 cf-se-blog/
 ├── app/
+│   ├── api/                     # Hono API レイヤー
+│   │   ├── index.ts             # Hono メインアプリ（CORS, logger, ルートマウント）
+│   │   ├── types.ts             # Bindings 型定義 (HonoEnv)
+│   │   ├── middleware.ts         # 認証・認可ミドルウェア
+│   │   └── routes/
+│   │       ├── chat.ts          # AI チャット (streamSSE)
+│   │       ├── ai.ts            # タグ提案・文章改善・トレンド
+│   │       ├── upload.ts        # 画像アップロード (R2)
+│   │       └── r2.ts            # R2 オブジェクト配信
 │   ├── components/
-│   │   ├── ui/              # shadcn/ui コンポーネント
-│   │   ├── blog/            # ブログ関連コンポーネント
-│   │   │   ├── PostCard.tsx
-│   │   │   ├── PostEditor.tsx
-│   │   │   ├── CategoryNav.tsx
-│   │   │   └── ChatWidget.tsx
-│   │   ├── admin/           # 管理画面コンポーネント
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── PostTable.tsx
-│   │   │   ├── QAPanel.tsx
-│   │   │   └── InsightCard.tsx
-│   │   └── layout/          # レイアウト
-│   │       ├── Header.tsx
-│   │       ├── Footer.tsx
-│   │       └── AdminLayout.tsx
+│   │   ├── ui/              # UI コンポーネント
+│   │   ├── PostCard.tsx
+│   │   ├── ChatWidget.tsx
+│   │   └── ...
 │   ├── lib/
 │   │   ├── auth.server.ts       # 認証ロジック
-│   │   ├── rbac.server.ts       # 認可 (RBAC)
 │   │   ├── db.server.ts         # Drizzle ORM 設定
-│   │   ├── sanitize.server.ts   # 入力サニタイズ
-│   │   ├── upload.server.ts     # R2 アップロード
-│   │   ├── cors.server.ts       # CORS
-│   │   ├── cache.server.ts      # KV キャッシュ
-│   │   └── security-headers.server.ts
-│   ├── routes/
+│   │   ├── chat.server.ts       # チャットロジック
+│   │   ├── ai.server.ts         # AI 機能ロジック
+│   │   └── ...
+│   ├── routes/                  # Remix ルート（API は Hono への thin shim）
 │   │   ├── _index.tsx           # トップページ
 │   │   ├── posts.$slug.tsx      # 記事詳細
-│   │   ├── category.$category.tsx
 │   │   ├── search.tsx           # 検索
-│   │   ├── auth.tsx             # ログイン
-│   │   ├── portal/              # ユーザーポータル
-│   │   │   ├── _index.tsx       # ダッシュボード
-│   │   │   ├── new.tsx          # 新規記事
-│   │   │   ├── edit.$id.tsx     # 記事編集
-│   │   │   ├── drafts.tsx       # 下書き一覧
-│   │   │   └── profile.tsx      # プロフィール
-│   │   ├── admin/               # 管理画面
-│   │   │   ├── _index.tsx       # ダッシュボード
-│   │   │   ├── posts.tsx        # 記事管理
-│   │   │   ├── posts.$id.review.tsx
-│   │   │   ├── users.tsx        # ユーザー管理
-│   │   │   ├── qa.tsx           # Q&A 管理
-│   │   │   ├── ai-insights.tsx  # AI インサイト
-│   │   │   ├── templates.tsx    # テンプレート管理
-│   │   │   ├── analytics.tsx    # アナリティクス
-│   │   │   └── settings.tsx     # 設定
-│   │   └── api/
-│   │       └── v1/
-│   │           ├── posts.tsx    # 記事 API
-│   │           ├── upload.tsx   # アップロード API
-│   │           ├── search.tsx   # 検索 API
-│   │           └── chat.tsx     # チャット API
+│   │   ├── about.tsx            # このブログについて
+│   │   ├── api.v1.chat.tsx      # → Hono app.fetch() 委譲
+│   │   ├── api.v1.ai.*.tsx      # → Hono app.fetch() 委譲
+│   │   ├── api.upload-image.tsx # → Hono app.fetch() 委譲
+│   │   ├── r2.$.tsx             # → Hono app.fetch() 委譲
+│   │   ├── portal.*/            # ユーザーポータル
+│   │   └── admin.*/             # 管理画面
 │   ├── db/
 │   │   ├── schema.ts            # Drizzle スキーマ
 │   │   └── migrations/          # D1 マイグレーション
@@ -176,17 +155,11 @@ cf-se-blog/
 │   │   └── tailwind.css
 │   ├── root.tsx
 │   └── entry.server.tsx
-├── workers/
-│   ├── ai-summary-worker/       # AI サマリー Worker
-│   ├── search-indexer-worker/   # 検索インデクサー Worker
-│   ├── chat-worker/             # チャット Durable Object
-│   └── cron-analytics-worker/   # Cron アナリティクス Worker
+├── functions/
+│   └── [[path]].ts              # Remix Pages Function エントリポイント
 ├── public/
 │   └── favicon.ico
 ├── migrations/
-│   ├── 0001_init.sql
-│   ├── 0002_seed_categories.sql
-│   └── 0003_seed_templates.sql
 ├── wrangler.toml
 ├── package.json
 ├── tsconfig.json

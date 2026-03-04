@@ -96,16 +96,20 @@ export default function AboutPage() {
 
               {/* CF Pages + Workers */}
               <g>
-                <rect x="345" y="130" width="200" height="160" rx="12" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.5" />
-                <text x="445" y="155" textAnchor="middle" fill="#1d4ed8" fontSize="12" fontWeight="700">Cloudflare Pages</text>
-                <rect x="365" y="168" width="160" height="32" rx="6" fill="#dbeafe" />
-                <text x="445" y="189" textAnchor="middle" fill="#1e40af" fontSize="10" fontWeight="600">Remix (SSR)</text>
-                <rect x="365" y="210" width="76" height="28" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
-                <text x="403" y="228" textAnchor="middle" fill="#1e40af" fontSize="9">Loader</text>
-                <rect x="449" y="210" width="76" height="28" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
-                <text x="487" y="228" textAnchor="middle" fill="#1e40af" fontSize="9">Action</text>
-                <rect x="365" y="248" width="160" height="28" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
-                <text x="445" y="266" textAnchor="middle" fill="#1e40af" fontSize="9">Tailwind CSS + Typography</text>
+                <rect x="345" y="110" width="200" height="200" rx="12" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.5" />
+                <text x="445" y="135" textAnchor="middle" fill="#1d4ed8" fontSize="12" fontWeight="700">Cloudflare Pages</text>
+                <rect x="365" y="148" width="160" height="28" rx="6" fill="#dbeafe" />
+                <text x="445" y="167" textAnchor="middle" fill="#1e40af" fontSize="10" fontWeight="600">Remix (SSR / UI)</text>
+                <rect x="365" y="184" width="160" height="28" rx="6" fill="#ff6b1a" fillOpacity="0.15" stroke="#ff6b1a" strokeWidth="1" />
+                <text x="445" y="203" textAnchor="middle" fill="#c2410c" fontSize="10" fontWeight="700">Hono (API Layer)</text>
+                <rect x="365" y="220" width="76" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="403" y="236" textAnchor="middle" fill="#1e40af" fontSize="8">streamSSE</text>
+                <rect x="449" y="220" width="76" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="487" y="236" textAnchor="middle" fill="#1e40af" fontSize="8">Middleware</text>
+                <rect x="365" y="252" width="160" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="445" y="268" textAnchor="middle" fill="#1e40af" fontSize="8">CORS / Auth / Logger</text>
+                <rect x="365" y="284" width="160" height="20" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+                <text x="445" y="298" textAnchor="middle" fill="#1e40af" fontSize="8">Tailwind CSS + Typography</text>
               </g>
 
               {/* Arrow: Pages → D1 */}
@@ -137,7 +141,7 @@ export default function AboutPage() {
               <g>
                 <rect x="610" y="270" width="130" height="70" rx="10" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1.5" />
                 <text x="675" y="297" textAnchor="middle" fill="#b45309" fontSize="11" fontWeight="700">Workers AI</text>
-                <text x="675" y="314" textAnchor="middle" fill="#d97706" fontSize="9">Llama 3.1 70B</text>
+                <text x="675" y="314" textAnchor="middle" fill="#d97706" fontSize="9">Llama 3.3 70B</text>
                 <text x="675" y="328" textAnchor="middle" fill="#d97706" fontSize="9">記事ドラフト生成</text>
               </g>
 
@@ -201,8 +205,8 @@ export default function AboutPage() {
             <TechCard
               color="amber"
               title="Workers AI"
-              description="Llama 3.1 70B モデルを使用し、テンプレートベースの記事ドラフトを AI が自動生成。プロンプトエンジニアリングで企業事例スタイルに最適化。"
-              tags={["LLM", "Llama 3.1", "70B"]}
+              description="Llama 3.3 70B モデルを使用し、テンプレートベースの記事ドラフトを AI が自動生成。Hono の streamSSE でチャット応答をリアルタイム配信。"
+              tags={["LLM", "Llama 3.3", "70B"]}
             />
             <TechCard
               color="pink"
@@ -223,9 +227,15 @@ export default function AboutPage() {
               tags={["Session", "Cache"]}
             />
             <TechCard
+              color="red"
+              title="Hono"
+              description="Cloudflare Workers に最適化された超軽量 API フレームワーク。型安全なバインディング、streamSSE による AI ストリーミング、共通ミドルウェア（認証・CORS・ロガー）を提供。"
+              tags={["API", "Middleware", "SSE", "TypeSafe"]}
+            />
+            <TechCard
               color="indigo"
               title="Remix v2"
-              description="フルスタック Web フレームワーク。Loader/Action パターンによるデータフェッチと、ネストルーティングで高度な画面構成を実現。"
+              description="フルスタック Web フレームワーク。Loader/Action パターンによるデータフェッチと、ネストルーティングで高度な画面構成を実現。API ルートは Hono に委譲。"
               tags={["Framework", "React", "SSR"]}
             />
             <TechCard
@@ -244,7 +254,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
               <FlowStep step={1} title="テンプレート選択" desc="6種類のテンプレートから選択" icon="📋" />
               <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" icon="✏️" />
-              <FlowStep step={3} title="AI ドラフト生成" desc="Llama 3.1 70B が記事化" icon="🤖" />
+              <FlowStep step={3} title="AI ドラフト生成" desc="Llama 3.3 70B が記事化" icon="🤖" />
               <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタで調整" icon="🖼️" />
               <FlowStep step={5} title="公開" desc="ワンクリックで公開" icon="🚀" />
             </div>
@@ -305,6 +315,73 @@ export default function AboutPage() {
             <TemplateCard title="セキュリティ対策" desc="WAF / Bot Management / DDoS 防御の導入・運用事例" category="Security" />
             <TemplateCard title="ネットワーク構成" desc="Magic Transit / WAN / Spectrum 等のネットワーク設計事例" category="Network" />
             <TemplateCard title="Tips &amp; Tricks" desc="短めの実用的な Cloudflare 活用テクニック" category="General" />
+          </div>
+        </section>
+
+        {/* Hono API Architecture */}
+        <section className="mb-20">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900">Hono API アーキテクチャ</h2>
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            本ブログの API レイヤーは、Cloudflare Workers に最適化された超軽量フレームワーク
+            <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
+            で構築されています。Remix の SSR/UI 層と Hono の API 層を組み合わせることで、
+            それぞれのフレームワークの強みを最大限に活かしたハイブリッド構成を実現しています。
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg font-bold text-red-600">H</div>
+              <h3 className="mb-2 font-bold text-gray-900">型安全なバインディング</h3>
+              <p className="text-sm text-gray-600">
+                <code className="rounded bg-red-100 px-1 text-xs text-red-700">c.env.DB</code>、
+                <code className="rounded bg-red-100 px-1 text-xs text-red-700">c.env.AI</code> など
+                全 Cloudflare サービスに型付きでアクセス。開発時にミスを防止。
+              </p>
+            </div>
+            <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg">⚡</div>
+              <h3 className="mb-2 font-bold text-gray-900">streamSSE</h3>
+              <p className="text-sm text-gray-600">
+                AI チャットの応答を Hono の <code className="rounded bg-red-100 px-1 text-xs text-red-700">streamSSE</code> ヘルパーで
+                リアルタイム配信。手動の ReadableStream 構築が不要に。
+              </p>
+            </div>
+            <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg">🔒</div>
+              <h3 className="mb-2 font-bold text-gray-900">共通ミドルウェア</h3>
+              <p className="text-sm text-gray-600">
+                認証・認可・CORS・ロガーを共通ミドルウェアとして定義。
+                ルートごとに宣言的に適用でき、コードの重複を排除。
+              </p>
+            </div>
+            <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg">🪶</div>
+              <h3 className="mb-2 font-bold text-gray-900">超軽量・高速</h3>
+              <p className="text-sm text-gray-600">
+                依存ゼロ、バンドルサイズ極小。Cloudflare Workers の起動時間を最小化し、
+                エッジでのレスポンス速度を最大化。
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5">
+            <h4 className="mb-3 text-sm font-bold text-red-800">API ルート構成</h4>
+            <div className="grid gap-2 text-sm text-red-900 sm:grid-cols-2">
+              <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">POST /api/v1/chat</code>
+                <span className="text-gray-600">AI チャット Q&A（SSE ストリーミング）</span>
+              </div>
+              <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">POST /api/v1/ai/*</code>
+                <span className="text-gray-600">タグ提案・文章改善・トレンドレポート</span>
+              </div>
+              <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">POST /api/upload-image</code>
+                <span className="text-gray-600">画像アップロード（R2）</span>
+              </div>
+              <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">GET /api/health</code>
+                <span className="text-gray-600">ヘルスチェック</span>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -422,6 +499,7 @@ export default function AboutPage() {
               <h3 className="mb-2 font-bold text-gray-900">開発体験</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>TypeScript + Drizzle ORM でタイプセーフ</li>
+                <li>Hono で API を型安全に構築</li>
                 <li>D1 マイグレーションによるスキーマ管理</li>
                 <li>Wrangler CLI でローカル開発・デプロイ</li>
                 <li>Vite ベースの高速 HMR</li>
@@ -442,12 +520,13 @@ export default function AboutPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                <SpecRow label="フレームワーク" value="Remix v2 (Vite)" />
+                <SpecRow label="フレームワーク" value="Remix v2 (Vite) + Hono (API)" />
                 <SpecRow label="ランタイム" value="Cloudflare Workers (V8 Isolates)" />
                 <SpecRow label="データベース" value="Cloudflare D1 (SQLite at edge)" />
                 <SpecRow label="ORM" value="Drizzle ORM" />
                 <SpecRow label="ストレージ" value="Cloudflare R2 (S3 互換)" />
-                <SpecRow label="AI モデル" value="Meta Llama 3.1 70B Instruct (Workers AI)" />
+                <SpecRow label="API レイヤー" value="Hono — streamSSE, 型付き Bindings, ミドルウェア" />
+                <SpecRow label="AI モデル" value="Meta Llama 3.3 70B Instruct fp8-fast (Workers AI)" />
                 <SpecRow label="ベクトル検索" value="Cloudflare Vectorize" />
                 <SpecRow label="認証" value="Cloudflare Access (Zero Trust)" />
                 <SpecRow label="セッション" value="Cloudflare KV" />
@@ -470,7 +549,7 @@ export default function AboutPage() {
               {siteName}
             </Link>
             <span className="text-xs text-gray-600">
-              Built on Cloudflare — Workers, Pages, D1, R2, AI
+              Built on Cloudflare — Workers, Pages, D1, R2, AI, Hono
             </span>
           </div>
         </div>
@@ -500,6 +579,7 @@ function TechCard({
     slate: "border-slate-200 bg-slate-50/50",
     indigo: "border-indigo-200 bg-indigo-50/50",
     cyan: "border-cyan-200 bg-cyan-50/50",
+    red: "border-red-200 bg-red-50/50",
   };
   const tagColorMap: Record<string, string> = {
     blue: "bg-blue-100 text-blue-700",
@@ -511,6 +591,7 @@ function TechCard({
     slate: "bg-slate-100 text-slate-700",
     indigo: "bg-indigo-100 text-indigo-700",
     cyan: "bg-cyan-100 text-cyan-700",
+    red: "bg-red-100 text-red-700",
   };
 
   return (

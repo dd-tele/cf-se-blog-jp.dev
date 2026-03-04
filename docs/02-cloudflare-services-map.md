@@ -22,18 +22,26 @@
 - Git 連携による自動 CI/CD（GitHub → Pages）
 - Preview URL による記事プレビュー
 
-### 2.2 Workers (Pages Functions)
+### 2.2 Workers (Pages Functions) + Hono
 
-本プラットフォームでは独立した Workers は使用せず、全バックエンドロジックを **Remix の loader/action (Pages Functions)** で実装しています。
+API レイヤーは **Hono** フレームワークで実装。Remix の route ファイルは thin shim として `app.fetch()` に委譲するハイブリッド構成。
+
+**Hono 採用のメリット:**
+- 型安全な Cloudflare バインディング（`c.env.DB`, `c.env.AI` 等）
+- 共通ミドルウェア（認証・認可・CORS・ロガー）
+- `streamSSE` ヘルパーによる AI チャットの簡潔なストリーミング実装
+- メソッドベースのルーティング（`app.get()` / `app.post()`）
 
 | 機能 | 実装場所 | 説明 |
 |---|---|---|
-| Blog CRUD | `portal.edit.$id.tsx` action | 記事の作成・編集・削除・公開 |
-| AI ドラフト生成 | `portal.templates.$id.tsx` action | テンプレート入力 → Workers AI 呼び出し |
-| 画像アップロード | `portal.edit.$id.tsx` action | R2 へのアップロード + Markdown 挿入 |
-| 認証 | `auth.login.tsx` / `auth.server.ts` | Access JWT 検証 + KV セッション |
+| Blog CRUD | Remix loader/action | 記事の作成・編集・削除・公開 |
+| AI ドラフト生成 | Remix action → Workers AI | テンプレート入力から AI が記事下書きを自動生成 |
+| AI チャット Q&A | Hono `app/api/routes/chat.ts` | streamSSE によるリアルタイム応答 |
+| AI 機能 | Hono `app/api/routes/ai.ts` | タグ提案・文章改善・トレンドレポート |
+| 画像アップロード | Hono `app/api/routes/upload.ts` | R2 へのアップロード |
+| R2 配信 | Hono `app/api/routes/r2.ts` | 画像・メディアの配信 |
+| 認証 | Hono middleware + `auth.server.ts` | Access JWT 検証 + Cookie セッション |
 | 検索 | `search.tsx` loader | D1 全文検索 |
-| AI チャット | `ChatWidget` component + action | 記事コンテキストベースの Q&A |
 
 > **注:** Durable Objects、Queues、Cron Triggers は現在未使用。将来的な拡張で導入を検討。
 
@@ -117,7 +125,7 @@ DRAFTS:
 
 | モデル | 用途 | 入出力 | パラメータ |
 |---|---|---|---|
-| `@cf/meta/llama-3.1-70b-instruct` | AI ドラフト生成・チャット Q&A 応答 | テキスト → テキスト | temperature: 0.4, max_tokens: 8192 |
+| `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | AI ドラフト生成・チャット Q&A 応答 | テキスト → テキスト | chat: temperature 0.3, max_tokens 1024 / draft: temperature 0.4, max_tokens 8192 |
 | `@cf/baai/bge-base-en-v1.5` | テキスト Embedding | テキスト → ベクトル (768次元) | — |
 
 > **注:** AI Gateway は現在未使用。Workers AI への直接呼び出しで運用中。

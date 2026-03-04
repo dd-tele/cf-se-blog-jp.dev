@@ -1,6 +1,6 @@
 # 08 - AI チャットエージェント設計
 
-> **実装状況:** 基本的なチャット Q&A ウィジェットは実装済み（記事ページ内に `ChatWidget` コンポーネントとして組み込み）。Workers AI (Llama 3.1 70B) で記事コンテキストベースの応答を生成。Durable Objects / WebSocket / Turnstile / AI Gateway は未使用 — 現在は Remix action 経由の同期リクエストで動作。
+> **実装状況:** チャット Q&A ウィジェットは実装済み（記事ページ内に `ChatWidget` コンポーネントとして組み込み）。API レイヤーは **Hono** フレームワークで実装し、`streamSSE` ヘルパーで SSE ストリーミング応答を実現。Workers AI (Llama 3.3 70B, temperature 0.3) で記事コンテキストベースの応答を生成。Llama Guard 3 8B によるコンテンツモデレーション、Vectorize RAG による関連コンテキスト取得も稼働中。Durable Objects / WebSocket / Turnstile / AI Gateway は未使用。
 
 ## 1. 概要
 
