@@ -103,7 +103,9 @@ export default function AdminPresentation() {
             Cloudflare Solution Engineering
           </p>
           <h1 className="mb-6 text-4xl font-extrabold leading-tight sm:text-5xl">
-            Solution Blog Platform
+            <span className="bg-gradient-to-r from-[#FBAD41] via-[#F6821F] to-[#F48120] bg-clip-text text-transparent">
+              Solution Blog Platform
+            </span>
           </h1>
           <p className="mb-8 max-w-2xl text-lg leading-relaxed text-blue-100">
             SE が持つ技術ナレッジを、AI の力で効率よく記事化し、
