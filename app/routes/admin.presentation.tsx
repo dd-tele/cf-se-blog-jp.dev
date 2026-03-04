@@ -122,17 +122,17 @@ export default function AdminPresentation() {
           <SlideHeader number={1} title="なぜこのブログが必要か" />
           <div className="grid gap-6 sm:grid-cols-3">
             <ProblemCard
-              icon="🧠"
+              number={1}
               problem="ナレッジが個人に閉じている"
               solution="ブログとして公開し、チーム全体で共有。検索・推薦で再利用性を最大化。"
             />
             <ProblemCard
-              icon="⏰"
+              number={2}
               problem="記事化に時間がかかる"
               solution="テンプレート + AI ドラフト生成で、メモ書きレベルの入力から記事を自動作成。"
             />
             <ProblemCard
-              icon="🔍"
+              number={3}
               problem="お客様への情報提供が非効率"
               solution="公開記事の URL を共有するだけ。AI チャットで追加の質問にもリアルタイム対応。"
             />
@@ -144,22 +144,22 @@ export default function AdminPresentation() {
           <SlideHeader number={2} title="設計思想" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <PhilosophyCard
-              icon="🌐"
+              number={1}
               title="Better Internet"
               desc="Cloudflare のミッションを体現するプラットフォーム"
             />
             <PhilosophyCard
-              icon="📝"
+              number={2}
               title="Blog as a Work"
               desc="ブログ執筆は業務の一環。テンプレートで敷居を下げる"
             />
             <PhilosophyCard
-              icon="🤝"
+              number={3}
               title="Engineer Engagement"
               desc="SE 同士の知見共有とお客様との接点を強化"
             />
             <PhilosophyCard
-              icon="🚀"
+              number={4}
               title="Easy Publication"
               desc="AI がドラフトを生成、ワンクリックで公開"
             />
@@ -285,10 +285,10 @@ export default function AdminPresentation() {
             を API レイヤーに採用。Remix の SSR/UI 層と組み合わせたハイブリッド構成。
           </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <HonoCard title="型安全バインディング" desc="c.env.DB、c.env.AI 等、全 CF サービスに型付きアクセス" icon="H" />
-            <HonoCard title="streamSSE" desc="AI チャットをリアルタイム配信。ReadableStream 手動構築が不要" icon="⚡" />
-            <HonoCard title="共通ミドルウェア" desc="認証・認可・CORS・ロガーを宣言的に適用" icon="🔒" />
-            <HonoCard title="超軽量・高速" desc="依存ゼロ、バンドル極小。Workers の起動を最小化" icon="🪶" />
+            <HonoCard number={1} title="型安全バインディング" desc="c.env.DB、c.env.AI 等、全 CF サービスに型付きアクセス" />
+            <HonoCard number={2} title="streamSSE" desc="AI チャットをリアルタイム配信。ReadableStream 手動構築が不要" />
+            <HonoCard number={3} title="共通ミドルウェア" desc="認証・認可・CORS・ロガーを宣言的に適用" />
+            <HonoCard number={4} title="超軽量・高速" desc="依存ゼロ、バンドル極小。Workers の起動を最小化" />
           </div>
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
@@ -310,11 +310,11 @@ export default function AdminPresentation() {
           <SlideHeader number={7} title="記事作成フロー" />
           <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
             <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
-              <FlowStep step={1} title="テンプレート選択" desc="6種類から選択" icon="📋" />
-              <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" icon="✏️" />
-              <FlowStep step={3} title="AI ドラフト" desc="Llama 3.3 70B が記事化" icon="🤖" />
-              <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタ" icon="🖼️" />
-              <FlowStep step={5} title="公開" desc="ワンクリック" icon="🚀" />
+              <FlowStep step={1} title="テンプレート選択" desc="6種類から選択" />
+              <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" />
+              <FlowStep step={3} title="AI ドラフト" desc="Llama 3.3 70B が記事化" />
+              <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタ" />
+              <FlowStep step={5} title="公開" desc="ワンクリック" />
             </div>
           </div>
         </section>
@@ -324,26 +324,76 @@ export default function AdminPresentation() {
           <SlideHeader number={8} title="セキュリティ & インフラ" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SecurityCard
-              icon="🛡️"
               title="Cloudflare Access"
               items={["Google / Okta SSO 連携", "JWT ベース認証", "RBAC (admin / se / user)"]}
             />
             <SecurityCard
-              icon="🤖"
               title="コンテンツモデレーション"
               items={["Llama Guard 3 8B", "スパムフィルター", "フラグ & 手動レビュー"]}
             />
             <SecurityCard
-              icon="⚡"
               title="エッジパフォーマンス"
               items={["V8 Isolates（コールドスタートなし）", "KV キャッシュ", "グローバル CDN"]}
             />
           </div>
         </section>
 
-        {/* ───────────────── Slide 10: Roadmap ───────────────── */}
+        {/* ───────────────── Slide 10: Challenges ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={9} title="ロードマップ" />
+          <SlideHeader number={9} title="現在の課題と取り組み" />
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+              <h3 className="mb-2 text-sm font-bold text-amber-800">課題</h3>
+              <p className="mb-4 text-sm font-semibold text-gray-900">AI の表現・レスポンス精度の向上</p>
+              <p className="mb-4 text-sm leading-relaxed text-gray-600">
+                現在の AI ドラフト生成やチャット Q&A は、Cloudflare Workers AI (Llama 3.3 70B) をベースにしていますが、
+                技術的な正確さや日本語表現の自然さにはまだ改善の余地があります。
+              </p>
+              <h3 className="mb-2 text-sm font-bold text-green-700">取り組み</h3>
+              <ul className="space-y-1.5 text-sm text-gray-600">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                  プロンプトエンジニアリングの継続的な改善
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                  RAG コンテキストの品質向上（チャンク戦略の最適化）
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                  新モデルリリース時の迅速な検証・切り替え体制
+                </li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
+              <h3 className="mb-2 text-sm font-bold text-blue-800">課題</h3>
+              <p className="mb-4 text-sm font-semibold text-gray-900">より詳細で情報量豊かなコンテンツ作成</p>
+              <p className="mb-4 text-sm leading-relaxed text-gray-600">
+                記事に構成図やアーキテクチャダイアグラムを含めることで、読者の理解度を大幅に向上させたい。
+                現状はテキスト中心の記事構成に留まっています。
+              </p>
+              <h3 className="mb-2 text-sm font-bold text-green-700">取り組み — サードパーティ連携</h3>
+              <ul className="space-y-1.5 text-sm text-gray-600">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                  構成図作成ツール連携（Mermaid / Excalidraw / draw.io 等）
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                  コードスニペットの埋め込み強化
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                  直近ロードマップに組み入れ済み — Phase 2 で対応予定
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 11: Roadmap ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={10} title="ロードマップ" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <RoadmapPhase
               phase="Phase 1"
@@ -355,7 +405,7 @@ export default function AdminPresentation() {
               phase="Phase 2"
               title="AI 機能"
               status="in-progress"
-              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "トレンドレポート"]}
+              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "AI 精度向上", "サードパーティ連携", "トレンドレポート"]}
             />
             <RoadmapPhase
               phase="Phase 3"
@@ -372,15 +422,16 @@ export default function AdminPresentation() {
           </div>
         </section>
 
-        {/* ───────────────── Slide 11: Call to Action ───────────────── */}
+        {/* ───────────────── Slide 12: Call to Action ───────────────── */}
         <section className="slide mb-16 rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 text-white shadow-xl sm:p-16">
           <h2 className="mb-6 text-3xl font-extrabold sm:text-4xl">
             一緒に作りませんか？
           </h2>
           <p className="mb-8 max-w-2xl text-lg leading-relaxed text-gray-300">
-            このプラットフォームは SE の皆さんの参加で価値が生まれます。
-            テンプレートに沿って入力するだけで、AI が記事のドラフトを作成。
-            あなたの技術ナレッジを、チームとお客様に届けましょう。
+            このプラットフォームは
+            皆さんの参加で価値が生まれます。
+            テンプレートに沿って入力するだけで、AI が記事のドラフトを作成し、皆様の表現や伝えたいことをアシストします。
+            あなたの技術ナレッジを、世界に届けましょう。
           </p>
           <div className="grid gap-6 sm:grid-cols-3">
             <CTACard
@@ -451,17 +502,19 @@ function SlideHeader({ number, title }: { number: number; title: string }) {
 }
 
 function ProblemCard({
-  icon,
+  number,
   problem,
   solution,
 }: {
-  icon: string;
+  number: number;
   problem: string;
   solution: string;
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-3 text-3xl">{icon}</div>
+      <span className="mb-4 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-gray-500">
+        {number}
+      </span>
       <h3 className="mb-2 text-sm font-bold text-red-600">課題</h3>
       <p className="mb-4 text-sm font-medium text-gray-900">{problem}</p>
       <h3 className="mb-2 text-sm font-bold text-green-600">解決</h3>
@@ -471,17 +524,19 @@ function ProblemCard({
 }
 
 function PhilosophyCard({
-  icon,
+  number,
   title,
   desc,
 }: {
-  icon: string;
+  number: number;
   title: string;
   desc: string;
 }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 text-center shadow-sm">
-      <div className="mb-2 text-2xl">{icon}</div>
+      <span className="mx-auto mb-3 flex h-7 w-7 items-center justify-center rounded-md bg-brand-50 text-xs font-bold text-brand-600">
+        {number}
+      </span>
       <h3 className="mb-1 text-sm font-bold text-gray-900">{title}</h3>
       <p className="text-xs text-gray-500">{desc}</p>
     </div>
@@ -598,19 +653,19 @@ function FeatureRow({
 }
 
 function HonoCard({
+  number,
   title,
   desc,
-  icon,
 }: {
+  number: number;
   title: string;
   desc: string;
-  icon: string;
 }) {
   return (
     <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg font-bold text-red-600">
-        {icon}
-      </div>
+      <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-600">
+        {number}
+      </span>
       <h3 className="mb-2 text-sm font-bold text-gray-900">{title}</h3>
       <p className="text-xs text-gray-600">{desc}</p>
     </div>
@@ -641,18 +696,15 @@ function FlowStep({
   step,
   title,
   desc,
-  icon,
 }: {
   step: number;
   title: string;
   desc: string;
-  icon: string;
 }) {
   return (
     <div className="flex flex-col items-center px-4 py-6 text-center">
-      <div className="mb-2 text-3xl">{icon}</div>
-      <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-        Step {step}
+      <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
+        {step}
       </span>
       <h3 className="text-sm font-bold text-gray-900">{title}</h3>
       <p className="mt-1 text-xs text-gray-500">{desc}</p>
@@ -661,17 +713,14 @@ function FlowStep({
 }
 
 function SecurityCard({
-  icon,
   title,
   items,
 }: {
-  icon: string;
   title: string;
   items: string[];
 }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-3 text-2xl">{icon}</div>
       <h3 className="mb-3 font-bold text-gray-900">{title}</h3>
       <ul className="space-y-1.5">
         {items.map((item) => (
