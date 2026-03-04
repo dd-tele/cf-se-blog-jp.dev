@@ -5,8 +5,7 @@ import { ulid } from "~/lib/ulid";
 import { generateEmbedding } from "~/lib/ai.server";
 
 // ─── Constants ──────────────────────────────────────────────
-const AI_GATEWAY_ID = "cf-se-blog-gw";
-const TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const TEXT_MODEL = "@cf/meta/llama-3.1-70b-instruct";
 const MODERATION_MODEL = "@cf/meta/llama-guard-3-8b";
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_MESSAGES_PER_MINUTE = 10;
@@ -72,7 +71,6 @@ export async function moderateContent(
       {
         messages: [{ role: "user", content }],
       },
-      { gateway: { id: AI_GATEWAY_ID } } as any
     );
 
     const output = (result.response || "").trim().toLowerCase();
@@ -253,7 +251,6 @@ export async function generateChatResponseStream(
       temperature: 0.7,
       stream: true,
     },
-    { gateway: { id: AI_GATEWAY_ID } } as any
   );
 
   return stream as ReadableStream;
