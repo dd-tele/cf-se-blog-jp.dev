@@ -104,13 +104,16 @@ export default function AdminQA() {
             <span className="text-sm text-gray-400">|</span>
             <nav className="flex items-center gap-4 text-sm">
               <Link to="/admin" className="text-gray-500 hover:text-gray-700">
-                承認キュー
+                投稿管理
               </Link>
               <Link to="/admin/ai-insights" className="text-gray-500 hover:text-gray-700">
                 AI インサイト
               </Link>
               <Link to="/admin/qa" className="font-medium text-brand-600">
                 Q&A 管理
+              </Link>
+              <Link to="/portal" className="text-gray-500 hover:text-gray-700">
+                ポータル
               </Link>
             </nav>
           </div>

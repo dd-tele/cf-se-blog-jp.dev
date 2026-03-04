@@ -283,6 +283,29 @@ export async function getAllDraftPosts(db: D1Database) {
     .orderBy(desc(posts.updated_at));
 }
 
+export async function getAllPostsForAdmin(db: D1Database) {
+  const d = getDb(db);
+  return await d
+    .select({
+      id: posts.id,
+      title: posts.title,
+      slug: posts.slug,
+      excerpt: posts.excerpt,
+      authorId: posts.author_id,
+      authorName: users.display_name,
+      categoryName: categories.name,
+      status: posts.status,
+      viewCount: posts.view_count,
+      publishedAt: posts.published_at,
+      createdAt: posts.created_at,
+      updatedAt: posts.updated_at,
+    })
+    .from(posts)
+    .leftJoin(users, eq(posts.author_id, users.id))
+    .leftJoin(categories, eq(posts.category_id, categories.id))
+    .orderBy(desc(posts.updated_at));
+}
+
 // ─── User management (admin) ──────────────────────────────
 
 export async function ensureUser(db: D1Database, user: SessionUser) {

@@ -1,30 +1,53 @@
 import { useState } from "react";
 import type {
+  ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/cloudflare";
-import { useLoaderData, Link } from "@remix-run/react";
+import { useLoaderData, useActionData, Link, Form, useNavigation } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
-import { getAllDraftPosts } from "~/lib/posts.server";
-import { renderMarkdown } from "~/lib/markdown.server";
+import { getAllPostsForAdmin, deletePost } from "~/lib/posts.server";
 
 export const meta: MetaFunction = () => [
-  { title: "管理画面 — Cloudflare Solution Blog" },
+  { title: "投稿管理 — Cloudflare Solution Blog" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const user = await requireRole(request, ["admin"]);
   const db = context.cloudflare.env.DB;
-  const drafts = await getAllDraftPosts(db);
-  const draftPosts = drafts.map((p) => ({
-    ...p,
-    contentHtml: renderMarkdown(p.content),
-  }));
-  return { user, draftPosts };
+  const allPosts = await getAllPostsForAdmin(db);
+  return { user, allPosts };
+}
+
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = await requireRole(request, ["admin"]);
+  const db = context.cloudflare.env.DB;
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
+
+  if (intent === "delete") {
+    const postId = formData.get("postId") as string;
+    if (!postId) return { error: "投稿IDが指定されていません" };
+    try {
+      await deletePost(db, postId, user);
+      return { success: true, deletedId: postId };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "削除に失敗しました" };
+    }
+  }
+
+  return { error: "Unknown action" };
 }
 
 export default function AdminIndex() {
-  const { user, draftPosts } = useLoaderData<typeof loader>();
+  const { user, allPosts } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const isDeleting = navigation.state === "submitting";
+
+  const draftCount = allPosts.filter((p) => p.status === "draft").length;
+  const publishedCount = allPosts.filter((p) => p.status === "published").length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -39,28 +62,16 @@ export default function AdminIndex() {
             <span className="text-sm font-semibold text-red-600">Admin</span>
             <span className="text-sm text-gray-400">|</span>
             <nav className="flex items-center gap-4 text-sm">
-              <Link
-                to="/admin"
-                className="font-medium text-brand-600"
-              >
-                下書き一覧
+              <Link to="/admin" className="font-medium text-brand-600">
+                投稿管理
               </Link>
-              <Link
-                to="/admin/ai-insights"
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <Link to="/admin/ai-insights" className="text-gray-500 hover:text-gray-700">
                 AI インサイト
               </Link>
-              <Link
-                to="/admin/qa"
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <Link to="/admin/qa" className="text-gray-500 hover:text-gray-700">
                 Q&A 管理
               </Link>
-              <Link
-                to="/portal"
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <Link to="/portal" className="text-gray-500 hover:text-gray-700">
                 ポータル
               </Link>
             </nav>
@@ -75,78 +86,118 @@ export default function AdminIndex() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">下書き一覧</h1>
+            <h1 className="text-2xl font-bold text-gray-900">投稿管理</h1>
             <p className="mt-1 text-sm text-gray-500">
-              全ユーザーの下書き記事が {draftPosts.length} 件あります（閲覧専用）
+              全 {allPosts.length} 件（公開 {publishedCount} / 下書き {draftCount}）
             </p>
           </div>
         </div>
 
-        {draftPosts.length === 0 ? (
+        {actionData && "error" in actionData && actionData.error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {actionData.error}
+          </div>
+        )}
+        {actionData && "success" in actionData && actionData.success && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            投稿を削除しました
+          </div>
+        )}
+
+        {allPosts.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-16 text-center">
             <div className="text-4xl">📝</div>
             <p className="mt-4 text-lg font-medium text-gray-600">
-              下書きの記事はありません
+              投稿がありません
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {draftPosts.map((post) => (
-              <div
-                key={post.id}
-                className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-              >
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {post.title}
-                  </h3>
-                  <div className="mt-2 flex items-center gap-3 text-sm text-gray-500">
-                    <span>著者: {post.authorName}</span>
-                    {post.categoryName && (
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">
-                        {post.categoryName}
+          <div className="overflow-hidden rounded-xl border bg-white">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">タイトル</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">著者</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">カテゴリ</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">ステータス</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">更新日</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {allPosts.map((post) => (
+                  <tr key={post.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                        {post.status === "published" ? (
+                          <Link to={`/posts/${post.slug}`} className="hover:text-brand-600">
+                            {post.title}
+                          </Link>
+                        ) : (
+                          post.title
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                      {post.authorName}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                      {post.categoryName ?? "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        post.status === "published"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {post.status === "published" ? "公開" : "下書き"}
                       </span>
-                    )}
-                    <span>
-                      更新: {new Date(post.updatedAt).toLocaleDateString("ja-JP")}
-                    </span>
-                  </div>
-                  {post.excerpt && (
-                    <p className="mt-2 text-sm text-gray-500 line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                  )}
-                  <ContentPreview contentHtml={post.contentHtml} />
-                </div>
-              </div>
-            ))}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                      {new Date(post.updatedAt).toLocaleDateString("ja-JP")}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {confirmId === post.id ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-xs text-red-600 font-medium">削除しますか？</span>
+                          <Form method="post" className="inline">
+                            <input type="hidden" name="intent" value="delete" />
+                            <input type="hidden" name="postId" value={post.id} />
+                            <button
+                              type="submit"
+                              disabled={isDeleting}
+                              className="rounded bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {isDeleting ? "削除中..." : "はい、削除"}
+                            </button>
+                          </Form>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmId(null)}
+                            className="rounded bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                          >
+                            キャンセル
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmId(post.id)}
+                          className="rounded bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
+                        >
+                          削除
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </main>
-    </div>
-  );
-}
-
-function ContentPreview({ contentHtml }: { contentHtml: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-3">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="text-xs font-medium text-brand-600 hover:text-brand-700"
-      >
-        {open ? "▼ プレビューを閉じる" : "▶ 記事をプレビュー"}
-      </button>
-      {open && (
-        <div className="mt-3 max-h-[600px] overflow-y-auto rounded-lg border border-gray-200 bg-white p-6">
-          <article className="prose prose-sm prose-gray max-w-none prose-headings:font-bold prose-a:text-brand-600 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-img:rounded-lg">
-            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
-          </article>
-        </div>
-      )}
     </div>
   );
 }
