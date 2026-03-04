@@ -1,6 +1,6 @@
-import { eq, desc, and, like, or, sql } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, inArray } from "drizzle-orm";
 import { getDb } from "~/lib/db.server";
-import { posts, users, categories, aiSummaries } from "~/db/schema";
+import { posts, users, categories, aiSummaries, aiDraftRequests, qaThreads, qaMessages } from "~/db/schema";
 import { ulid } from "~/lib/ulid";
 import { slugify, estimateReadingTime } from "~/lib/utils";
 import type { SessionUser } from "~/lib/auth.server";
@@ -254,7 +254,25 @@ export async function deletePost(db: D1Database, postId: string, user: SessionUs
     throw new Error("Forbidden");
   }
 
+  // Delete related records to satisfy foreign key constraints
+  // 1. qa_messages (references qa_threads)
+  const threads = await d
+    .select({ id: qaThreads.id })
+    .from(qaThreads)
+    .where(eq(qaThreads.post_id, postId));
+  if (threads.length > 0) {
+    const threadIds = threads.map((t) => t.id);
+    await d.delete(qaMessages).where(inArray(qaMessages.thread_id, threadIds));
+  }
+  // 2. qa_threads (references posts)
+  await d.delete(qaThreads).where(eq(qaThreads.post_id, postId));
+  // 3. ai_summaries (references posts)
+  await d.delete(aiSummaries).where(eq(aiSummaries.post_id, postId));
+  // 4. ai_draft_requests (references posts)
+  await d.delete(aiDraftRequests).where(eq(aiDraftRequests.post_id, postId));
+  // 5. Finally delete the post
   await d.delete(posts).where(eq(posts.id, postId));
+
   return { success: true };
 }
 
