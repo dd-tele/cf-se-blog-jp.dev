@@ -1,0 +1,758 @@
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
+import { useLoaderData, Link } from "@remix-run/react";
+import { requireRole } from "~/lib/auth.server";
+import { getDb } from "~/lib/db.server";
+import { posts, users, qaThreads, qaMessages, aiDraftRequests, templates } from "~/db/schema";
+import { count, eq, sql } from "drizzle-orm";
+
+export const meta: MetaFunction = () => [
+  { title: "プレゼンテーション — Cloudflare Solution Blog" },
+];
+
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const user = await requireRole(request, ["admin"]);
+  const db = context.cloudflare.env.DB;
+  const d = getDb(db);
+
+  // Gather live stats for the presentation
+  const [postStats, userStats, threadStats, draftStats, templateCount] =
+    await Promise.all([
+      d
+        .select({
+          total: count(),
+          published: sql<number>`SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END)`,
+          draft: sql<number>`SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END)`,
+          totalViews: sql<number>`SUM(view_count)`,
+        })
+        .from(posts)
+        .get(),
+      d.select({ total: count() }).from(users).get(),
+      d
+        .select({
+          total: count(),
+          active: sql<number>`SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END)`,
+        })
+        .from(qaThreads)
+        .get(),
+      d
+        .select({
+          total: count(),
+          completed: sql<number>`SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)`,
+        })
+        .from(aiDraftRequests)
+        .get(),
+      d.select({ total: count() }).from(templates).get(),
+    ]);
+
+  return {
+    user,
+    stats: {
+      posts: postStats ?? { total: 0, published: 0, draft: 0, totalViews: 0 },
+      users: userStats ?? { total: 0 },
+      threads: threadStats ?? { total: 0, active: 0 },
+      drafts: draftStats ?? { total: 0, completed: 0 },
+      templates: templateCount?.total ?? 0,
+    },
+  };
+}
+
+export default function AdminPresentation() {
+  const { user, stats } = useLoaderData<typeof loader>();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="border-b bg-white print:hidden">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/"
+              className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors"
+            >
+              Cloudflare Solution Blog
+            </Link>
+            <span className="text-sm text-gray-400">|</span>
+            <span className="text-sm font-semibold text-red-600">Admin</span>
+            <span className="text-sm text-gray-400">|</span>
+            <nav className="flex items-center gap-4 text-sm">
+              <Link to="/admin" className="text-gray-500 hover:text-gray-700">
+                投稿管理
+              </Link>
+              <Link to="/admin/ai-insights" className="text-gray-500 hover:text-gray-700">
+                AI インサイト
+              </Link>
+              <Link to="/admin/qa" className="text-gray-500 hover:text-gray-700">
+                Q&A 管理
+              </Link>
+              <Link to="/admin/presentation" className="font-medium text-brand-600">
+                プレゼン
+              </Link>
+              <Link to="/portal" className="text-gray-500 hover:text-gray-700">
+                ポータル
+              </Link>
+            </nav>
+          </div>
+          <span className="text-sm text-gray-500">{user.displayName}</span>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* ───────────────── Slide 1: Title ───────────────── */}
+        <section className="slide mb-16 rounded-3xl bg-gradient-to-br from-brand-600 via-blue-600 to-indigo-700 p-12 text-white shadow-xl sm:p-16">
+          <p className="mb-4 text-sm font-medium uppercase tracking-widest text-blue-200">
+            Cloudflare Solution Engineering
+          </p>
+          <h1 className="mb-6 text-4xl font-extrabold leading-tight sm:text-5xl">
+            Solution Blog Platform
+          </h1>
+          <p className="mb-8 max-w-2xl text-lg leading-relaxed text-blue-100">
+            SE が持つ技術ナレッジを、AI の力で効率よく記事化し、
+            チーム全体の技術力とお客様への価値を高めるプラットフォーム。
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Badge>100% Cloudflare Stack</Badge>
+            <Badge>Hono + Remix</Badge>
+            <Badge>Workers AI (Llama 3.3 70B)</Badge>
+            <Badge>RAG Chat Q&A</Badge>
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 2: Why ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={1} title="なぜこのブログが必要か" />
+          <div className="grid gap-6 sm:grid-cols-3">
+            <ProblemCard
+              icon="🧠"
+              problem="ナレッジが個人に閉じている"
+              solution="ブログとして公開し、チーム全体で共有。検索・推薦で再利用性を最大化。"
+            />
+            <ProblemCard
+              icon="⏰"
+              problem="記事化に時間がかかる"
+              solution="テンプレート + AI ドラフト生成で、メモ書きレベルの入力から記事を自動作成。"
+            />
+            <ProblemCard
+              icon="🔍"
+              problem="お客様への情報提供が非効率"
+              solution="公開記事の URL を共有するだけ。AI チャットで追加の質問にもリアルタイム対応。"
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 3: Design Philosophy ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={2} title="設計思想" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <PhilosophyCard
+              icon="🌐"
+              title="Better Internet"
+              desc="Cloudflare のミッションを体現するプラットフォーム"
+            />
+            <PhilosophyCard
+              icon="📝"
+              title="Blog as a Work"
+              desc="ブログ執筆は業務の一環。テンプレートで敷居を下げる"
+            />
+            <PhilosophyCard
+              icon="🤝"
+              title="Engineer Engagement"
+              desc="SE 同士の知見共有とお客様との接点を強化"
+            />
+            <PhilosophyCard
+              icon="🚀"
+              title="Easy Publication"
+              desc="AI がドラフトを生成、ワンクリックで公開"
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 4: Live Stats ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={3} title="現在の実績（ライブデータ）" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <StatCard
+              label="公開記事"
+              value={stats.posts.published ?? 0}
+              sub={`/ ${stats.posts.total ?? 0} 件`}
+              color="blue"
+            />
+            <StatCard
+              label="登録ユーザー"
+              value={stats.users.total ?? 0}
+              sub="名"
+              color="purple"
+            />
+            <StatCard
+              label="AI ドラフト生成"
+              value={stats.drafts.completed ?? 0}
+              sub={`/ ${stats.drafts.total ?? 0} 回`}
+              color="amber"
+            />
+            <StatCard
+              label="Q&A スレッド"
+              value={stats.threads.total ?? 0}
+              sub={`(Active: ${stats.threads.active ?? 0})`}
+              color="green"
+            />
+            <StatCard
+              label="テンプレート"
+              value={stats.templates ?? 0}
+              sub="種類"
+              color="red"
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 5: Tech Stack ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={4} title="技術スタック — 100% Cloudflare" />
+          <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="grid divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+              <div className="p-6">
+                <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-400">
+                  フロントエンド / API
+                </h3>
+                <ul className="space-y-3">
+                  <StackItem name="Remix v2" desc="SSR + ネストルーティング" />
+                  <StackItem name="Hono" desc="API レイヤー、streamSSE、型安全バインディング" highlight />
+                  <StackItem name="Tailwind CSS" desc="ユーティリティ CSS + Typography" />
+                  <StackItem name="TypeScript" desc="フルスタック型安全" />
+                </ul>
+              </div>
+              <div className="p-6">
+                <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-400">
+                  Cloudflare サービス
+                </h3>
+                <ul className="space-y-3">
+                  <StackItem name="Pages" desc="ホスティング + CI/CD" />
+                  <StackItem name="D1" desc="SQLite DB（Drizzle ORM）" />
+                  <StackItem name="R2" desc="画像ストレージ（S3 互換）" />
+                  <StackItem name="Workers AI" desc="Llama 3.3 70B + Llama Guard 3" highlight />
+                  <StackItem name="Vectorize" desc="ベクトル検索・関連記事推薦" />
+                  <StackItem name="KV" desc="セッション / キャッシュ" />
+                  <StackItem name="Access" desc="Zero Trust 認証（SSO）" />
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 6: Key Features ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={5} title="主要機能" />
+          <div className="space-y-6">
+            {/* Feature 1: AI Draft */}
+            <FeatureRow
+              number="01"
+              title="AI ドラフト生成"
+              desc="6種類のテンプレートから選択 → メモ書きレベルの入力 → Llama 3.3 70B が Markdown 記事を自動生成。プロンプトエンジニアリングで Cloudflare 事例スタイルに最適化。"
+              color="amber"
+              tags={["Workers AI", "テンプレート", "Llama 3.3"]}
+            />
+            {/* Feature 2: AI Chat Q&A */}
+            <FeatureRow
+              number="02"
+              title="AI チャット Q&A"
+              desc="記事ページに埋め込まれたチャットウィジェット。読者の質問に対し、記事コンテキストに厳密にグラウンディングされた回答を SSE ストリーミングでリアルタイム配信。Llama Guard でコンテンツモデレーション。"
+              color="blue"
+              tags={["Hono streamSSE", "RAG", "Llama Guard"]}
+            />
+            {/* Feature 3: Related Posts */}
+            <FeatureRow
+              number="03"
+              title="関連記事レコメンド"
+              desc="Vectorize に記事の Embedding を保存し、コンテンツの類似度ベースで関連記事を推薦。読者のエンゲージメントを向上。"
+              color="purple"
+              tags={["Vectorize", "bge-base-en", "Embedding"]}
+            />
+            {/* Feature 4: Admin & Moderation */}
+            <FeatureRow
+              number="04"
+              title="管理 & モデレーション"
+              desc="投稿管理、Q&A スレッド管理（削除・フラグ）、AI インサイトダッシュボード、トレンドレポート生成。4週間経過した Active スレッドは自動削除。"
+              color="red"
+              tags={["Admin", "Audit Log", "Auto-expire"]}
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 7: Hono Architecture ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={6} title="Hono — API レイヤーの心臓部" />
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            Cloudflare Workers に最適化された超軽量フレームワーク
+            <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
+            を API レイヤーに採用。Remix の SSR/UI 層と組み合わせたハイブリッド構成。
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <HonoCard title="型安全バインディング" desc="c.env.DB、c.env.AI 等、全 CF サービスに型付きアクセス" icon="H" />
+            <HonoCard title="streamSSE" desc="AI チャットをリアルタイム配信。ReadableStream 手動構築が不要" icon="⚡" />
+            <HonoCard title="共通ミドルウェア" desc="認証・認可・CORS・ロガーを宣言的に適用" icon="🔒" />
+            <HonoCard title="超軽量・高速" desc="依存ゼロ、バンドル極小。Workers の起動を最小化" icon="🪶" />
+          </div>
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
+              API エンドポイント
+            </h4>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <Endpoint method="POST" path="/api/v1/chat" desc="AI チャット Q&A（SSE）" />
+              <Endpoint method="POST" path="/api/v1/ai/suggest-tags" desc="タグ提案" />
+              <Endpoint method="POST" path="/api/v1/ai/improve" desc="文章改善" />
+              <Endpoint method="POST" path="/api/v1/ai/trend-report" desc="トレンドレポート" />
+              <Endpoint method="POST" path="/api/upload-image" desc="画像アップロード（R2）" />
+              <Endpoint method="GET" path="/api/health" desc="ヘルスチェック" />
+            </div>
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 8: Article Creation Flow ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={7} title="記事作成フロー" />
+          <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+              <FlowStep step={1} title="テンプレート選択" desc="6種類から選択" icon="📋" />
+              <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" icon="✏️" />
+              <FlowStep step={3} title="AI ドラフト" desc="Llama 3.3 70B が記事化" icon="🤖" />
+              <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタ" icon="🖼️" />
+              <FlowStep step={5} title="公開" desc="ワンクリック" icon="🚀" />
+            </div>
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 9: Security ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={8} title="セキュリティ & インフラ" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <SecurityCard
+              icon="🛡️"
+              title="Cloudflare Access"
+              items={["Google / Okta SSO 連携", "JWT ベース認証", "RBAC (admin / se / user)"]}
+            />
+            <SecurityCard
+              icon="🤖"
+              title="コンテンツモデレーション"
+              items={["Llama Guard 3 8B", "スパムフィルター", "フラグ & 手動レビュー"]}
+            />
+            <SecurityCard
+              icon="⚡"
+              title="エッジパフォーマンス"
+              items={["V8 Isolates（コールドスタートなし）", "KV キャッシュ", "グローバル CDN"]}
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 10: Roadmap ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={9} title="ロードマップ" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <RoadmapPhase
+              phase="Phase 1"
+              title="MVP"
+              status="completed"
+              items={["Public Blog", "User Portal", "Admin Dashboard", "認証/認可 (Access)", "基本セキュリティ"]}
+            />
+            <RoadmapPhase
+              phase="Phase 2"
+              title="AI 機能"
+              status="in-progress"
+              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "トレンドレポート"]}
+            />
+            <RoadmapPhase
+              phase="Phase 3"
+              title="Advanced"
+              status="planned"
+              items={["Durable Objects", "Queues 非同期処理", "AI Gateway", "Turnstile", "Logpush"]}
+            />
+            <RoadmapPhase
+              phase="Phase 4"
+              title="Scale"
+              status="planned"
+              items={["パフォーマンス最適化", "アナリティクス", "多言語対応", "コミュニティ機能", "外部連携"]}
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 11: Call to Action ───────────────── */}
+        <section className="slide mb-16 rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 text-white shadow-xl sm:p-16">
+          <h2 className="mb-6 text-3xl font-extrabold sm:text-4xl">
+            一緒に作りませんか？
+          </h2>
+          <p className="mb-8 max-w-2xl text-lg leading-relaxed text-gray-300">
+            このプラットフォームは SE の皆さんの参加で価値が生まれます。
+            テンプレートに沿って入力するだけで、AI が記事のドラフトを作成。
+            あなたの技術ナレッジを、チームとお客様に届けましょう。
+          </p>
+          <div className="grid gap-6 sm:grid-cols-3">
+            <CTACard
+              step="1"
+              title="アカウント作成"
+              desc="Google SSO でワンクリックログイン"
+            />
+            <CTACard
+              step="2"
+              title="テンプレートで記事作成"
+              desc="メモ書きレベルの入力で OK"
+            />
+            <CTACard
+              step="3"
+              title="公開 & 共有"
+              desc="お客様に URL を共有するだけ"
+            />
+          </div>
+          <div className="mt-10 flex flex-wrap gap-4">
+            <Link
+              to="/portal"
+              className="rounded-xl bg-brand-500 px-8 py-3 text-sm font-bold text-white shadow-lg hover:bg-brand-400 transition-colors"
+            >
+              ポータルを開く
+            </Link>
+            <Link
+              to="/about"
+              className="rounded-xl border border-gray-600 px-8 py-3 text-sm font-bold text-gray-300 hover:bg-gray-700 transition-colors"
+            >
+              技術詳細を見る
+            </Link>
+          </div>
+        </section>
+
+        {/* ───────────────── Footer ───────────────── */}
+        <footer className="text-center text-xs text-gray-400 print:hidden">
+          <p>
+            Built on Cloudflare — Workers, Pages, D1, R2, AI, Hono
+          </p>
+          <p className="mt-1">
+            Admin 専用プレゼンテーションページ
+          </p>
+        </footer>
+      </main>
+    </div>
+  );
+}
+
+// ─── Sub-components ─────────────────────────────────────────
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+      {children}
+    </span>
+  );
+}
+
+function SlideHeader({ number, title }: { number: number; title: string }) {
+  return (
+    <div className="mb-8 flex items-center gap-4">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-sm font-bold text-brand-700">
+        {number}
+      </span>
+      <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+    </div>
+  );
+}
+
+function ProblemCard({
+  icon,
+  problem,
+  solution,
+}: {
+  icon: string;
+  problem: string;
+  solution: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-3 text-3xl">{icon}</div>
+      <h3 className="mb-2 text-sm font-bold text-red-600">課題</h3>
+      <p className="mb-4 text-sm font-medium text-gray-900">{problem}</p>
+      <h3 className="mb-2 text-sm font-bold text-green-600">解決</h3>
+      <p className="text-sm text-gray-600">{solution}</p>
+    </div>
+  );
+}
+
+function PhilosophyCard({
+  icon,
+  title,
+  desc,
+}: {
+  icon: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 text-center shadow-sm">
+      <div className="mb-2 text-2xl">{icon}</div>
+      <h3 className="mb-1 text-sm font-bold text-gray-900">{title}</h3>
+      <p className="text-xs text-gray-500">{desc}</p>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+  color,
+}: {
+  label: string;
+  value: number;
+  sub: string;
+  color: string;
+}) {
+  const colors: Record<string, string> = {
+    blue: "from-blue-500 to-blue-600",
+    purple: "from-purple-500 to-purple-600",
+    amber: "from-amber-500 to-amber-600",
+    green: "from-green-500 to-green-600",
+    red: "from-red-500 to-red-600",
+  };
+  return (
+    <div
+      className={`rounded-2xl bg-gradient-to-br ${colors[color] ?? colors.blue} p-5 text-white shadow-lg`}
+    >
+      <p className="text-xs font-medium text-white/80">{label}</p>
+      <p className="mt-1 text-3xl font-extrabold">
+        {value}
+        <span className="ml-1 text-sm font-normal text-white/70">{sub}</span>
+      </p>
+    </div>
+  );
+}
+
+function StackItem({
+  name,
+  desc,
+  highlight,
+}: {
+  name: string;
+  desc: string;
+  highlight?: boolean;
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold ${
+          highlight
+            ? "bg-red-100 text-red-700"
+            : "bg-gray-100 text-gray-600"
+        }`}
+      >
+        {name[0]}
+      </span>
+      <div>
+        <span className={`text-sm font-semibold ${highlight ? "text-red-700" : "text-gray-900"}`}>
+          {name}
+        </span>
+        <span className="ml-1.5 text-xs text-gray-500">{desc}</span>
+      </div>
+    </li>
+  );
+}
+
+function FeatureRow({
+  number,
+  title,
+  desc,
+  color,
+  tags,
+}: {
+  number: string;
+  title: string;
+  desc: string;
+  color: string;
+  tags: string[];
+}) {
+  const bgMap: Record<string, string> = {
+    amber: "bg-amber-50 border-amber-200",
+    blue: "bg-blue-50 border-blue-200",
+    purple: "bg-purple-50 border-purple-200",
+    red: "bg-red-50 border-red-200",
+  };
+  const tagMap: Record<string, string> = {
+    amber: "bg-amber-100 text-amber-700",
+    blue: "bg-blue-100 text-blue-700",
+    purple: "bg-purple-100 text-purple-700",
+    red: "bg-red-100 text-red-700",
+  };
+  return (
+    <div className={`flex gap-5 rounded-2xl border p-6 ${bgMap[color] ?? bgMap.blue}`}>
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-lg font-extrabold text-gray-400 shadow-sm">
+        {number}
+      </span>
+      <div>
+        <h3 className="mb-1 text-base font-bold text-gray-900">{title}</h3>
+        <p className="mb-3 text-sm leading-relaxed text-gray-600">{desc}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((t) => (
+            <span
+              key={t}
+              className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${tagMap[color] ?? tagMap.blue}`}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HonoCard({
+  title,
+  desc,
+  icon,
+}: {
+  title: string;
+  desc: string;
+  icon: string;
+}) {
+  return (
+    <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg font-bold text-red-600">
+        {icon}
+      </div>
+      <h3 className="mb-2 text-sm font-bold text-gray-900">{title}</h3>
+      <p className="text-xs text-gray-600">{desc}</p>
+    </div>
+  );
+}
+
+function Endpoint({
+  method,
+  path,
+  desc,
+}: {
+  method: string;
+  path: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="shrink-0 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-bold text-green-400">
+        {method}
+      </span>
+      <code className="shrink-0 text-xs font-mono text-gray-700">{path}</code>
+      <span className="text-xs text-gray-400">{desc}</span>
+    </div>
+  );
+}
+
+function FlowStep({
+  step,
+  title,
+  desc,
+  icon,
+}: {
+  step: number;
+  title: string;
+  desc: string;
+  icon: string;
+}) {
+  return (
+    <div className="flex flex-col items-center px-4 py-6 text-center">
+      <div className="mb-2 text-3xl">{icon}</div>
+      <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+        Step {step}
+      </span>
+      <h3 className="text-sm font-bold text-gray-900">{title}</h3>
+      <p className="mt-1 text-xs text-gray-500">{desc}</p>
+    </div>
+  );
+}
+
+function SecurityCard({
+  icon,
+  title,
+  items,
+}: {
+  icon: string;
+  title: string;
+  items: string[];
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-3 text-2xl">{icon}</div>
+      <h3 className="mb-3 font-bold text-gray-900">{title}</h3>
+      <ul className="space-y-1.5">
+        {items.map((item) => (
+          <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-300" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function RoadmapPhase({
+  phase,
+  title,
+  status,
+  items,
+}: {
+  phase: string;
+  title: string;
+  status: "completed" | "in-progress" | "planned";
+  items: string[];
+}) {
+  const statusStyles = {
+    completed: "border-green-300 bg-green-50",
+    "in-progress": "border-amber-300 bg-amber-50",
+    planned: "border-gray-200 bg-gray-50",
+  };
+  const badgeStyles = {
+    completed: "bg-green-100 text-green-700",
+    "in-progress": "bg-amber-100 text-amber-700",
+    planned: "bg-gray-100 text-gray-500",
+  };
+  const badgeText = {
+    completed: "完了",
+    "in-progress": "進行中",
+    planned: "計画中",
+  };
+  return (
+    <div className={`rounded-xl border p-5 ${statusStyles[status]}`}>
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            {phase}
+          </p>
+          <h3 className="text-sm font-bold text-gray-900">{title}</h3>
+        </div>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeStyles[status]}`}
+        >
+          {badgeText[status]}
+        </span>
+      </div>
+      <ul className="space-y-1">
+        {items.map((item) => (
+          <li key={item} className="text-xs text-gray-600">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function CTACard({
+  step,
+  title,
+  desc,
+}: {
+  step: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5">
+      <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white">
+        {step}
+      </span>
+      <h3 className="mt-3 text-sm font-bold text-white">{title}</h3>
+      <p className="mt-1 text-xs text-gray-400">{desc}</p>
+    </div>
+  );
+}

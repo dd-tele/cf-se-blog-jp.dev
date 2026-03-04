@@ -140,6 +140,9 @@ export default function AdminQA() {
               <Link to="/admin/qa" className="font-medium text-brand-600">
                 Q&A 管理
               </Link>
+              <Link to="/admin/presentation" className="text-gray-500 hover:text-gray-700">
+                プレゼン
+              </Link>
               <Link to="/portal" className="text-gray-500 hover:text-gray-700">
                 ポータル
               </Link>
