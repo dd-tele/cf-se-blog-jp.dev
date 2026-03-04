@@ -253,6 +253,9 @@ export function ChatWidget({ postId, postTitle }: Props) {
               </button>
             </div>
             <p className="mt-1.5 text-[10px] leading-tight text-gray-400">
+              ※ 日本語入力時は Enter キーで誤送信される場合があります。メモ帳等で文章を作成し、コピー＆ペーストでご利用ください。
+            </p>
+            <p className="mt-1 text-[10px] leading-tight text-gray-400">
               AI の回答は参考情報です。正確な情報は{" "}
               <a
                 href="https://developers.cloudflare.com/"
@@ -262,7 +265,7 @@ export function ChatWidget({ postId, postTitle }: Props) {
               >
                 公式ドキュメント
               </a>
-              をご確認ください。
+              をご確認ください。AI で不十分な場合、適切なご質問に関しては管理者側から回答をさせていただくことができます。
             </p>
           </div>
         </div>
