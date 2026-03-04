@@ -119,11 +119,11 @@ export default function AdminPresentation() {
 
         {/* ───────────────── Slide 2: Why ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={1} title="なぜこのブログが必要か" />
+          <SlideHeader number={1} title="このブログが目指す課題解決" />
           <div className="grid gap-6 sm:grid-cols-3">
             <ProblemCard
               number={1}
-              problem="Cloudflare SE や導入を手動したエンジニアたちのリアルが閉じている"
+              problem="Cloudflare SE や導入をリードしたエンジニアたちのリアルが閉じている"
               solution="ブログとして公開し、チーム全体で共有。検索・推薦で再利用性を最大化。"
             />
             <ProblemCard
