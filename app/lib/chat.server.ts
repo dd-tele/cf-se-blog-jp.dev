@@ -5,7 +5,7 @@ import { ulid } from "~/lib/ulid";
 import { generateEmbedding } from "~/lib/ai.server";
 
 // ─── Constants ──────────────────────────────────────────────
-const TEXT_MODEL = "@cf/qwen/qwen2.5-72b-instruct-fp8-fast";
+const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODERATION_MODEL = "@cf/meta/llama-guard-3-8b";
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_MESSAGES_PER_MINUTE = 10;
@@ -257,7 +257,7 @@ export async function generateChatResponseStream(
     {
       messages,
       max_tokens: 1024,
-      temperature: 0.7,
+      temperature: 0.3,
       stream: true,
     },
   );
