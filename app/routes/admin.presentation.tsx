@@ -231,6 +231,8 @@ export default function AdminPresentation() {
                   <StackItem name="Vectorize" desc="ベクトル検索・関連記事推薦" />
                   <StackItem name="KV" desc="セッション / キャッシュ" />
                   <StackItem name="Access" desc="Zero Trust 認証（SSO）" />
+                  <StackItem name="WAF" desc="OWASP Top 10 / カスタムルール" highlight />
+                  <StackItem name="Bot Management" desc="自動化攻撃検知・軽減" highlight />
                 </ul>
               </div>
             </div>
@@ -322,10 +324,14 @@ export default function AdminPresentation() {
         {/* ───────────────── Slide 9: Security ───────────────── */}
         <section className="slide mb-16">
           <SlideHeader number={8} title="セキュリティ & インフラ" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <SecurityCard
               title="Cloudflare Access"
               items={["Google / Okta SSO 連携", "JWT ベース認証", "RBAC (admin / se / user)"]}
+            />
+            <SecurityCard
+              title="WAF + Bot Management"
+              items={["OWASP Top 10 防御（SQLi / XSS 等）", "API エンドポイント保護", "Bot 検知・自動化攻撃軽減", "カスタムドメインでゼロコード適用"]}
             />
             <SecurityCard
               title="コンテンツモデレーション"
