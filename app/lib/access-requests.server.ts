@@ -330,6 +330,48 @@ export async function registerEmailDestination(
   }
 }
 
+export async function deleteEmailDestination(
+  env: Env,
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  const auth = getCfApiAuth(env);
+  if (!auth || !env.CF_ACCOUNT_ID) {
+    return { success: false, error: "Cloudflare API の認証情報が設定されていません" };
+  }
+
+  try {
+    // 1. List destination addresses to find the ID for the given email
+    const listUrl = `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/email/routing/addresses`;
+    const listRes = await fetch(listUrl, { headers: auth.headers });
+    const listData = await listRes.json() as any;
+
+    if (!listData.success) {
+      return { success: false, error: listData.errors?.[0]?.message || "宛先アドレス一覧の取得に失敗しました" };
+    }
+
+    const entry = listData.result?.find((a: any) => a.email === email);
+    if (!entry) {
+      return { success: true }; // Already gone
+    }
+
+    // 2. Delete the destination address by ID
+    const deleteUrl = `${listUrl}/${entry.tag}`;
+    const deleteRes = await fetch(deleteUrl, {
+      method: "DELETE",
+      headers: auth.headers,
+    });
+    const deleteData = await deleteRes.json() as any;
+
+    if (!deleteData.success) {
+      return { success: false, error: deleteData.errors?.[0]?.message || "宛先アドレスの削除に失敗しました" };
+    }
+
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: `Email Routing API error: ${e.message}` };
+  }
+}
+
 // ─── Cloudflare Access API ─────────────────────────────────
 
 export async function addEmailToAccessPolicy(

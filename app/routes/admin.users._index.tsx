@@ -12,7 +12,7 @@ import {
   useNavigation,
 } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
-import { getAllUsers, deleteUser, removeEmailFromAccessPolicy } from "~/lib/access-requests.server";
+import { getAllUsers, deleteUser, removeEmailFromAccessPolicy, deleteEmailDestination } from "~/lib/access-requests.server";
 
 export const meta: MetaFunction = () => [
   { title: "ユーザー管理 — Cloudflare Solution Blog" },
@@ -37,15 +37,26 @@ export async function action({ request, context }: ActionFunctionArgs) {
     try {
       const env = context.cloudflare.env;
       const result = await deleteUser(db, userId);
+
+      const messages: string[] = ["ユーザーを削除しました"];
+
       // Remove email from Cloudflare Access policy
       const accessResult = await removeEmailFromAccessPolicy(env, result.email);
-      if (!accessResult.success) {
-        return {
-          success: true,
-          message: `ユーザーを削除しました。ただし Access ポリシーからのメール削除に失敗しました: ${accessResult.error}`,
-        };
+      if (accessResult.success) {
+        messages.push("Access ポリシーからメールを削除しました");
+      } else {
+        messages.push(`Access ポリシーからのメール削除に失敗: ${accessResult.error}`);
       }
-      return { success: true, message: "ユーザーを削除し、Access ポリシーからメールも削除しました" };
+
+      // Remove email from Email Routing destination addresses
+      const emailResult = await deleteEmailDestination(env, result.email);
+      if (emailResult.success) {
+        messages.push("Email Routing の宛先アドレスを削除しました");
+      } else {
+        messages.push(`Email Routing の宛先削除に失敗: ${emailResult.error}`);
+      }
+
+      return { success: true, message: messages.join("。") };
     } catch (e: any) {
       return { error: e.message };
     }
