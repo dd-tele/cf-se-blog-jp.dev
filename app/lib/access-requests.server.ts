@@ -297,8 +297,8 @@ export async function addEmailToAccessPolicy(
   }
 
   try {
-    // 1. Get current policy
-    const getRes = await fetch(config.policyUrl, { headers: config.headers });
+    // 1. Get current policy (use reusable endpoint for consistency with PUT)
+    const getRes = await fetch(config.reusablePolicyUrl, { headers: config.headers });
 
     if (!getRes.ok) {
       const errText = await getRes.text();
@@ -356,8 +356,8 @@ export async function removeEmailFromAccessPolicy(
   }
 
   try {
-    // 1. Get current policy
-    const getRes = await fetch(config.policyUrl, { headers: config.headers });
+    // 1. Get current policy (use reusable endpoint for consistency with PUT)
+    const getRes = await fetch(config.reusablePolicyUrl, { headers: config.headers });
 
     if (!getRes.ok) {
       const errText = await getRes.text();
