@@ -13,6 +13,7 @@ import {
 import { redirect } from "@remix-run/cloudflare";
 import { useState } from "react";
 import { requireUser } from "~/lib/auth.server";
+import { MarkdownGuide } from "~/components/MarkdownGuide";
 import {
   getTemplateById,
   parseInputFields,
@@ -123,6 +124,13 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
    - 入力内容の要素から推測される**組織的・技術的なインパクトの総括**
    - 同様の課題を持つ読者への**実践的なアドバイス**
    - 今後の**改善計画や発展の方向性**
+
+7. **Mermaid 図表を積極的に活用する**: アーキテクチャ構成、ネットワーク図、フローチャート、シーケンス図などを ${"```"}mermaid コードブロックで記事に埋め込む。特に以下の場面で図表を推奨:
+   - システム構成やネットワークトポロジの説明→ flowchart または C4Context
+   - リクエストフローや API シーケンスの説明 → sequenceDiagram
+   - データモデルの説明 → erDiagram
+   - プロジェクトタイムライン → gantt
+   - ユーザー入力に図表の Mermaid テキストが含まれている場合はそのまま保持すること
 
 ### 推奨表現・テックブログ常套句
 - 導入背景: 「自社では〜という課題を抱えていました」「〜の要件を満たす必要がありました」
@@ -340,9 +348,12 @@ export default function TemplateInput() {
           ))}
 
           <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
-            入力後「AI で下書き生成」をクリックすると、Workers AI がブログ記事の下書きを自動作成します。
-            生成後はエディタで自由に編集できます。
+            <p>入力後「AI で下書き生成」をクリックすると、Workers AI がブログ記事の下書きを自動作成します。
+            生成後はエディタで自由に編集できます。</p>
+            <p className="mt-1">入力テキストに Markdown 記法や Mermaid 図表を含めると、AI がそのまま下書きに組み込みます。</p>
           </div>
+
+          <MarkdownGuide />
 
           <div className="flex items-center justify-between border-t pt-6">
             <Link to="/portal/templates" className="text-sm text-gray-500 hover:text-gray-700">
