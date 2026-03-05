@@ -114,6 +114,11 @@ export default function ApplyPage() {
               （ダッシュボードへのログインは不要です）
             </p>
             <p className="mt-1 text-xs leading-relaxed text-amber-700">
+              確認後に「Email Routing に移動する」ボタンが表示されますが、
+              Email Routing ページでのセットアップは自動化されていますので、操作は不要です。
+              「Email Routing に移動する」ボタンを押す必要はありません。
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-700">
               確認が完了すると、申請の承認時に通知メールをお送りできます。
             </p>
           </div>
