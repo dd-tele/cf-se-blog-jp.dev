@@ -418,7 +418,6 @@ export default function AboutPage() {
           </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-lg font-bold text-red-600">H</div>
               <h3 className="mb-2 font-bold text-gray-900">型安全なバインディング</h3>
               <p className="text-sm text-gray-600">
                 <code className="rounded bg-red-100 px-1 text-xs text-red-700">c.env.DB</code>、
@@ -427,7 +426,6 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-sm font-bold text-red-600">SSE</div>
               <h3 className="mb-2 font-bold text-gray-900">streamSSE</h3>
               <p className="text-sm text-gray-600">
                 AI チャットの応答を Hono の <code className="rounded bg-red-100 px-1 text-xs text-red-700">streamSSE</code> ヘルパーで
@@ -435,7 +433,6 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-sm font-bold text-red-600">MW</div>
               <h3 className="mb-2 font-bold text-gray-900">共通ミドルウェア</h3>
               <p className="text-sm text-gray-600">
                 認証・認可・CORS・ロガーを共通ミドルウェアとして定義。
@@ -443,7 +440,6 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="rounded-xl border border-red-200 bg-red-50/50 p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-sm font-bold text-red-600">Lt</div>
               <h3 className="mb-2 font-bold text-gray-900">超軽量・高速</h3>
               <p className="text-sm text-gray-600">
                 依存ゼロ、バンドルサイズ極小。Cloudflare Workers の起動時間を最小化し、
@@ -554,7 +550,6 @@ export default function AboutPage() {
           <h2 className="mb-8 text-2xl font-bold text-gray-900">セキュリティ & インフラ</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-sm font-bold text-orange-700">Auth</div>
               <h3 className="mb-2 font-bold text-gray-900">認証・認可</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>Cloudflare Access による Zero Trust 認証</li>
@@ -564,7 +559,6 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-sm font-bold text-red-700">WAF</div>
               <h3 className="mb-2 font-bold text-gray-900">WAF + Bot Management</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>カスタムドメインに WAF を適用</li>
@@ -574,7 +568,6 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">Edge</div>
               <h3 className="mb-2 font-bold text-gray-900">エッジコンピューティング</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>全コンポーネントが Cloudflare エッジで動作</li>
@@ -584,7 +577,6 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-sm font-bold text-green-700">Ops</div>
               <h3 className="mb-2 font-bold text-gray-900">運用機能</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>RSS フィード自動生成</li>
@@ -594,7 +586,6 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-sm font-bold text-purple-700">DX</div>
               <h3 className="mb-2 font-bold text-gray-900">開発体験</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>TypeScript + Drizzle ORM でタイプセーフ</li>
