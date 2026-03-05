@@ -93,6 +93,7 @@ export const posts = sqliteTable("posts", {
   reading_time_minutes: integer("reading_time_minutes"),
   view_count: integer("view_count").notNull().default(0),
   published_at: text("published_at"),
+  author_name_snapshot: text("author_name_snapshot"),
   reviewed_by: text("reviewed_by").references(() => users.id),
   reviewed_at: text("reviewed_at"),
   created_at: text("created_at")

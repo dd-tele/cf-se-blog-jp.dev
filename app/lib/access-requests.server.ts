@@ -217,13 +217,33 @@ export async function adminUpdateUser(db: D1Database, userId: string, input: Adm
 
 export async function deleteUser(db: D1Database, userId: string) {
   const d = getDb(db);
-  // Check for posts by this user
-  const { posts } = await import("~/db/schema");
-  const userPosts = await d.select({ id: posts.id }).from(posts).where(eq(posts.author_id, userId));
-  if (userPosts.length > 0) {
-    throw new Error(`このユーザーには ${userPosts.length} 件の投稿があるため削除できません。先に投稿を削除または移管してください。`);
-  }
+  const {
+    posts, aiDraftRequests, qaMessages, userBadges,
+    notificationSettings, auditLogs,
+  } = await import("~/db/schema");
+
+  // 1. Get user info for snapshot
+  const userRow = await d.select().from(users).where(eq(users.id, userId)).get();
+  if (!userRow) throw new Error("ユーザーが見つかりません");
+
+  // 2. Snapshot author name into posts
+  const displayName = userRow.nickname || userRow.display_name;
+  await d.update(posts)
+    .set({ author_name_snapshot: displayName })
+    .where(eq(posts.author_id, userId));
+
+  // 3. Clean up related records (order matters for FK safety)
+  await d.delete(aiDraftRequests).where(eq(aiDraftRequests.user_id, userId));
+  await d.delete(userBadges).where(eq(userBadges.user_id, userId));
+  await d.delete(notificationSettings).where(eq(notificationSettings.user_id, userId));
+  // audit_logs and qa_messages: nullify user_id to preserve history
+  await d.update(auditLogs).set({ user_id: null }).where(eq(auditLogs.user_id, userId));
+  await d.update(qaMessages).set({ user_id: null }).where(eq(qaMessages.user_id, userId));
+
+  // 4. Delete user
   await d.delete(users).where(eq(users.id, userId));
+
+  return { email: userRow.email };
 }
 
 // ─── Cloudflare Access API ─────────────────────────────────
@@ -287,6 +307,68 @@ export async function addEmailToAccessPolicy(
       body: JSON.stringify({
         ...policy,
         include: existingIncludes,
+      }),
+    });
+
+    if (!updateRes.ok) {
+      const errText = await updateRes.text();
+      return { success: false, error: `Access API PUT failed: ${updateRes.status} ${errText}` };
+    }
+
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: `Access API error: ${e.message}` };
+  }
+}
+
+export async function removeEmailFromAccessPolicy(
+  env: Env,
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  const { CF_API_TOKEN, CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
+  if (!CF_API_TOKEN || !CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) {
+    return { success: false, error: "Cloudflare Access API の環境変数が設定されていません。手動で削除してください。" };
+  }
+
+  try {
+    // 1. Get current policy
+    const getPolicyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${CF_ACCESS_APP_ID}/policies/${CF_ACCESS_POLICY_ID}`;
+    const getRes = await fetch(getPolicyUrl, {
+      headers: {
+        Authorization: `Bearer ${CF_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!getRes.ok) {
+      const errText = await getRes.text();
+      return { success: false, error: `Access API GET failed: ${getRes.status} ${errText}` };
+    }
+
+    const policyData = await getRes.json() as any;
+    const policy = policyData.result;
+
+    // 2. Remove matching email from includes
+    const existingIncludes = policy.include || [];
+    const filtered = existingIncludes.filter(
+      (inc: any) => inc.email?.email !== email
+    );
+
+    if (filtered.length === existingIncludes.length) {
+      // Email not found in policy — nothing to do
+      return { success: true };
+    }
+
+    // 3. Update policy without the removed email
+    const updateRes = await fetch(getPolicyUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${CF_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...policy,
+        include: filtered,
       }),
     });
 

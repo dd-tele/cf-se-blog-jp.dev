@@ -12,7 +12,7 @@ import {
   useNavigation,
 } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
-import { getAllUsers, deleteUser } from "~/lib/access-requests.server";
+import { getAllUsers, deleteUser, removeEmailFromAccessPolicy } from "~/lib/access-requests.server";
 
 export const meta: MetaFunction = () => [
   { title: "ユーザー管理 — Cloudflare Solution Blog" },
@@ -35,8 +35,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const userId = formData.get("userId") as string;
     if (!userId) return { error: "ユーザーIDが指定されていません" };
     try {
-      await deleteUser(db, userId);
-      return { success: true, message: "ユーザーを削除しました" };
+      const env = context.cloudflare.env;
+      const result = await deleteUser(db, userId);
+      // Remove email from Cloudflare Access policy
+      const accessResult = await removeEmailFromAccessPolicy(env, result.email);
+      if (!accessResult.success) {
+        return {
+          success: true,
+          message: `ユーザーを削除しました。ただし Access ポリシーからのメール削除に失敗しました: ${accessResult.error}`,
+        };
+      }
+      return { success: true, message: "ユーザーを削除し、Access ポリシーからメールも削除しました" };
     } catch (e: any) {
       return { error: e.message };
     }
