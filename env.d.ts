@@ -13,6 +13,8 @@ interface Env {
   SITE_NAME: string;
   SITE_URL: string;
   CF_API_TOKEN?: string;
+  CF_AUTH_EMAIL?: string;
+  CF_GLOBAL_API_KEY?: string;
   CF_ACCOUNT_ID?: string;
   CF_ACCESS_APP_ID?: string;
   CF_ACCESS_POLICY_ID?: string;

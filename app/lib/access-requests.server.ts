@@ -248,24 +248,50 @@ export async function deleteUser(db: D1Database, userId: string) {
 
 // ─── Cloudflare Access API ─────────────────────────────────
 
+function getAccessApiConfig(env: Env): { headers: Record<string, string>; policyUrl: string } | null {
+  const { CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
+  if (!CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) return null;
+
+  const policyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${CF_ACCESS_APP_ID}/policies/${CF_ACCESS_POLICY_ID}`;
+
+  // Prefer Global API Key (required for Zero Trust on some enterprise accounts)
+  if (env.CF_AUTH_EMAIL && env.CF_GLOBAL_API_KEY) {
+    return {
+      headers: {
+        "X-Auth-Email": env.CF_AUTH_EMAIL,
+        "X-Auth-Key": env.CF_GLOBAL_API_KEY,
+        "Content-Type": "application/json",
+      },
+      policyUrl,
+    };
+  }
+
+  // Fallback to API Token
+  if (env.CF_API_TOKEN) {
+    return {
+      headers: {
+        Authorization: `Bearer ${env.CF_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      policyUrl,
+    };
+  }
+
+  return null;
+}
+
 export async function addEmailToAccessPolicy(
   env: Env,
   email: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { CF_API_TOKEN, CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
-  if (!CF_API_TOKEN || !CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) {
+  const config = getAccessApiConfig(env);
+  if (!config) {
     return { success: false, error: "Cloudflare Access API の環境変数が設定されていません" };
   }
 
   try {
     // 1. Get current policy
-    const getPolicyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${CF_ACCESS_APP_ID}/policies/${CF_ACCESS_POLICY_ID}`;
-    const getRes = await fetch(getPolicyUrl, {
-      headers: {
-        Authorization: `Bearer ${CF_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const getRes = await fetch(config.policyUrl, { headers: config.headers });
 
     if (!getRes.ok) {
       const errText = await getRes.text();
@@ -275,19 +301,7 @@ export async function addEmailToAccessPolicy(
     const policyData = await getRes.json() as any;
     const policy = policyData.result;
 
-    // 2. Find the "Emails" include rule and add the new email
-    let emailsFound = false;
-    for (const include of (policy.include || [])) {
-      if (include.email) {
-        // Single email rule — convert to email_list or keep adding
-        // Cloudflare Access uses { email: { email: "xxx" } } format
-      }
-      if (include.email_list) {
-        // Already a list
-      }
-    }
-
-    // The simplest approach: add a new email include entry
+    // 2. Add the new email to include rules
     const existingIncludes = policy.include || [];
     const emailAlreadyExists = existingIncludes.some(
       (inc: any) => inc.email?.email === email
@@ -298,12 +312,9 @@ export async function addEmailToAccessPolicy(
     }
 
     // 3. Update policy
-    const updateRes = await fetch(getPolicyUrl, {
+    const updateRes = await fetch(config.policyUrl, {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${CF_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
+      headers: config.headers,
       body: JSON.stringify({
         ...policy,
         include: existingIncludes,
@@ -325,20 +336,14 @@ export async function removeEmailFromAccessPolicy(
   env: Env,
   email: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { CF_API_TOKEN, CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
-  if (!CF_API_TOKEN || !CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) {
+  const config = getAccessApiConfig(env);
+  if (!config) {
     return { success: false, error: "Cloudflare Access API の環境変数が設定されていません。手動で削除してください。" };
   }
 
   try {
     // 1. Get current policy
-    const getPolicyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${CF_ACCESS_APP_ID}/policies/${CF_ACCESS_POLICY_ID}`;
-    const getRes = await fetch(getPolicyUrl, {
-      headers: {
-        Authorization: `Bearer ${CF_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const getRes = await fetch(config.policyUrl, { headers: config.headers });
 
     if (!getRes.ok) {
       const errText = await getRes.text();
@@ -355,17 +360,13 @@ export async function removeEmailFromAccessPolicy(
     );
 
     if (filtered.length === existingIncludes.length) {
-      // Email not found in policy — nothing to do
       return { success: true };
     }
 
     // 3. Update policy without the removed email
-    const updateRes = await fetch(getPolicyUrl, {
+    const updateRes = await fetch(config.policyUrl, {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${CF_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
+      headers: config.headers,
       body: JSON.stringify({
         ...policy,
         include: filtered,
