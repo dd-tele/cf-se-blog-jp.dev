@@ -1,7 +1,7 @@
 # 本番デプロイ手順書
 
 **ドメイン:** `cf-se-blog-jp.dev`  
-**スタック:** Remix on Cloudflare Pages + D1 + R2 + KV + Workers AI + Vectorize
+**スタック:** Remix on Cloudflare Pages + D1 + R2 + KV + Workers AI + Vectorize + Email Workers
 
 ---
 
@@ -142,6 +142,7 @@ wrangler d1 execute cf-se-blog-db --remote --file=migrations/0005_badges.sql
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0006_user_password.sql
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0007_update_template_prompts.sql
 wrangler d1 execute cf-se-blog-db --remote --file=migrations/0008_fix_tldr_label.sql
+wrangler d1 execute cf-se-blog-db --remote --file=migrations/0009_user_profiles_and_access_requests.sql
 ```
 
 実行後、確認:
@@ -149,7 +150,31 @@ wrangler d1 execute cf-se-blog-db --remote --file=migrations/0008_fix_tldr_label
 wrangler d1 execute cf-se-blog-db --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
 ```
 
-期待される出力テーブル: `ai_draft_requests`, `ai_summaries`, `audit_logs`, `categories`, `posts`, `qa_messages`, `qa_threads`, `templates`, `user_badges`, `users`
+期待される出力テーブル: `access_requests`, `ai_draft_requests`, `ai_summaries`, `audit_logs`, `categories`, `notification_settings`, `posts`, `qa_messages`, `qa_threads`, `templates`, `user_badges`, `users`
+
+---
+
+## Step 3.5: Email Worker デプロイ
+
+承認通知メール送信用の専用 Worker をデプロイします。
+
+```bash
+# Email Worker の依存パッケージインストール
+cd workers/email-worker && npm install && cd ../..
+
+# Email Worker デプロイ
+npx wrangler deploy --config workers/email-worker/wrangler.toml
+```
+
+出力例:
+```
+Published cf-se-blog-email-worker
+  https://cf-se-blog-email-worker.<subdomain>.workers.dev
+  Send Email: SEND_EMAIL: unrestricted
+```
+
+> **❗ `send_email` バインディングを使うため、Email Routing がドメインで有効である必要があります。**
+> Dashboard → Email → Email Routing → Overview で有効化してください。
 
 ---
 
@@ -307,6 +332,26 @@ Dashboard → `cf-se-blog-jp.dev` ゾーンで以下を設定:
 | **ポリシー** | Emails ending in `@cloudflare.com` |
 
 ローカル開発時は Access が無効化され、モックログインが表示されます（`CLOUDFLARE_ACCESS_TEAM` 環境変数未設定時）。
+
+---
+
+## Step 10: Cloudflare API 環境変数設定
+
+投稿者申請の承認・ Email Routing ・ Access ポリシー操作に必要な環境変数を Pages の Secrets に設定:
+
+| 変数名 | 用途 | 設定先 |
+|---|---|---|
+| `CF_AUTH_EMAIL` | Cloudflare アカウントメール | Pages Secrets |
+| `CF_GLOBAL_API_KEY` | Global API Key | Pages Secrets |
+| `CF_ACCOUNT_ID` | アカウント ID | Pages Secrets |
+| `CF_ACCESS_APP_ID` | Access アプリケーション ID | Pages Secrets |
+| `CF_ACCESS_POLICY_ID` | Access ポリシー ID | Pages Secrets |
+| `CF_ACCESS_TEAM_DOMAIN` | Zero Trust チーム URL | Pages Secrets |
+| `CF_ACCESS_AUD` | Access オーディエンスタグ | Pages Secrets |
+| `ADMIN_EMAILS` | 管理者メール（カンマ区切り） | Pages Secrets |
+| `SE_EMAIL_DOMAINS` | SE メールドメイン | Pages Secrets |
+
+Dashboard → Workers & Pages → `cf-se-blog` → Settings → Environment variables → Secrets で設定。
 
 ---
 

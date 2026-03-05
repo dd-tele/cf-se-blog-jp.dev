@@ -1,7 +1,7 @@
 # Cloudflare SE Engineer Blog Platform
 
 **ドメイン:** `cf-se-blog-jp.dev`  
-**100% Cloudflare Stack** — Pages, D1, R2, KV, Workers AI, Vectorize, Access
+**100% Cloudflare Stack** — Pages, D1, R2, KV, Workers AI, Vectorize, Access, Email Workers, Email Routing
 
 Cloudflare の技術を活用して、より良いインターネット環境の構築に貢献するためのフルスタックブログプラットフォーム。  
 ユーザーが自らの作品とも言えるアプリケーションやセキュリティ構築の実践例を、Cloudflare の技術者とエンゲージしながら世の中に簡単に公表できる場を提供。  
@@ -18,6 +18,7 @@ Cloudflare の技術を活用して、より良いインターネット環境の
 | ベクトル検索 | Cloudflare Vectorize (関連記事推薦) |
 | 認証 | Cloudflare Access (Zero Trust / IdP 連携) |
 | セッション・キャッシュ | Cloudflare KV |
+| メール通知 | Cloudflare Email Workers + Email Routing |
 | CSS | Tailwind CSS v3 + Typography plugin |
 | Markdown | marked + DOMPurify |
 | 言語 | TypeScript 5.7 |
@@ -31,6 +32,8 @@ Cloudflare の技術を活用して、より良いインターネット環境の
 - **関連記事推薦** — Vectorize による類似記事の自動提案
 - **AI チャット Q&A** — 記事内容に基づく質問応答ウィジェット
 - **RSS / SEO** — OGP・Twitter Card・RSS フィード自動生成
+- **投稿者申請システム** — 公開申請フォーム → メール検証 → 管理者承認 → 通知メール自動送信
+- **ユーザープロフィール** — ニックネーム・所属・専門分野等の管理
 
 ## ドキュメント構成
 

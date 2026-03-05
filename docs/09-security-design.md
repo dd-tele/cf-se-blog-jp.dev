@@ -231,7 +231,31 @@ export async function verifyAccessJWT(
 }
 ```
 
-### 3.3 RBAC ミドルウェア
+### 3.3 投稿者申請・メール検証フロー
+
+**投稿者申請フロー（`/apply`）:**
+1. 未認証ユーザーが `/apply` から申請フォームを送信（メールアドレス・表示名・所属等）
+2. D1 に申請レコード作成 (`access_requests` テーブル)
+3. Email Routing API でメールアドレスを宛先登録 → Cloudflare が検証メール送信
+4. ユーザーが検証リンクをクリック（アドレス検証完了）
+5. Admin が `/admin/access-requests` で承認 → 以下が自動実行:
+   - D1 にユーザーレコード作成
+   - Cloudflare Access ポリシーにメールアドレス追加（API 経由）
+   - Email Worker 経由で承認通知メール送信（検証済みアドレスのみ）
+
+**ユーザー削除フロー:**
+1. D1 からユーザー・関連データを削除（記事は `author_name_snapshot` で保持）
+2. Cloudflare Access ポリシーからメールを削除（API 経由）
+3. Email Routing の宛先アドレスを削除（API 経由）
+
+**関連ファイル:**
+- `app/lib/access-requests.server.ts` — 申請 CRUD、CF Access API、Email Routing API
+- `app/lib/email.server.ts` — Email Worker 呼び出し
+- `app/routes/apply.tsx` — 申請フォーム
+- `app/routes/admin.access-requests.tsx` — 管理者による承認・却下
+- `workers/email-worker/` — メール送信用専用 Worker
+
+### 3.4 RBAC ミドルウェア
 
 ```typescript
 // app/lib/rbac.server.ts
@@ -489,6 +513,10 @@ export const securityHeaders: HeadersInit = {
 | `user.login` | ログイン成功 |
 | `user.login_failed` | ログイン失敗 |
 | `user.role_change` | ロール変更 |
+| `user.delete` | ユーザー削除（Access ポリシー + Email Routing クリーンアップ含む） |
+| `access_request.create` | 投稿者申請受付 |
+| `access_request.approve` | 投稿者申請承認（ユーザー作成 + Access ポリシー追加 + 通知メール） |
+| `access_request.reject` | 投稿者申請却下 |
 | `post.create` | 記事作成 |
 | `post.publish` | 記事公開 |
 | `post.delete` | 記事削除 |

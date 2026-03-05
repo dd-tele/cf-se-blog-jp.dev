@@ -1,12 +1,12 @@
 # 10 - 実装ロードマップ
 
-> **現在の状況（2026-03）:** Phase 1 (MVP) + Phase 2 の AI ドラフト生成が完了。下書き→公開ワークフロー、6テンプレート、AI ドラフト生成 (Llama 3.3 70B)、Vectorize 関連記事推薦、AI チャット Q&A (Hono streamSSE)、About ページ が稼働中。API レイヤーを **Hono** フレームワークに移行済み。
+> **現在の状況（2026-03）:** Phase 1 (MVP) + Phase 2 の AI ドラフト生成が完了。下書き→公開ワークフロー、6テンプレート、AI ドラフト生成 (Llama 3.3 70B)、Vectorize 関連記事推薦、AI チャット Q&A (Hono streamSSE)、About ページ が稼働中。API レイヤーを **Hono** フレームワークに移行済み。投稿者申請システム、Email Workers + Email Routing による承認通知メール、ユーザープロフィール管理が稼働中。
 
 ## 1. フェーズ概要
 
 ```
 Phase 1 (MVP) ✅        Phase 2 (AI) 🔶        Phase 3 (Advanced)      Phase 4 (Scale)
-完了                    一部完了               未着手                  未着手
+完了                    一部完了               未着手                  一部完了
 ─────────────────── → ─────────────────── → ─────────────────── → ───────────────
 ✅ 基盤構築             ✅ テンプレート AI      ・Durable Objects       ・パフォーマンス
 ✅ Public Blog          ✅ AI ドラフト生成      ・コンテンツモデレーション ・アナリティクス
@@ -14,6 +14,7 @@ Phase 1 (MVP) ✅        Phase 2 (AI) 🔶        Phase 3 (Advanced)      Phase 
 ✅ Admin Dashboard      ✅ AI チャット Q&A     ・AI Gateway            ・コミュニティ機能
 ✅ 認証/認可 (Access)   ✅ Hono API 移行       ・Logpush              ・外部連携
 ✅ 基本セキュリティ      ・トレンドレポート      ・Turnstile
+✅ 投稿者申請システム                                         ✅ メール通知
 ```
 
 ---
@@ -249,7 +250,7 @@ cf-se-blog/
 | 4.3 | OGP / SNS シェア最適化 | Open Graph, Twitter Card | 🟢 | 1日 |
 | 4.4 | RSS / Atom フィード | Remix | 🟢 | 0.5日 |
 | 4.5 | サイトマップ自動生成 | Remix | 🟢 | 0.5日 |
-| 4.6 | メール通知 (記事承認、Q&A) | Email Routing / Workers | 🟢 | 1.5日 |
+| 4.6 | ✅ **メール通知 (承認通知)** | Email Workers + Email Routing | ✅ | 1.5日 |
 | 4.7 | 多言語対応 (i18n) | remix-i18next | 🟢 | 3日 |
 | 4.8 | PWA 対応 | Service Worker | 🟢 | 1日 |
 | 4.9 | Waiting Room (トラフィック急増時) | Waiting Room | 🟢 | 0.5日 |
