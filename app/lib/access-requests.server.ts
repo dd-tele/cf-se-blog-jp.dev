@@ -248,11 +248,12 @@ export async function deleteUser(db: D1Database, userId: string) {
 
 // ─── Cloudflare Access API ─────────────────────────────────
 
-function getAccessApiConfig(env: Env): { headers: Record<string, string>; policyUrl: string; authMethod: string } | null {
+function getAccessApiConfig(env: Env): { headers: Record<string, string>; policyUrl: string; reusablePolicyUrl: string; authMethod: string } | null {
   const { CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
   if (!CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) return null;
 
   const policyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${CF_ACCESS_APP_ID}/policies/${CF_ACCESS_POLICY_ID}`;
+  const reusablePolicyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/policies/${CF_ACCESS_POLICY_ID}`;
 
   // Prefer Global API Key (required for Zero Trust on some enterprise accounts)
   if (env.CF_AUTH_EMAIL && env.CF_GLOBAL_API_KEY) {
@@ -264,6 +265,7 @@ function getAccessApiConfig(env: Env): { headers: Record<string, string>; policy
         "Content-Type": "application/json",
       },
       policyUrl,
+      reusablePolicyUrl,
       authMethod: "GlobalApiKey",
     };
   }
@@ -277,6 +279,7 @@ function getAccessApiConfig(env: Env): { headers: Record<string, string>; policy
         "Content-Type": "application/json",
       },
       policyUrl,
+      reusablePolicyUrl,
       authMethod: "BearerToken",
     };
   }
@@ -315,15 +318,22 @@ export async function addEmailToAccessPolicy(
       existingIncludes.push({ email: { email } });
     }
 
-    // 3. Update policy
-    const updateRes = await fetch(config.policyUrl, {
+    // 3. Update policy (try reusable policy endpoint first, then app-specific)
+    const updateBody = JSON.stringify({ ...policy, include: existingIncludes });
+    let updateRes = await fetch(config.reusablePolicyUrl, {
       method: "PUT",
       headers: config.headers,
-      body: JSON.stringify({
-        ...policy,
-        include: existingIncludes,
-      }),
+      body: updateBody,
     });
+
+    if (!updateRes.ok) {
+      // Fallback to app-specific endpoint
+      updateRes = await fetch(config.policyUrl, {
+        method: "PUT",
+        headers: config.headers,
+        body: updateBody,
+      });
+    }
 
     if (!updateRes.ok) {
       const errText = await updateRes.text();
@@ -367,15 +377,22 @@ export async function removeEmailFromAccessPolicy(
       return { success: true };
     }
 
-    // 3. Update policy without the removed email
-    const updateRes = await fetch(config.policyUrl, {
+    // 3. Update policy (try reusable policy endpoint first, then app-specific)
+    const updateBody = JSON.stringify({ ...policy, include: filtered });
+    let updateRes = await fetch(config.reusablePolicyUrl, {
       method: "PUT",
       headers: config.headers,
-      body: JSON.stringify({
-        ...policy,
-        include: filtered,
-      }),
+      body: updateBody,
     });
+
+    if (!updateRes.ok) {
+      // Fallback to app-specific endpoint
+      updateRes = await fetch(config.policyUrl, {
+        method: "PUT",
+        headers: config.headers,
+        body: updateBody,
+      });
+    }
 
     if (!updateRes.ok) {
       const errText = await updateRes.text();
