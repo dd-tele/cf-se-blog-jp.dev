@@ -251,6 +251,14 @@ export default function AdminPresentation() {
               </div>
             </div>
           </div>
+          <div className="mt-4 text-right print:hidden">
+            <Link
+              to="/admin/presentation/stack"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-gray-700 transition-colors"
+            >
+              技術スタック詳細を見る →
+            </Link>
+          </div>
         </section>
 
         {/* ───────────────── Slide 6: Key Features ───────────────── */}
@@ -336,6 +344,14 @@ export default function AdminPresentation() {
               <Endpoint method="GET" path="/api/health" desc="ヘルスチェック" />
               <Endpoint method="GET" path="/feed.xml" desc="RSS フィード" />
             </div>
+          </div>
+          <div className="mt-4 text-right print:hidden">
+            <Link
+              to="/admin/presentation/hono"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-red-500 transition-colors"
+            >
+              Hono 詳細を見る →
+            </Link>
           </div>
         </section>
 
