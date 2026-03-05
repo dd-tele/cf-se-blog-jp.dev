@@ -128,6 +128,18 @@ export default function PortalIndex() {
             </p>
           </Link>
 
+          <Link
+            to="/portal/profile"
+            className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
+          >
+            <h2 className="text-lg font-semibold text-gray-900 group-hover:text-brand-600">
+              プロフィール編集
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              名前、ニックネーム、所属、得意分野を設定
+            </p>
+          </Link>
+
           {/* Admin-only links */}
           {(user.role === "admin" || user.role === "se") && (
             <Link

@@ -105,7 +105,7 @@ export default function Index() {
               事例を読む
             </Link>
             <Link
-              to="/portal/templates"
+              to={user ? "/portal/templates" : "/apply"}
               className="rounded-lg border border-gray-300 bg-white px-7 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
             >
               事例を投稿する

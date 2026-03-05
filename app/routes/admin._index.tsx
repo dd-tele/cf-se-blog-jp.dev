@@ -65,6 +65,9 @@ export default function AdminIndex() {
               <Link to="/admin" className="font-medium text-brand-600">
                 投稿管理
               </Link>
+              <Link to="/admin/access-requests" className="text-gray-500 hover:text-gray-700">
+                投稿者申請
+              </Link>
               <Link to="/admin/ai-insights" className="text-gray-500 hover:text-gray-700">
                 AI インサイト
               </Link>

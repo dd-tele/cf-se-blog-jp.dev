@@ -13,8 +13,39 @@ export const users = sqliteTable("users", {
     .default("user"),
   bio: text("bio"),
   social_links_json: text("social_links_json"), // JSON string
+  nickname: text("nickname"),
+  furigana: text("furigana"),
+  company: text("company"),
+  job_role: text("job_role"),
+  expertise: text("expertise"),
+  profile_comment: text("profile_comment"),
   approved_post_count: integer("approved_post_count").notNull().default(0),
   is_active: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ─── Access Requests ──────────────────────────────────────
+export const accessRequests = sqliteTable("access_requests", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  display_name: text("display_name").notNull(),
+  nickname: text("nickname"),
+  furigana: text("furigana"),
+  company: text("company"),
+  job_role: text("job_role"),
+  expertise: text("expertise"),
+  profile_comment: text("profile_comment"),
+  status: text("status", { enum: ["pending", "approved", "rejected"] })
+    .notNull()
+    .default("pending"),
+  reviewed_by: text("reviewed_by").references(() => users.id),
+  reviewed_at: text("reviewed_at"),
+  admin_note: text("admin_note"),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),

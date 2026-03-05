@@ -12,4 +12,10 @@ interface Env {
   ENVIRONMENT: string;
   SITE_NAME: string;
   SITE_URL: string;
+  CF_API_TOKEN?: string;
+  CF_ACCOUNT_ID?: string;
+  CF_ACCESS_APP_ID?: string;
+  CF_ACCESS_POLICY_ID?: string;
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  CF_ACCESS_AUD?: string;
 }
