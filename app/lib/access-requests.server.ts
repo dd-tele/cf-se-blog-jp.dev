@@ -169,6 +169,63 @@ export async function updateUserProfile(db: D1Database, userId: string, input: P
   await d.update(users).set(updateData).where(eq(users.id, userId));
 }
 
+// ─── Admin User Management ─────────────────────────────────
+
+export async function getAllUsers(db: D1Database) {
+  const d = getDb(db);
+  return await d.select().from(users).orderBy(desc(users.created_at));
+}
+
+export async function getUserById(db: D1Database, userId: string) {
+  const d = getDb(db);
+  return await d.select().from(users).where(eq(users.id, userId)).get() ?? null;
+}
+
+export interface AdminUserUpdateInput {
+  displayName?: string;
+  nickname?: string;
+  furigana?: string;
+  email?: string;
+  company?: string;
+  jobRole?: string;
+  expertise?: string;
+  profileComment?: string;
+  bio?: string;
+  role?: "admin" | "se" | "user";
+  isActive?: boolean;
+}
+
+export async function adminUpdateUser(db: D1Database, userId: string, input: AdminUserUpdateInput) {
+  const d = getDb(db);
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+  const updateData: Record<string, any> = { updated_at: now };
+  if (input.displayName !== undefined) updateData.display_name = input.displayName;
+  if (input.nickname !== undefined) updateData.nickname = input.nickname || null;
+  if (input.furigana !== undefined) updateData.furigana = input.furigana || null;
+  if (input.email !== undefined) updateData.email = input.email;
+  if (input.company !== undefined) updateData.company = input.company || null;
+  if (input.jobRole !== undefined) updateData.job_role = input.jobRole || null;
+  if (input.expertise !== undefined) updateData.expertise = input.expertise || null;
+  if (input.profileComment !== undefined) updateData.profile_comment = input.profileComment || null;
+  if (input.bio !== undefined) updateData.bio = input.bio || null;
+  if (input.role !== undefined) updateData.role = input.role;
+  if (input.isActive !== undefined) updateData.is_active = input.isActive;
+
+  await d.update(users).set(updateData).where(eq(users.id, userId));
+}
+
+export async function deleteUser(db: D1Database, userId: string) {
+  const d = getDb(db);
+  // Check for posts by this user
+  const { posts } = await import("~/db/schema");
+  const userPosts = await d.select({ id: posts.id }).from(posts).where(eq(posts.author_id, userId));
+  if (userPosts.length > 0) {
+    throw new Error(`このユーザーには ${userPosts.length} 件の投稿があるため削除できません。先に投稿を削除または移管してください。`);
+  }
+  await d.delete(users).where(eq(users.id, userId));
+}
+
 // ─── Cloudflare Access API ─────────────────────────────────
 
 export async function addEmailToAccessPolicy(

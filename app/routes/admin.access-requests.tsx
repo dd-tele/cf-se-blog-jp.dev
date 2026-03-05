@@ -108,6 +108,9 @@ export default function AdminAccessRequests() {
               <Link to="/admin/access-requests" className="font-medium text-brand-600">
                 投稿者申請
               </Link>
+              <Link to="/admin/users" className="text-gray-500 hover:text-gray-700">
+                ユーザー管理
+              </Link>
               <Link to="/admin/ai-insights" className="text-gray-500 hover:text-gray-700">
                 AI インサイト
               </Link>
