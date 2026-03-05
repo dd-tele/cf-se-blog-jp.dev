@@ -120,17 +120,19 @@ export default function AdminPresentation() {
             <Badge>Hono + Remix</Badge>
             <Badge>Workers AI (Llama 3.3 70B)</Badge>
             <Badge>RAG Chat Q&A</Badge>
+            <Badge>Semantic Search</Badge>
+            <Badge>Email Workers</Badge>
           </div>
         </section>
 
         {/* ───────────────── Slide 2: Why ───────────────── */}
         <section className="slide mb-16">
           <SlideHeader number={1} title="このブログが目指す課題解決" />
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2">
             <ProblemCard
               number={1}
-              problem="Cloudflare SE や導入をリードしたエンジニアたちのリアルが閉じている"
-              solution="ブログとして公開し、チーム全体で共有。検索・推薦で再利用性を最大化。"
+              problem="事例や実際の現場での実装例を検索する労力が大きい"
+              solution="ブログとして公開し、キーワード＋セマンティック検索で事例をすぐに発見。AI チャットで追加の質問にもリアルタイム対応。"
             />
             <ProblemCard
               number={2}
@@ -139,8 +141,13 @@ export default function AdminPresentation() {
             />
             <ProblemCard
               number={3}
-              problem="お客様への情報提供が非効率"
-              solution="公開記事の URL を共有するだけ。AI チャットで追加の質問にもリアルタイム対応。"
+              problem="エンジニア同士の接点が限られている"
+              solution="投稿者や会社のアウェアネスを高め、エンジニア同士の接点を創出。新たな試みの参考や共有の場に。"
+            />
+            <ProblemCard
+              number={4}
+              problem="技術共有やイベント情報が分散している"
+              solution="コミュニティイベントや Cloudflare 主催イベントのハブとなるプラットフォームを目指す。"
             />
           </div>
         </section>
@@ -235,8 +242,9 @@ export default function AdminPresentation() {
                   <StackItem name="R2" desc="画像ストレージ（S3 互換）" />
                   <StackItem name="Workers AI" desc="Llama 3.3 70B + Llama Guard 3" highlight />
                   <StackItem name="Vectorize" desc="ベクトル検索・関連記事推薦" />
-                  <StackItem name="KV" desc="セッション / キャッシュ" />
-                  <StackItem name="Access" desc="Zero Trust 認証（SSO）" />
+                  <StackItem name="KV" desc="セッション / キャッシュ / ドラフト" />
+                  <StackItem name="Access" desc="Zero Trust 認証（SSO）+ API 連携" />
+                  <StackItem name="Email Workers" desc="通知メール送信" highlight />
                   <StackItem name="WAF" desc="OWASP Top 10 / カスタムルール" highlight />
                   <StackItem name="Bot Management" desc="自動化攻撃検知・軽減" highlight />
                 </ul>
@@ -273,13 +281,29 @@ export default function AdminPresentation() {
               color="purple"
               tags={["Vectorize", "bge-base-en", "Embedding"]}
             />
-            {/* Feature 4: Admin & Moderation */}
+            {/* Feature 4: Search */}
             <FeatureRow
               number="04"
+              title="キーワード＋セマンティック検索"
+              desc="キーワード検索に加え、Vectorize を活用したセマンティック検索で意味的に近い記事を発見。事例検索の労力を大幅に削減。"
+              color="green"
+              tags={["Vectorize", "Semantic Search", "bge-base-en"]}
+            />
+            {/* Feature 5: Onboarding */}
+            <FeatureRow
+              number="05"
+              title="投稿者オンボーディング"
+              desc="公開申請フォーム → Admin 承認 → Cloudflare Access ポリシー自動追加 → Email 通知。プロフィール（ニックネーム・会社・専門分野等）で投稿者のアウェアネスを向上。"
+              color="purple"
+              tags={["Access API", "Email Worker", "Profile"]}
+            />
+            {/* Feature 6: Admin & Moderation */}
+            <FeatureRow
+              number="06"
               title="管理 & モデレーション"
-              desc="投稿管理、Q&A スレッド管理（削除・フラグ）、AI インサイトダッシュボード、トレンドレポート生成。4週間経過した Active スレッドは自動削除。"
+              desc="投稿管理、ユーザー管理、Q&A スレッド管理（削除・フラグ）、AI インサイトダッシュボード、トレンドレポート生成。4週間経過した Active スレッドは自動削除。"
               color="red"
-              tags={["Admin", "Audit Log", "Auto-expire"]}
+              tags={["Admin", "User Mgmt", "Auto-expire"]}
             />
           </div>
         </section>
@@ -308,7 +332,9 @@ export default function AdminPresentation() {
               <Endpoint method="POST" path="/api/v1/ai/improve" desc="文章改善" />
               <Endpoint method="POST" path="/api/v1/ai/trend-report" desc="トレンドレポート" />
               <Endpoint method="POST" path="/api/upload-image" desc="画像アップロード（R2）" />
+              <Endpoint method="GET" path="/r2/*" desc="R2 オブジェクト配信" />
               <Endpoint method="GET" path="/api/health" desc="ヘルスチェック" />
+              <Endpoint method="GET" path="/feed.xml" desc="RSS フィード" />
             </div>
           </div>
         </section>
@@ -415,9 +441,9 @@ export default function AdminPresentation() {
             />
             <RoadmapPhase
               phase="Phase 2"
-              title="AI 機能"
+              title="AI & エンゲージメント"
               status="in-progress"
-              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "AI 精度向上", "サードパーティ連携", "トレンドレポート"]}
+              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "AI 精度向上", "サードパーティ連携"]}
             />
             <RoadmapPhase
               phase="Phase 3"
