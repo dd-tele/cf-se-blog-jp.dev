@@ -36,3 +36,6 @@ binding = "AI"
 [[vectorize]]
 binding = "VECTORIZE"
 index_name = "cf-se-blog-vectors"
+
+[[send_email]]
+name = "SEND_EMAIL"

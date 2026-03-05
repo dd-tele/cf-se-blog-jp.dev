@@ -22,4 +22,5 @@ interface Env {
   CF_ACCESS_AUD?: string;
   ADMIN_EMAILS?: string;
   SE_EMAIL_DOMAINS?: string;
+  SEND_EMAIL?: SendEmail;
 }

@@ -18,7 +18,9 @@ import {
   rejectAccessRequest,
   deleteAccessRequest,
   addEmailToAccessPolicy,
+  getAccessRequestById,
 } from "~/lib/access-requests.server";
+import { sendApprovalEmail } from "~/lib/email.server";
 
 export const meta: MetaFunction = () => [
   { title: "投稿者申請管理 — Cloudflare Solution Blog" },
@@ -44,20 +46,35 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   if (intent === "approve") {
     try {
+      // Get request details for email
+      const reqData = await getAccessRequestById(db, requestId);
       const result = await approveAccessRequest(db, requestId, user.id, adminNote);
 
       // Try to add email to Cloudflare Access policy
       const accessResult = await addEmailToAccessPolicy(env, result.email);
-      if (!accessResult.success) {
-        return {
-          success: true,
-          message: `申請を承認し、ユーザーを作成しました。ただし Access ポリシーへの追加に失敗しました: ${accessResult.error}。手動で追加してください。`,
-        };
+
+      // Try to send approval notification email
+      const displayName = reqData?.nickname || reqData?.display_name || result.email;
+      const emailResult = await sendApprovalEmail(env, result.email, displayName);
+
+      const messages: string[] = [];
+      messages.push("申請を承認し、ユーザーを作成しました");
+
+      if (accessResult.success) {
+        messages.push(`${result.email} を Access ポリシーに追加しました`);
+      } else {
+        messages.push(`Access ポリシーへの追加に失敗: ${accessResult.error}。手動で追加してください`);
+      }
+
+      if (emailResult.success) {
+        messages.push("承認通知メールを送信しました");
+      } else {
+        messages.push(`メール送信に失敗: ${emailResult.error}`);
       }
 
       return {
         success: true,
-        message: `申請を承認しました。${result.email} を Access ポリシーに追加しました。`,
+        message: messages.join("。"),
       };
     } catch (e: any) {
       return { error: e.message };
