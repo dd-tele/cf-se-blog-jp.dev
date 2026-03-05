@@ -21,6 +21,7 @@ import {
   getAllCategories,
 } from "~/lib/posts.server";
 import { ImageUploader } from "~/components/ImageUploader";
+import { MarkdownGuide } from "~/components/MarkdownGuide";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: `${data?.post?.title ?? "記事"} を編集 — Cloudflare Solution Blog` },
@@ -239,9 +240,12 @@ export default function EditPost() {
               defaultValue={post.content}
               className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
-            <p className="mt-1 text-xs text-gray-400">
-              Markdown 形式で記述できます。画像は上の「画像を挿入」ボタンからアップロードできます。
-            </p>
+            <div className="mt-2 flex items-start justify-between gap-4">
+              <p className="text-xs text-gray-400">
+                Markdown 形式で記述できます。画像は上の「画像を挿入」ボタンからアップロードできます。
+              </p>
+              <MarkdownGuide />
+            </div>
           </div>
 
           {/* Actions */}

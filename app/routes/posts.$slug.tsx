@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getPostBySlug, getPostSummary, incrementViewCount } from "~/lib/posts.server";
@@ -95,6 +96,33 @@ export default function PostDetail() {
   const { post, user, aiSummary, relatedPosts, siteName } = useLoaderData<typeof loader>();
 
   const tags: string[] = post.tagsJson ? JSON.parse(post.tagsJson) : [];
+
+  // Initialize Mermaid.js for diagram rendering
+  useEffect(() => {
+    const mermaidDivs = document.querySelectorAll(".mermaid");
+    if (mermaidDivs.length === 0) return;
+
+    const MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { default: mermaid } = await import(/* @vite-ignore */ MERMAID_CDN);
+        if (cancelled) return;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "neutral",
+          securityLevel: "loose",
+          fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        });
+        await mermaid.run({ nodes: mermaidDivs });
+      } catch (e) {
+        console.warn("Mermaid initialization failed:", e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [post.contentHtml]);
 
   return (
     <div className="flex min-h-screen flex-col">

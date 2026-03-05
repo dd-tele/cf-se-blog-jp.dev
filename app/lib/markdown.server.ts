@@ -1,9 +1,20 @@
-import { marked } from "marked";
+import { marked, type Tokens } from "marked";
+
+// Custom renderer: convert ```mermaid blocks into <div class="mermaid">
+const renderer = new marked.Renderer();
+const originalCode = renderer.code.bind(renderer);
+renderer.code = function (token: Tokens.Code): string {
+  if (token.lang === "mermaid") {
+    return `<div class="mermaid">${token.text}</div>`;
+  }
+  return originalCode(token);
+};
 
 // Configure marked for safe, well-formatted output
 marked.setOptions({
   gfm: true,
   breaks: true,
+  renderer,
 });
 
 export function renderMarkdown(content: string): string {
