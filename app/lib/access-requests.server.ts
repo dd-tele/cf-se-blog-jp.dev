@@ -248,7 +248,7 @@ export async function deleteUser(db: D1Database, userId: string) {
 
 // ─── Cloudflare Access API ─────────────────────────────────
 
-function getAccessApiConfig(env: Env): { headers: Record<string, string>; policyUrl: string } | null {
+function getAccessApiConfig(env: Env): { headers: Record<string, string>; policyUrl: string; authMethod: string } | null {
   const { CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
   if (!CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) return null;
 
@@ -256,6 +256,7 @@ function getAccessApiConfig(env: Env): { headers: Record<string, string>; policy
 
   // Prefer Global API Key (required for Zero Trust on some enterprise accounts)
   if (env.CF_AUTH_EMAIL && env.CF_GLOBAL_API_KEY) {
+    console.log("[Access API] Using Global API Key auth");
     return {
       headers: {
         "X-Auth-Email": env.CF_AUTH_EMAIL,
@@ -263,17 +264,20 @@ function getAccessApiConfig(env: Env): { headers: Record<string, string>; policy
         "Content-Type": "application/json",
       },
       policyUrl,
+      authMethod: "GlobalApiKey",
     };
   }
 
   // Fallback to API Token
   if (env.CF_API_TOKEN) {
+    console.log("[Access API] Falling back to Bearer token (CF_AUTH_EMAIL/CF_GLOBAL_API_KEY not set)");
     return {
       headers: {
         Authorization: `Bearer ${env.CF_API_TOKEN}`,
         "Content-Type": "application/json",
       },
       policyUrl,
+      authMethod: "BearerToken",
     };
   }
 
@@ -295,7 +299,7 @@ export async function addEmailToAccessPolicy(
 
     if (!getRes.ok) {
       const errText = await getRes.text();
-      return { success: false, error: `Access API GET failed: ${getRes.status} ${errText}` };
+      return { success: false, error: `Access API GET failed (auth=${config.authMethod}): ${getRes.status} ${errText}` };
     }
 
     const policyData = await getRes.json() as any;
@@ -347,7 +351,7 @@ export async function removeEmailFromAccessPolicy(
 
     if (!getRes.ok) {
       const errText = await getRes.text();
-      return { success: false, error: `Access API GET failed: ${getRes.status} ${errText}` };
+      return { success: false, error: `Access API GET failed (auth=${config.authMethod}): ${getRes.status} ${errText}` };
     }
 
     const policyData = await getRes.json() as any;
