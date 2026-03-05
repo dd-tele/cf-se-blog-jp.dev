@@ -18,4 +18,6 @@ interface Env {
   CF_ACCESS_POLICY_ID?: string;
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
+  ADMIN_EMAILS?: string;
+  SE_EMAIL_DOMAINS?: string;
 }

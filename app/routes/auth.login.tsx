@@ -69,8 +69,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           );
           const sessionUser = buildSessionUserFromAccess(payload, role);
 
-          // Ensure user exists in D1
-          await ensureUser(env.DB, sessionUser);
+          // Ensure user exists in D1 and reflect DB profile
+          const dbUser = await ensureUser(env.DB, sessionUser);
+          if (dbUser) {
+            sessionUser.displayName = dbUser.nickname || dbUser.display_name;
+            if (dbUser.role) sessionUser.role = dbUser.role as typeof sessionUser.role;
+          }
 
           const url = new URL(request.url);
           const returnTo = url.searchParams.get("returnTo") || "/portal";
