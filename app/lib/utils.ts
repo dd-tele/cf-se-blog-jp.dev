@@ -68,23 +68,29 @@ export function stripMarkdown(md: string): string {
  * Generate a clean, reader-friendly excerpt from Markdown content.
  * Skips the title heading and picks the first meaningful paragraph.
  */
-export function generateExcerpt(content: string, maxLength = 160): string {
+export function generateExcerpt(content: string, maxLength = 240): string {
   const plain = stripMarkdown(content);
-  // Split into lines and find the first substantial line (>20 chars, not a title repeat)
+  // Split into lines, skip very short ones (headings, labels)
   const lines = plain.split("\n").map((l) => l.trim()).filter(Boolean);
-
-  // Skip very short lines (likely leftover headings or labels)
   const meaningful = lines.filter((l) => l.length > 20);
-  const text = meaningful.length > 0 ? meaningful[0] : lines.join(" ");
+
+  // Join multiple meaningful sentences for a richer highlight
+  let text = "";
+  for (const line of (meaningful.length > 0 ? meaningful : lines)) {
+    const next = text ? text + " " + line : line;
+    if (next.length > maxLength) break;
+    text = next;
+  }
+  if (!text) text = lines.join(" ");
 
   if (text.length <= maxLength) return text;
-  // Truncate at sentence or word boundary
+  // Truncate at sentence boundary
   const truncated = text.slice(0, maxLength);
   const lastPeriod = Math.max(
     truncated.lastIndexOf("。"),
     truncated.lastIndexOf("．"),
     truncated.lastIndexOf(". ")
   );
-  if (lastPeriod > maxLength * 0.5) return truncated.slice(0, lastPeriod + 1);
+  if (lastPeriod > maxLength * 0.4) return truncated.slice(0, lastPeriod + 1);
   return truncated.replace(/\s+\S*$/, "") + "…";
 }

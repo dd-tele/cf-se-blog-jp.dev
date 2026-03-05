@@ -214,7 +214,7 @@ export default function Index() {
                     {post.title}
                   </h3>
                   {post.excerpt && (
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-500 line-clamp-2">
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-500 line-clamp-3">
                       {stripMarkdown(post.excerpt)}
                     </p>
                   )}
