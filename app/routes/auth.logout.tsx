@@ -13,10 +13,19 @@ import { redirect } from "@remix-run/cloudflare";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
-  if (!user) {
-    return redirect("/");
-  }
   const env = context.cloudflare.env;
+
+  // If no session but arrived here (e.g. from error page), clear cookies and redirect
+  if (!user) {
+    const session = await getSession(request);
+    const redirectTo = isAccessConfigured(env) ? "/auth/logged-out" : "/";
+    return redirect(redirectTo, {
+      headers: {
+        "Set-Cookie": await sessionStorage.destroySession(session),
+      },
+    });
+  }
+
   const accessLogoutUrl = isAccessConfigured(env)
     ? `https://${env.CF_ACCESS_TEAM_DOMAIN}.cloudflareaccess.com/cdn-cgi/access/logout`
     : null;

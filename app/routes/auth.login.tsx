@@ -72,6 +72,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           // Ensure user exists in D1 and reflect DB profile
           const dbUser = await ensureUser(env.DB, sessionUser);
           if (dbUser) {
+            // Block inactive users
+            if (!dbUser.is_active) {
+              return {
+                mode: "error" as const,
+                error: "このアカウントは無効化されています。管理者にお問い合わせください。",
+              };
+            }
             sessionUser.displayName = dbUser.nickname || dbUser.display_name;
             if (dbUser.role) sessionUser.role = dbUser.role as typeof sessionUser.role;
           }
@@ -152,7 +159,13 @@ export default function LoginPage() {
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {data.error}
           </div>
-          <div className="mt-4 text-center">
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <a
+              href="/auth/logout"
+              className="text-sm font-medium text-red-600 hover:text-red-700 underline"
+            >
+              ログアウトして別のアカウントでログイン
+            </a>
             <a
               href="/"
               className="text-sm text-brand-600 hover:text-brand-700 underline"

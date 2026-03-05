@@ -328,9 +328,21 @@ export async function getAllPostsForAdmin(db: D1Database) {
 
 export async function ensureUser(db: D1Database, user: SessionUser) {
   const d = getDb(db);
+
+  // 1. Lookup by ID
   const existing = await d.select().from(users).where(eq(users.id, user.id)).get();
   if (existing) return existing;
 
+  // 2. Fallback: lookup by email (handles ID mismatch, e.g. access-request approval vs Access JWT)
+  const byEmail = await d.select().from(users).where(eq(users.email, user.email)).get();
+  if (byEmail) {
+    // Update the ID to match the current Access identity so future lookups work by ID
+    const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+    await d.update(users).set({ id: user.id, updated_at: now }).where(eq(users.email, user.email));
+    return await d.select().from(users).where(eq(users.id, user.id)).get();
+  }
+
+  // 3. New user — insert
   const now = new Date().toISOString().replace("T", " ").slice(0, 19);
   await d.insert(users).values({
     id: user.id,
