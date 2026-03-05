@@ -16,6 +16,7 @@ import {
   getAllAccessRequests,
   approveAccessRequest,
   rejectAccessRequest,
+  deleteAccessRequest,
   addEmailToAccessPolicy,
 } from "~/lib/access-requests.server";
 
@@ -67,6 +68,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
     try {
       await rejectAccessRequest(db, requestId, user.id, adminNote);
       return { success: true, message: "申請を却下しました。" };
+    } catch (e: any) {
+      return { error: e.message };
+    }
+  }
+
+  if (intent === "delete") {
+    try {
+      await deleteAccessRequest(db, requestId);
+      return { success: true, message: "申請を削除しました。" };
     } catch (e: any) {
       return { error: e.message };
     }
@@ -298,10 +308,29 @@ export default function AdminAccessRequests() {
                         </div>
                       )}
 
-                      {/* Info for processed requests */}
-                      {req.status !== "pending" && req.reviewed_at && (
-                        <div className="mt-4 text-xs text-gray-400">
-                          {req.status === "approved" ? "承認" : "却下"}日: {new Date(req.reviewed_at).toLocaleString("ja-JP")}
+                      {/* Info and actions for processed requests */}
+                      {req.status !== "pending" && (
+                        <div className="mt-4 flex items-center justify-between border-t pt-4">
+                          {req.reviewed_at && (
+                            <span className="text-xs text-gray-400">
+                              {req.status === "approved" ? "承認" : "却下"}日: {new Date(req.reviewed_at).toLocaleString("ja-JP")}
+                            </span>
+                          )}
+                          <Form method="post">
+                            <input type="hidden" name="requestId" value={req.id} />
+                            <button
+                              type="submit"
+                              name="intent"
+                              value="delete"
+                              disabled={isSubmitting}
+                              onClick={(e) => {
+                                if (!confirm("この申請を削除しますか？")) e.preventDefault();
+                              }}
+                              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+                            >
+                              削除
+                            </button>
+                          </Form>
                         </div>
                       )}
                     </div>

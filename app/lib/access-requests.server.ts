@@ -75,6 +75,11 @@ export async function getAccessRequestById(db: D1Database, id: string) {
   return await d.select().from(accessRequests).where(eq(accessRequests.id, id)).get() ?? null;
 }
 
+export async function deleteAccessRequest(db: D1Database, id: string) {
+  const d = getDb(db);
+  await d.delete(accessRequests).where(eq(accessRequests.id, id));
+}
+
 export async function approveAccessRequest(
   db: D1Database,
   requestId: string,

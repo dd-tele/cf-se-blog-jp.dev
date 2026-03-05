@@ -30,6 +30,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const db = context.cloudflare.env.DB;
 
   const email = (formData.get("email") as string)?.trim();
+  const emailConfirm = (formData.get("email_confirm") as string)?.trim();
   const displayName = (formData.get("display_name") as string)?.trim();
 
   if (!email || !displayName) {
@@ -39,6 +40,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
   // Email format check
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: "正しいメールアドレスを入力してください" };
+  }
+
+  // Email confirmation check
+  if (email !== emailConfirm) {
+    return { error: "メールアドレスが一致しません。確認用の欄をもう一度ご確認ください。" };
   }
 
   try {
@@ -229,6 +235,23 @@ export default function ApplyPage() {
               <p className="mt-1 text-xs text-gray-400">
                 承認後、このアドレスで Cloudflare Access にログインできるようになります。
               </p>
+            </div>
+
+            {/* Email Confirm */}
+            <div>
+              <label htmlFor="email_confirm" className="mb-1 block text-sm font-medium text-gray-700">
+                メールアドレス（確認） <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                id="email_confirm"
+                name="email_confirm"
+                required
+                placeholder="もう一度入力してください"
+                autoComplete="off"
+                onPaste={(e) => e.preventDefault()}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
             </div>
 
             {/* Company */}
