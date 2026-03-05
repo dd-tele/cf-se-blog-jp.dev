@@ -3,6 +3,7 @@ import { useLoaderData, Link, useSearchParams } from "@remix-run/react";
 import { getPublishedPosts, getAllCategories } from "~/lib/posts.server";
 import { getSessionUser } from "~/lib/auth.server";
 import { getCached, CacheKeys } from "~/lib/cache.server";
+import { stripMarkdown } from "~/lib/utils";
 
 export const meta: MetaFunction = () => [
   { title: "事例一覧 — Cloudflare Solution Blog" },
@@ -174,7 +175,7 @@ export default function PostsIndex() {
                 </h2>
                 {post.excerpt && (
                   <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-500 line-clamp-2">
-                    {post.excerpt}
+                    {stripMarkdown(post.excerpt)}
                   </p>
                 )}
                 <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-400">

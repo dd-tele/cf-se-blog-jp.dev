@@ -3,6 +3,7 @@ import { useLoaderData, Link, Form, useSearchParams } from "@remix-run/react";
 import { getSessionUser } from "~/lib/auth.server";
 import { semanticSearch } from "~/lib/vectorize.server";
 import { getPublishedPosts } from "~/lib/posts.server";
+import { stripMarkdown } from "~/lib/utils";
 
 export const meta: MetaFunction = () => [
   { title: "検索 — Cloudflare Solution Blog" },
@@ -222,7 +223,7 @@ export default function SearchPage() {
                     </h3>
                     {post.excerpt && (
                       <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-                        {post.excerpt}
+                        {stripMarkdown(post.excerpt)}
                       </p>
                     )}
                     <p className="mt-2 text-xs text-gray-400">

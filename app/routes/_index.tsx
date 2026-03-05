@@ -2,6 +2,7 @@ import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getSessionUser } from "~/lib/auth.server";
 import { getPublishedPosts } from "~/lib/posts.server";
+import { stripMarkdown } from "~/lib/utils";
 
 export const meta: MetaFunction = () => {
   return [
@@ -214,7 +215,7 @@ export default function Index() {
                   </h3>
                   {post.excerpt && (
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-500 line-clamp-2">
-                      {post.excerpt}
+                      {stripMarkdown(post.excerpt)}
                     </p>
                   )}
                   <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-400">

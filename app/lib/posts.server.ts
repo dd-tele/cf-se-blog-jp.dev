@@ -2,7 +2,7 @@ import { eq, desc, and, like, or, sql, inArray } from "drizzle-orm";
 import { getDb } from "~/lib/db.server";
 import { posts, users, categories, aiSummaries, aiDraftRequests, qaThreads, qaMessages } from "~/db/schema";
 import { ulid } from "~/lib/ulid";
-import { slugify, estimateReadingTime } from "~/lib/utils";
+import { slugify, estimateReadingTime, generateExcerpt } from "~/lib/utils";
 import type { SessionUser } from "~/lib/auth.server";
 
 // ─── Types ─────────────────────────────────────────────────
@@ -174,14 +174,14 @@ export async function createPost(
     title: input.title,
     slug,
     content: input.content,
-    excerpt: input.excerpt || input.content.slice(0, 200),
+    excerpt: input.excerpt || generateExcerpt(input.content),
     cover_image_url: input.coverImageUrl,
     author_id: user.id,
     category_id: input.categoryId || null,
     status: "draft",
     tags_json: input.tagsJson,
     meta_title: input.metaTitle || input.title,
-    meta_description: input.metaDescription || input.content.slice(0, 160),
+    meta_description: input.metaDescription || generateExcerpt(input.content, 120),
     reading_time_minutes: readingTime,
     created_at: now,
     updated_at: now,
