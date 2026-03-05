@@ -99,29 +99,40 @@ export default function PostDetail() {
 
   // Initialize Mermaid.js for diagram rendering
   useEffect(() => {
-    const mermaidDivs = document.querySelectorAll(".mermaid");
-    if (mermaidDivs.length === 0) return;
+    const nodes = document.querySelectorAll("pre.mermaid");
+    if (nodes.length === 0) return;
 
-    const MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
     let cancelled = false;
 
-    (async () => {
-      try {
-        const { default: mermaid } = await import(/* @vite-ignore */ MERMAID_CDN);
-        if (cancelled) return;
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: "neutral",
-          securityLevel: "loose",
-          fontFamily: "ui-sans-serif, system-ui, sans-serif",
-        });
-        await mermaid.run({ nodes: mermaidDivs });
-      } catch (e) {
-        console.warn("Mermaid initialization failed:", e);
-      }
-    })();
+    function initMermaid() {
+      if (cancelled) return;
+      const m = (window as any).mermaid;
+      if (!m) return;
+      m.initialize({
+        startOnLoad: false,
+        theme: "neutral",
+        securityLevel: "loose",
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+      });
+      m.run({ nodes });
+    }
 
-    return () => { cancelled = true; };
+    // If already loaded (e.g. client-side navigation)
+    if ((window as any).mermaid) {
+      initMermaid();
+      return () => { cancelled = true; };
+    }
+
+    // Load via script tag
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+    script.onload = initMermaid;
+    script.onerror = () => console.warn("Failed to load Mermaid.js");
+    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+    };
   }, [post.contentHtml]);
 
   return (

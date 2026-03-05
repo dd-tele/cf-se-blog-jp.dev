@@ -1,11 +1,21 @@
 import { marked, type Tokens } from "marked";
 
-// Custom renderer: convert ```mermaid blocks into <div class="mermaid">
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// Custom renderer: convert ```mermaid blocks into <pre class="mermaid">
+// HTML-escaped so the browser doesn't parse mermaid syntax as HTML.
+// Mermaid.js reads textContent which auto-unescapes the entities.
 const renderer = new marked.Renderer();
 const originalCode = renderer.code.bind(renderer);
 renderer.code = function (token: Tokens.Code): string {
   if (token.lang === "mermaid") {
-    return `<div class="mermaid">${token.text}</div>`;
+    return `<pre class="mermaid">${escapeHtml(token.text)}</pre>`;
   }
   return originalCode(token);
 };
