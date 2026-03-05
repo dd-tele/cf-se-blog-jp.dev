@@ -134,12 +134,11 @@ export default function AdminIndex() {
                   <tr key={post.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                        {post.status === "published" ? (
-                          <Link to={`/posts/${post.slug}`} className="hover:text-brand-600">
-                            {post.title}
-                          </Link>
-                        ) : (
-                          post.title
+                        <Link to={`/posts/${post.slug}`} className="hover:text-brand-600">
+                          {post.title}
+                        </Link>
+                        {post.status === "draft" && (
+                          <span className="ml-2 text-[10px] text-gray-400">(プレビュー可)</span>
                         )}
                       </div>
                     </td>
@@ -185,13 +184,27 @@ export default function AdminIndex() {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => setConfirmId(post.id)}
-                          className="rounded bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
-                        >
-                          削除
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            to={`/posts/${post.slug}`}
+                            className="rounded bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
+                          >
+                            表示
+                          </Link>
+                          <Link
+                            to={`/portal/edit/${post.id}`}
+                            className="rounded bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                          >
+                            編集
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmId(post.id)}
+                            className="rounded bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
+                          >
+                            削除
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
