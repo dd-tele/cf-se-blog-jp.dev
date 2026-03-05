@@ -251,46 +251,86 @@ export async function deleteUser(db: D1Database, userId: string) {
   return { email: userRow.email };
 }
 
-// ─── Cloudflare Access API ─────────────────────────────────
+// ─── Cloudflare API Helpers ────────────────────────────────
 
-function getAccessApiConfig(env: Env): { headers: Record<string, string>; policyUrl: string; reusablePolicyUrl: string; authMethod: string } | null {
-  const { CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
-  if (!CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) return null;
-
-  const policyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${CF_ACCESS_APP_ID}/policies/${CF_ACCESS_POLICY_ID}`;
-  const reusablePolicyUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/policies/${CF_ACCESS_POLICY_ID}`;
-
+function getCfApiAuth(env: Env): { headers: Record<string, string>; authMethod: string } | null {
   // Prefer Global API Key (required for Zero Trust on some enterprise accounts)
   if (env.CF_AUTH_EMAIL && env.CF_GLOBAL_API_KEY) {
-    console.log("[Access API] Using Global API Key auth");
     return {
       headers: {
         "X-Auth-Email": env.CF_AUTH_EMAIL,
         "X-Auth-Key": env.CF_GLOBAL_API_KEY,
         "Content-Type": "application/json",
       },
-      policyUrl,
-      reusablePolicyUrl,
       authMethod: "GlobalApiKey",
     };
   }
 
   // Fallback to API Token
   if (env.CF_API_TOKEN) {
-    console.log("[Access API] Falling back to Bearer token (CF_AUTH_EMAIL/CF_GLOBAL_API_KEY not set)");
     return {
       headers: {
         Authorization: `Bearer ${env.CF_API_TOKEN}`,
         "Content-Type": "application/json",
       },
-      policyUrl,
-      reusablePolicyUrl,
       authMethod: "BearerToken",
     };
   }
 
   return null;
 }
+
+function getAccessApiConfig(env: Env) {
+  const { CF_ACCOUNT_ID, CF_ACCESS_APP_ID, CF_ACCESS_POLICY_ID } = env;
+  if (!CF_ACCOUNT_ID || !CF_ACCESS_APP_ID || !CF_ACCESS_POLICY_ID) return null;
+
+  const auth = getCfApiAuth(env);
+  if (!auth) return null;
+
+  return {
+    ...auth,
+    policyUrl: `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${CF_ACCESS_APP_ID}/policies/${CF_ACCESS_POLICY_ID}`,
+    reusablePolicyUrl: `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/access/policies/${CF_ACCESS_POLICY_ID}`,
+  };
+}
+
+// ─── Email Routing: Destination Address Registration ──────
+
+export async function registerEmailDestination(
+  env: Env,
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  const auth = getCfApiAuth(env);
+  if (!auth || !env.CF_ACCOUNT_ID) {
+    return { success: false, error: "Cloudflare API の認証情報が設定されていません" };
+  }
+
+  try {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/email/routing/addresses`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json() as any;
+
+    if (!data.success) {
+      const errMsg = data.errors?.[0]?.message || JSON.stringify(data.errors);
+      // "Address is already being used" is not a real error
+      if (errMsg.includes("already")) {
+        return { success: true };
+      }
+      return { success: false, error: errMsg };
+    }
+
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: `Email Routing API error: ${e.message}` };
+  }
+}
+
+// ─── Cloudflare Access API ─────────────────────────────────
 
 export async function addEmailToAccessPolicy(
   env: Env,

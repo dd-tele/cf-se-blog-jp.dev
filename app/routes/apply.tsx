@@ -11,7 +11,7 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 import { getSessionUser } from "~/lib/auth.server";
-import { createAccessRequest } from "~/lib/access-requests.server";
+import { createAccessRequest, registerEmailDestination } from "~/lib/access-requests.server";
 import { redirect } from "@remix-run/cloudflare";
 
 export const meta: MetaFunction = () => [
@@ -48,6 +48,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 
   try {
+    const env = context.cloudflare.env;
+
     await createAccessRequest(db, {
       email,
       displayName,
@@ -59,7 +61,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
       profileComment: (formData.get("profile_comment") as string) || undefined,
     });
 
-    return { success: true };
+    // Register email as Email Routing destination (triggers verification email)
+    const emailRegResult = await registerEmailDestination(env, email);
+
+    return { success: true, emailVerification: emailRegResult.success };
   } catch (e: any) {
     return { error: `申請の送信に失敗しました: ${e.message}` };
   }
@@ -98,8 +103,17 @@ export default function ApplyPage() {
           <h1 className="text-2xl font-bold text-gray-900">申請を受け付けました</h1>
           <p className="mt-3 text-sm leading-relaxed text-gray-500">
             管理者が申請内容を確認し、承認されると投稿が可能になります。
-            承認後、ご登録のメールアドレスに Cloudflare Access からログイン招待が届きます。
           </p>
+          <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-left">
+            <p className="text-sm font-medium text-amber-800">
+              ✉️ メールアドレスの確認をお願いします
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-700">
+              ご登録のメールアドレスに Cloudflare から確認メールが届きます。
+              メール内のリンクをクリックして、アドレスの確認を完了してください。
+              確認が完了すると、承認時に通知メールをお送りできます。
+            </p>
+          </div>
           <Link
             to="/"
             className="mt-8 inline-block rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
