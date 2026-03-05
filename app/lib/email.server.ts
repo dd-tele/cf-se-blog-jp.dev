@@ -1,49 +1,38 @@
-import { createMimeMessage } from "mimetext";
-import { EmailMessage } from "cloudflare:email";
-
-const SENDER = "noreply@cf-se-blog-jp.dev";
-const SENDER_NAME = "Cloudflare Solution Blog";
-
 export async function sendApprovalEmail(
   env: Env,
   to: string,
   displayName: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!env.SEND_EMAIL) {
-    return { success: false, error: "SEND_EMAIL binding が設定されていません" };
+  if (!env.EMAIL_WORKER) {
+    return { success: false, error: "EMAIL_WORKER binding が設定されていません" };
   }
 
   try {
     const loginUrl = `${env.SITE_URL || "https://cf-se-blog-jp.dev"}/portal`;
+    const siteUrl = env.SITE_URL || "https://cf-se-blog-jp.dev";
 
-    const msg = createMimeMessage();
-    msg.setSender({ name: SENDER_NAME, addr: SENDER });
-    msg.setRecipient(to);
-    msg.setSubject("【Cloudflare Solution Blog】投稿者アカウントが承認されました");
-
-    msg.addMessage({
-      contentType: "text/plain",
-      data: [
-        `${displayName} さん`,
-        "",
-        "Cloudflare Solution Blog への投稿者申請が承認されました。",
-        "以下のリンクからログインして、記事の投稿を始めることができます。",
-        "",
-        `ログイン: ${loginUrl}`,
-        "",
-        "ログインには Cloudflare Access の認証が必要です。",
-        "申請時にご登録いただいたメールアドレスでログインしてください。",
-        "",
-        "---",
-        "Cloudflare Solution Blog",
-        env.SITE_URL || "https://cf-se-blog-jp.dev",
-      ].join("\n"),
-    });
-
-    msg.addMessage({
-      contentType: "text/html",
-      data: `
-<!DOCTYPE html>
+    const res = await env.EMAIL_WORKER.fetch("https://email-worker/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to,
+        subject: "【Cloudflare Solution Blog】投稿者アカウントが承認されました",
+        text: [
+          `${displayName} さん`,
+          "",
+          "Cloudflare Solution Blog への投稿者申請が承認されました。",
+          "以下のリンクからログインして、記事の投稿を始めることができます。",
+          "",
+          `ログイン: ${loginUrl}`,
+          "",
+          "ログインには Cloudflare Access の認証が必要です。",
+          "申請時にご登録いただいたメールアドレスでログインしてください。",
+          "",
+          "---",
+          "Cloudflare Solution Blog",
+          siteUrl,
+        ].join("\n"),
+        html: `<!DOCTYPE html>
 <html lang="ja">
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
@@ -66,14 +55,17 @@ export async function sendApprovalEmail(
   </p>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
   <p style="font-size: 12px; color: #9ca3af;">
-    Cloudflare Solution Blog — <a href="${env.SITE_URL || "https://cf-se-blog-jp.dev"}" style="color: #9ca3af;">${env.SITE_URL || "https://cf-se-blog-jp.dev"}</a>
+    Cloudflare Solution Blog — <a href="${siteUrl}" style="color: #9ca3af;">${siteUrl}</a>
   </p>
 </body>
-</html>`.trim(),
+</html>`,
+      }),
     });
 
-    const emailMessage = new EmailMessage(SENDER, to, msg.asRaw());
-    await env.SEND_EMAIL.send(emailMessage);
+    const result = await res.json() as any;
+    if (!result.success) {
+      return { success: false, error: `Email Worker エラー: ${result.error}` };
+    }
 
     return { success: true };
   } catch (e: any) {

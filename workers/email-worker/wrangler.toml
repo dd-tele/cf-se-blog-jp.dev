@@ -1,0 +1,7 @@
+name = "cf-se-blog-email-worker"
+compatibility_date = "2025-12-01"
+compatibility_flags = ["nodejs_compat"]
+main = "src/index.ts"
+
+[[send_email]]
+name = "SEND_EMAIL"

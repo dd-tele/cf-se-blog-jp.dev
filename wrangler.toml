@@ -37,5 +37,6 @@ binding = "AI"
 binding = "VECTORIZE"
 index_name = "cf-se-blog-vectors"
 
-[[send_email]]
-name = "SEND_EMAIL"
+[[services]]
+binding = "EMAIL_WORKER"
+service = "cf-se-blog-email-worker"

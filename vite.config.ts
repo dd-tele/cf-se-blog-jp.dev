@@ -13,7 +13,7 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   ssr: {
-    external: ["cloudflare:email"],
+    external: [],
     resolve: {
       conditions: ["workerd", "worker", "browser"],
     },
