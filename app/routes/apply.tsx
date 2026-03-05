@@ -110,8 +110,11 @@ export default function ApplyPage() {
             </p>
             <p className="mt-1 text-xs leading-relaxed text-amber-700">
               ご登録のメールアドレスに Cloudflare から確認メールが届きます。
-              メール内のリンクをクリックして、アドレスの確認を完了してください。
-              確認が完了すると、承認時に通知メールをお送りできます。
+              メール内の「メール アドレスを確認」ボタンをクリックするだけで完了です。
+              （ダッシュボードへのログインは不要です）
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-700">
+              確認が完了すると、申請の承認時に通知メールをお送りできます。
             </p>
           </div>
           <Link
