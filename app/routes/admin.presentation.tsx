@@ -96,7 +96,7 @@ export default function AdminPresentation() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* ───────────────── Slide 1: Title ───────────────── */}
         <section className="slide mb-16 rounded-3xl bg-gradient-to-br from-[#FBAD41] via-[#F6821F] to-[#E04E16] p-12 text-white shadow-xl sm:p-16">
           <p className="mb-4 text-sm font-medium uppercase tracking-widest text-white/70">
