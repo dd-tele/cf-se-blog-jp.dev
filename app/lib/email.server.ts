@@ -3,15 +3,15 @@ export async function sendApprovalEmail(
   to: string,
   displayName: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!env.EMAIL_WORKER) {
-    return { success: false, error: "EMAIL_WORKER binding が設定されていません" };
+  if (!env.EMAIL_WORKER_URL) {
+    return { success: false, error: "EMAIL_WORKER_URL が設定されていません" };
   }
 
   try {
     const loginUrl = `${env.SITE_URL || "https://cf-se-blog-jp.dev"}/portal`;
     const siteUrl = env.SITE_URL || "https://cf-se-blog-jp.dev";
 
-    const res = await env.EMAIL_WORKER.fetch("https://email-worker/send", {
+    const res = await fetch(env.EMAIL_WORKER_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

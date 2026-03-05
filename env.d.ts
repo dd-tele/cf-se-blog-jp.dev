@@ -22,5 +22,5 @@ interface Env {
   CF_ACCESS_AUD?: string;
   ADMIN_EMAILS?: string;
   SE_EMAIL_DOMAINS?: string;
-  EMAIL_WORKER?: Fetcher;
+  EMAIL_WORKER_URL?: string;
 }

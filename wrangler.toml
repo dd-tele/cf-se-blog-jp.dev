@@ -8,6 +8,7 @@ pages_build_output_dir = "./build/client"
 ENVIRONMENT = "production"
 SITE_NAME = "Cloudflare Solution Blog"
 SITE_URL = "https://cf-se-blog-jp.dev"
+EMAIL_WORKER_URL = "https://cf-se-blog-email-worker.cloudflare-japan-se.workers.dev"
 
 [[d1_databases]]
 binding = "DB"
@@ -36,7 +37,3 @@ binding = "AI"
 [[vectorize]]
 binding = "VECTORIZE"
 index_name = "cf-se-blog-vectors"
-
-[[services]]
-binding = "EMAIL_WORKER"
-service = "cf-se-blog-email-worker"

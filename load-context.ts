@@ -23,7 +23,7 @@ interface Env {
   ADMIN_EMAILS?: string;
   SE_EMAIL_DOMAINS?: string;
   SESSION_SECRET?: string;
-  EMAIL_WORKER?: Fetcher;
+  EMAIL_WORKER_URL?: string;
 }
 
 type Cloudflare = Omit<PlatformProxy<Env>, "dispose">;
