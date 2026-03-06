@@ -19,6 +19,7 @@ export interface TemplateWithCategory {
   categoryId: string | null;
   categoryName: string | null;
   difficulty: string;
+  templateType: string;
   estimatedMinutes: number;
   inputFieldsJson: string;
   aiPromptTemplate: string;
@@ -35,6 +36,7 @@ export async function getActiveTemplates(db: D1Database): Promise<TemplateWithCa
       categoryId: templates.category_id,
       categoryName: categories.name,
       difficulty: templates.difficulty,
+      templateType: templates.template_type,
       estimatedMinutes: templates.estimated_minutes,
       inputFieldsJson: templates.input_fields_json,
       aiPromptTemplate: templates.ai_prompt_template,
@@ -58,6 +60,7 @@ export async function getTemplateById(db: D1Database, id: string): Promise<Templ
       categoryId: templates.category_id,
       categoryName: categories.name,
       difficulty: templates.difficulty,
+      templateType: templates.template_type,
       estimatedMinutes: templates.estimated_minutes,
       inputFieldsJson: templates.input_fields_json,
       aiPromptTemplate: templates.ai_prompt_template,

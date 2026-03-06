@@ -236,10 +236,10 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
   }
 }
 
-const DIFFICULTY_MAP: Record<string, { label: string; className: string }> = {
-  beginner: { label: "初級", className: "bg-green-100 text-green-700" },
-  intermediate: { label: "中級", className: "bg-yellow-100 text-yellow-700" },
-  advanced: { label: "上級", className: "bg-red-100 text-red-700" },
+const TYPE_MAP: Record<string, { label: string; className: string }> = {
+  case_study: { label: "導入事例", className: "bg-blue-100 text-blue-700" },
+  solution: { label: "ソリューション", className: "bg-purple-100 text-purple-700" },
+  tips: { label: "Tips", className: "bg-amber-100 text-amber-700" },
 };
 
 export default function TemplateInput() {
@@ -247,7 +247,7 @@ export default function TemplateInput() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
-  const diff = DIFFICULTY_MAP[template.difficulty] ?? DIFFICULTY_MAP.beginner;
+  const typeInfo = TYPE_MAP[template.templateType] ?? TYPE_MAP.case_study;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -273,8 +273,8 @@ export default function TemplateInput() {
             {template.categoryName && (
               <span className="text-xs font-medium text-gray-400">{template.categoryName}</span>
             )}
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${diff.className}`}>
-              {diff.label}
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${typeInfo.className}`}>
+              {typeInfo.label}
             </span>
             <span className="text-[11px] text-gray-400">約{template.estimatedMinutes}分</span>
           </div>

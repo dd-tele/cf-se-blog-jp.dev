@@ -113,6 +113,9 @@ export const templates = sqliteTable("templates", {
   difficulty: text("difficulty", { enum: ["beginner", "intermediate", "advanced"] })
     .notNull()
     .default("beginner"),
+  template_type: text("template_type", { enum: ["case_study", "solution", "tips"] })
+    .notNull()
+    .default("case_study"),
   estimated_minutes: integer("estimated_minutes").notNull().default(30),
   input_fields_json: text("input_fields_json").notNull(), // JSON: structured input field definitions
   ai_prompt_template: text("ai_prompt_template").notNull(), // AI prompt template with {{placeholders}}
