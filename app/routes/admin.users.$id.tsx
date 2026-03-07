@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from "react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -13,6 +14,7 @@ import {
 import { redirect } from "@remix-run/cloudflare";
 import { requireRole } from "~/lib/auth.server";
 import { getUserById, adminUpdateUser } from "~/lib/access-requests.server";
+import { AvatarCropModal } from "~/components/AvatarCropModal";
 
 export const meta: MetaFunction = () => [
   { title: "ユーザー編集 — Cloudflare Solution Blog" },
@@ -49,6 +51,13 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   }
 
   const isActive = formData.get("is_active") === "true";
+
+  // Avatar URL update (from client-side upload)
+  const avatarUrl = formData.get("avatar_url") as string | null;
+  if (avatarUrl !== null && !formData.has("display_name")) {
+    await adminUpdateUser(db, userId, { avatarUrl });
+    return { success: true, message: "プロフィール写真を更新しました" };
+  }
 
   await adminUpdateUser(db, userId, {
     displayName,
@@ -89,6 +98,57 @@ export default function AdminUserEdit() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
+  // Avatar upload state
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(targetUser.avatar_url ?? null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("画像ファイルを選択してください");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarError("ファイルサイズが大きすぎます（最大 10MB）");
+      return;
+    }
+    setAvatarError(null);
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }, []);
+
+  const handleCrop = useCallback(async (blob: Blob) => {
+    setCropSrc(null);
+    setAvatarUploading(true);
+    setAvatarError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, "avatar.png");
+      const uploadRes = await fetch("/api/upload-image", { method: "POST", body: formData });
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({ error: "アップロードに失敗しました" }));
+        throw new Error((err as any).error || "アップロードに失敗しました");
+      }
+      const { url } = await uploadRes.json() as { url: string };
+      setAvatarPreview(url);
+
+      // Save avatar_url to DB
+      const saveForm = new FormData();
+      saveForm.append("avatar_url", url);
+      await fetch(`/admin/users/${targetUser.id}`, { method: "POST", body: saveForm });
+    } catch (err: any) {
+      setAvatarError(err.message || "アップロードに失敗しました");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }, [targetUser.id]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white">
@@ -128,6 +188,64 @@ export default function AdminUserEdit() {
           <div className="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
             {actionData.message}
           </div>
+        )}
+
+        {/* Avatar Upload Section */}
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6">
+          <label className="mb-3 block text-sm font-medium text-gray-700">プロフィール写真</label>
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-gray-200 bg-gray-100">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-bold text-gray-400">
+                    {(targetUser.nickname || targetUser.display_name)?.charAt(0) ?? "?"}
+                  </span>
+                )}
+              </div>
+              {avatarUploading && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                  <svg className="h-6 w-6 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                写真を変更
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <p className="mt-2 text-xs text-gray-400">
+                JPEG, PNG, WebP, GIF（最大 10MB）。アップロード後に顔の位置を調整できます。
+              </p>
+              {avatarError && (
+                <p className="mt-1 text-xs text-red-600">{avatarError}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Crop Modal */}
+        {cropSrc && (
+          <AvatarCropModal
+            imageSrc={cropSrc}
+            onCrop={handleCrop}
+            onClose={() => setCropSrc(null)}
+          />
         )}
 
         <Form method="post" className="space-y-6">

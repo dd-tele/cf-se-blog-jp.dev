@@ -196,6 +196,7 @@ export interface AdminUserUpdateInput {
   expertise?: string;
   profileComment?: string;
   bio?: string;
+  avatarUrl?: string;
   role?: "admin" | "se" | "user";
   isActive?: boolean;
 }
@@ -214,6 +215,7 @@ export async function adminUpdateUser(db: D1Database, userId: string, input: Adm
   if (input.expertise !== undefined) updateData.expertise = input.expertise || null;
   if (input.profileComment !== undefined) updateData.profile_comment = input.profileComment || null;
   if (input.bio !== undefined) updateData.bio = input.bio || null;
+  if (input.avatarUrl !== undefined) updateData.avatar_url = input.avatarUrl || null;
   if (input.role !== undefined) updateData.role = input.role;
   if (input.isActive !== undefined) updateData.is_active = input.isActive;
 
