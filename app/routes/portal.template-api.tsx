@@ -129,6 +129,35 @@ export default function PortalTemplateApiGuide() {
           </div>
         </Section>
 
+        {/* API Key Security Notice */}
+        <div className="mb-10 rounded-xl border border-green-200 bg-green-50 p-5">
+          <h2 className="mb-3 text-base font-bold text-green-900">API キーの安全性について</h2>
+          <p className="mb-3 text-sm leading-relaxed text-green-800">
+            API キーは<strong>安全に利用できる</strong>設計になっています。
+          </p>
+          <ul className="mb-3 space-y-2 text-sm text-green-800">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>できるのはテンプレート情報の閲覧と下書き作成だけ</strong> — 記事の公開・削除・ユーザー情報へのアクセスはできません</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>あなたのデータだけに限定</strong> — キーはあなたのアカウントに紐づいており、他のユーザーの記事やデータには一切触れません</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>いつでも無効化・再作成できます</strong> — 不安になったら上の一覧から「無効化」するだけで即座に使えなくなります</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>キーはサーバーに安全に保存</strong> — データベースにはハッシュ化された値のみ保存されるため、万が一の漏洩時もキー自体は復元できません</span>
+            </li>
+          </ul>
+          <p className="text-xs text-green-700">
+            Windsurf / Cascade などのコーディングアシスタントにキーを渡す場合も、上記の通りできることは限定的です。気になる場合は、使用後にキーを無効化して新しく作り直す運用もおすすめです。
+          </p>
+        </div>
+
         {/* Template list */}
         <Section title="利用可能なテンプレート">
           <div className="overflow-x-auto">
@@ -221,7 +250,8 @@ function ApiKeyManager({ initialKeys, siteUrl }: { initialKeys: any[]; siteUrl: 
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-600">
-        API キーを使えば、Cookie 不要で外部の AI ツール（Gemini、ChatGPT、Claude 等）から直接 API を呼べます。
+        API キーを使うと、ターミナル（curl）やコーディングアシスタント（Windsurf / Cascade 等）からブラウザのログイン不要で API を呼べます。
+        Gemini・ChatGPT・Claude などのチャット型 AI は HTTP リクエストを直接実行できないため、AI には「フィールド定義をコピー」で JSON 生成を依頼し、このサイトのフォームからインポートしてください。
       </p>
 
       {/* Create key — only if no active key exists */}
