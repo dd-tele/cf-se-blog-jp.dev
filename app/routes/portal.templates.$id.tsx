@@ -11,7 +11,7 @@ import {
   Link,
 } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
 import {
@@ -269,29 +269,75 @@ export default function TemplateInput() {
   // ─── JSON import ───
   const [jsonText, setJsonText] = useState("");
   const [jsonImportOpen, setJsonImportOpen] = useState(false);
-  const [importMessage, setImportMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [importResult, setImportResult] = useState<{
+    type: "ok" | "warn" | "error";
+    message: string;
+    details?: string[];
+  } | null>(null);
+  const jsonTextareaNodeRef = useRef<HTMLTextAreaElement | null>(null);
+  const jsonTextareaRef = useCallback((node: HTMLTextAreaElement | null) => {
+    jsonTextareaNodeRef.current = node;
+  }, []);
 
   const handleJsonImport = useCallback(() => {
-    setImportMessage(null);
+    setImportResult(null);
+    // Read from state, fallback to DOM value
+    const raw = jsonText || jsonTextareaNodeRef.current?.value || "";
+    if (!raw.trim()) {
+      setImportResult({ type: "error", message: "JSON が空です。テキストエリアに JSON を貼り付けてください。" });
+      return;
+    }
     try {
-      const data = JSON.parse(jsonText);
+      const data = JSON.parse(raw);
       if (typeof data !== "object" || data === null) throw new Error("JSON はオブジェクトである必要があります");
 
       let importedCount = 0;
+      const matched: string[] = [];
       const newValues = { ...fieldValues };
       for (const f of fields) {
         if (data[f.id] !== undefined) {
           newValues[f.id] = data[f.id];
           importedCount++;
+          matched.push(f.id);
         }
       }
       setFieldValues(newValues);
-      if (data.custom_title) setCustomTitle(data.custom_title);
-      if (data.company_name) setCompanyName(data.company_name);
 
-      setImportMessage({ type: "ok", text: `${importedCount} フィールドをインポートしました` });
+      let extras = 0;
+      if (data.custom_title) { setCustomTitle(data.custom_title); extras++; }
+      if (data.company_name) { setCompanyName(data.company_name); extras++; }
+
+      // Identify unmatched JSON keys
+      const fieldIds = new Set(fields.map((f) => f.id));
+      const ignoredKeys = Object.keys(data).filter(
+        (k) => !fieldIds.has(k) && k !== "custom_title" && k !== "company_name"
+      );
+
+      if (importedCount === 0 && extras === 0) {
+        const expectedIds = fields.map((f) => f.id).join(", ");
+        setImportResult({
+          type: "error",
+          message: "一致するフィールドがありませんでした。JSON のキーがこのテンプレートのフィールド ID と一致していません。",
+          details: [
+            `JSON のキー: ${Object.keys(data).join(", ")}`,
+            `テンプレートの期待キー: ${expectedIds}`,
+            "「フィールド定義をコピー」で正しいキーを AI に渡してください。",
+          ],
+        });
+      } else if (ignoredKeys.length > 0) {
+        setImportResult({
+          type: "warn",
+          message: `${importedCount} フィールド${extras > 0 ? ` + ${extras} 件（タイトル/会社名）` : ""}をインポートしました。`,
+          details: [`無視されたキー: ${ignoredKeys.join(", ")}`],
+        });
+      } else {
+        setImportResult({
+          type: "ok",
+          message: `${importedCount} フィールド${extras > 0 ? ` + ${extras} 件（タイトル/会社名）` : ""}をインポートしました。`,
+        });
+      }
     } catch (e: any) {
-      setImportMessage({ type: "error", text: `JSON パースエラー: ${e.message}` });
+      setImportResult({ type: "error", message: `JSON パースエラー: ${e.message}` });
     }
   }, [jsonText, fieldValues, fields]);
 
@@ -304,7 +350,13 @@ export default function TemplateInput() {
       if (f.options) def += `\n  選択肢: [${f.options.join(", ")}]`;
       return def;
     });
-    return `テンプレート: ${template.name}\nタイプ: ${template.templateType}\n\n以下のフィールド定義に従って、各フィールドの値を JSON オブジェクトで出力してください。\nキーはフィールド ID、値は入力テキストです。\ntag_select は配列、url_list も配列、その他は文字列です。\ntextarea は箇条書きやメモ形式で、具体的な数値・製品名・設定値を含めてください。\n\n## フィールド一覧\n${lines.join("\n\n")}\n\n## 出力形式の例\n{\n  "フィールドID1": "値",\n  "フィールドID2": "- 箇条書き1\\n- 箇条書き2",\n  "custom_title": "記事タイトル（任意）",\n  "company_name": "会社名（任意）"\n}`;
+    // Build a concrete example using the first 2-3 actual field IDs
+    const exampleFields = fields.slice(0, 3).map((f) => {
+      if (f.type === "tag_select" && f.options) return `  "${f.id}": ["${f.options[0]}", "${f.options[1] || f.options[0]}"]`;
+      if (f.type === "url_list") return `  "${f.id}": ["https://example.com"]`;
+      return `  "${f.id}": "ここに入力"`;
+    });
+    return `テンプレート: ${template.name}\nタイプ: ${template.templateType}\n\n以下のフィールド定義に従って、各フィールドの値を JSON で出力してください。\n\n【重要】JSON のキーは必ず以下のフィールド ID をそのまま使ってください。\n独自のキー名に変えないでください（インポート時にマッチしなくなります）。\n\n- tag_select タイプ → 配列（options から選択）\n- url_list タイプ → 文字列の配列\n- その他 → 文字列（textarea は箇条書きや改行入り文章も可）\n\n## フィールド一覧\n${lines.join("\n\n")}\n\n## 出力 JSON の形式（キーは上記の ID をそのまま使うこと）\n{\n${exampleFields.join(",\n")},\n  ...\n  "custom_title": "記事タイトル（任意）",\n  "company_name": "会社名（任意）"\n}`;
   }, [fields, template]);
 
   const handleCopyFieldDef = useCallback(() => {
@@ -387,13 +439,14 @@ export default function TemplateInput() {
               <div>
                 <p className="mb-2 text-xs font-semibold text-brand-700">ステップ2: AI が出力した JSON をインポート</p>
                 <textarea
+                  ref={jsonTextareaRef}
                   value={jsonText}
                   onChange={(e) => setJsonText(e.target.value)}
                   placeholder='{ "service_name": "Cloudflare Access", "current_issues": "- VPN の同時接続数が..." }'
                   rows={5}
                   className="w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-mono focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
-                <div className="mt-2 flex items-center gap-3">
+                <div className="mt-2">
                   <button
                     type="button"
                     onClick={handleJsonImport}
@@ -402,12 +455,25 @@ export default function TemplateInput() {
                   >
                     JSON をインポート
                   </button>
-                  {importMessage && (
-                    <span className={`text-xs font-medium ${importMessage.type === "ok" ? "text-green-600" : "text-red-600"}`}>
-                      {importMessage.text}
-                    </span>
-                  )}
                 </div>
+                {importResult && (
+                  <div className={`mt-3 rounded-lg border px-4 py-3 text-sm ${
+                    importResult.type === "ok"
+                      ? "border-green-200 bg-green-50 text-green-800"
+                      : importResult.type === "warn"
+                      ? "border-amber-200 bg-amber-50 text-amber-800"
+                      : "border-red-200 bg-red-50 text-red-800"
+                  }`}>
+                    <p className="font-medium">{importResult.message}</p>
+                    {importResult.details && (
+                      <ul className="mt-1 space-y-0.5 text-xs">
+                        {importResult.details.map((d, i) => (
+                          <li key={i}>{d}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
