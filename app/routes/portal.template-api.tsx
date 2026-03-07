@@ -242,23 +242,29 @@ function ApiKeyManager({ initialKeys, siteUrl }: { initialKeys: any[]; siteUrl: 
         API キーを使えば、Cookie 不要で外部の AI ツール（Gemini、ChatGPT、Claude 等）から直接 API を呼べます。
       </p>
 
-      {/* Create key */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={newKeyName}
-          onChange={(e) => setNewKeyName(e.target.value)}
-          placeholder="キー名（例: Gemini 用）"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-        <button
-          onClick={createKey}
-          disabled={loading}
-          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-        >
-          {loading ? "作成中..." : "キーを作成"}
-        </button>
-      </div>
+      {/* Create key — only if no active key exists */}
+      {keys.some((k) => k.isActive) ? (
+        <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+          既に有効な API キーがあります。新しいキーを作成するには、既存のキーを削除してください。
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newKeyName}
+            onChange={(e) => setNewKeyName(e.target.value)}
+            placeholder="キー名（例: Gemini 用）"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          <button
+            onClick={createKey}
+            disabled={loading}
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+          >
+            {loading ? "作成中..." : "キーを作成"}
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">{error}</div>

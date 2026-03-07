@@ -22,11 +22,11 @@ apiKeysRoute.post("/", requireAuth, async (c) => {
     return c.json({ error: "キー名は100文字以内にしてください" }, 400);
   }
 
-  // Limit to 5 active keys per user
+  // Limit to 1 active key per user
   const existing = await listApiKeys(c.env.DB, user.id);
   const activeCount = existing.filter((k) => k.isActive).length;
-  if (activeCount >= 5) {
-    return c.json({ error: "API キーは最大5つまでです。不要なキーを無効化してください。" }, 400);
+  if (activeCount >= 1) {
+    return c.json({ error: "API キーは1つまでです。既存のキーを削除してから再作成してください。" }, 400);
   }
 
   const result = await createApiKey(c.env.DB, user.id, name);
