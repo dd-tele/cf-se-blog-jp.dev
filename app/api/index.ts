@@ -6,6 +6,7 @@ import chat from "./routes/chat";
 import ai from "./routes/ai";
 import upload from "./routes/upload";
 import r2 from "./routes/r2";
+import templatesApi from "./routes/templates";
 
 const app = new Hono<HonoEnv>();
 
@@ -24,6 +25,7 @@ app.use(
 app.route("/api/v1/chat", chat);
 app.route("/api/v1/ai", ai);
 app.route("/api/upload-image", upload);
+app.route("/api/v1/templates", templatesApi);
 app.route("/r2", r2);
 
 // ─── Health check ────────────────────────────────────────────
