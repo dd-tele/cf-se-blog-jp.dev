@@ -150,6 +150,48 @@ export async function getUserPosts(
     .orderBy(desc(posts.updated_at));
 }
 
+export async function getAuthorPublicProfile(db: D1Database, authorId: string) {
+  const d = getDb(db);
+
+  const author = await d
+    .select({
+      id: users.id,
+      displayName: sql<string>`COALESCE(${users.nickname}, ${users.display_name})`.as("display_name_resolved"),
+      avatarUrl: users.avatar_url,
+      bio: users.bio,
+      company: users.company,
+      jobRole: users.job_role,
+      expertise: users.expertise,
+      profileComment: users.profile_comment,
+    })
+    .from(users)
+    .where(and(eq(users.id, authorId), eq(users.is_active, true)))
+    .get();
+
+  if (!author) return null;
+
+  const authorPosts = await d
+    .select({
+      id: posts.id,
+      title: posts.title,
+      slug: posts.slug,
+      excerpt: posts.excerpt,
+      coverImageUrl: posts.cover_image_url,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
+      tagsJson: posts.tags_json,
+      readingTimeMinutes: posts.reading_time_minutes,
+      viewCount: posts.view_count,
+      publishedAt: posts.published_at,
+    })
+    .from(posts)
+    .leftJoin(categories, eq(posts.category_id, categories.id))
+    .where(and(eq(posts.author_id, authorId), eq(posts.status, "published")))
+    .orderBy(desc(posts.published_at));
+
+  return { author, posts: authorPosts };
+}
+
 export async function getAllCategories(db: D1Database) {
   const d = getDb(db);
   return await d.select().from(categories).orderBy(categories.sort_order);

@@ -148,10 +148,9 @@ export default function PostsIndex() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (
-              <Link
+              <div
                 key={post.id}
-                to={`/posts/${post.slug}`}
-                className="group flex flex-col rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-md"
+                className="group relative flex flex-col rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-md"
               >
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   {post.categoryName && (
@@ -171,7 +170,9 @@ export default function PostsIndex() {
                   })()}
                 </div>
                 <h2 className="mb-2 text-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-brand-600">
-                  {post.title}
+                  <Link to={`/posts/${post.slug}`} className="after:absolute after:inset-0">
+                    {post.title}
+                  </Link>
                 </h2>
                 {post.excerpt && (
                   <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-500 line-clamp-3">
@@ -179,7 +180,7 @@ export default function PostsIndex() {
                   </p>
                 )}
                 <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-400">
-                  <span>{post.authorName}</span>
+                  <Link to={`/authors/${post.authorId}`} className="relative z-10 hover:text-brand-600 transition-colors">{post.authorName}</Link>
                   <div className="flex items-center gap-2">
                     {post.readingTimeMinutes && (
                       <span>{post.readingTimeMinutes}分</span>
@@ -191,7 +192,7 @@ export default function PostsIndex() {
                     )}
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

@@ -230,7 +230,7 @@ export default function PostDetail() {
 
         {/* Author */}
         <div className="mb-8 flex items-center gap-3 border-b pb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+          <Link to={`/authors/${post.authorId}`} className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-brand-700 hover:ring-2 hover:ring-brand-300 transition-all">
             {post.authorAvatar ? (
               <img
                 src={post.authorAvatar}
@@ -242,9 +242,9 @@ export default function PostDetail() {
                 {post.authorName?.charAt(0) ?? "?"}
               </span>
             )}
-          </div>
+          </Link>
           <div>
-            <div className="font-medium text-gray-900">{post.authorName}</div>
+            <Link to={`/authors/${post.authorId}`} className="font-medium text-gray-900 hover:text-brand-600 transition-colors">{post.authorName}</Link>
             {post.authorBio && (
               <div className="text-xs text-gray-500">{post.authorBio}</div>
             )}

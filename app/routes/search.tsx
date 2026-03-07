@@ -23,6 +23,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     title: string;
     slug: string;
     excerpt: string | null;
+    authorId: string;
     authorName: string;
     categoryName: string | null;
     publishedAt: string | null;
@@ -44,11 +45,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         const matchMap = new Map(results.map((r) => [r.id, r.score]));
         posts = allPosts
           .filter((p: { id: string }) => matchMap.has(p.id))
-          .map((p: { id: string; title: string; slug: string; excerpt: string | null; authorName: string | null; categoryName: string | null; publishedAt: string | null }) => ({
+          .map((p: { id: string; title: string; slug: string; excerpt: string | null; authorId: string; authorName: string | null; categoryName: string | null; publishedAt: string | null }) => ({
             id: p.id,
             title: p.title,
             slug: p.slug,
             excerpt: p.excerpt,
+            authorId: p.authorId,
             authorName: p.authorName ?? "",
             categoryName: p.categoryName,
             publishedAt: p.publishedAt,
@@ -63,11 +65,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         limit: 20,
         offset: 0,
       });
-      posts = keywordPosts.map((p: { id: string; title: string; slug: string; excerpt: string | null; authorName: string | null; categoryName: string | null; publishedAt: string | null }) => ({
+      posts = keywordPosts.map((p: { id: string; title: string; slug: string; excerpt: string | null; authorId: string; authorName: string | null; categoryName: string | null; publishedAt: string | null }) => ({
         id: p.id,
         title: p.title,
         slug: p.slug,
         excerpt: p.excerpt,
+        authorId: p.authorId,
         authorName: p.authorName ?? "",
         categoryName: p.categoryName,
         publishedAt: p.publishedAt,
@@ -196,10 +199,9 @@ export default function SearchPage() {
             {posts.length > 0 ? (
               <div className="space-y-4">
                 {posts.map((post) => (
-                  <Link
+                  <div
                     key={post.id}
-                    to={`/posts/${post.slug}`}
-                    className="block rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-sm"
+                    className="group relative block rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-sm"
                   >
                     <div className="mb-1 flex items-center gap-2">
                       {post.categoryName && (
@@ -218,8 +220,10 @@ export default function SearchPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900">
-                      {post.title}
+                    <h3 className="text-base font-semibold text-gray-900 group-hover:text-brand-600">
+                      <Link to={`/posts/${post.slug}`} className="after:absolute after:inset-0">
+                        {post.title}
+                      </Link>
                     </h3>
                     {post.excerpt && (
                       <p className="mt-1 text-sm text-gray-500 line-clamp-2">
@@ -227,9 +231,9 @@ export default function SearchPage() {
                       </p>
                     )}
                     <p className="mt-2 text-xs text-gray-400">
-                      by {post.authorName}
+                      by <Link to={`/authors/${post.authorId}`} className="relative z-10 hover:text-brand-600 transition-colors">{post.authorName}</Link>
                     </p>
-                  </Link>
+                  </div>
                 ))}
               </div>
             ) : (
