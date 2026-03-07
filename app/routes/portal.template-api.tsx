@@ -45,174 +45,89 @@ export default function PortalTemplateApiGuide() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Template API ガイド</h1>
           <p className="mt-2 text-sm text-gray-500">
-            お使いの AI ツール（Gemini、ChatGPT、Claude、Windsurf など）から API キーで認証し、テンプレート情報の取得や記事作成に活用できます。
+            お使いの AI ツール（Gemini、ChatGPT、Claude 等）でフィールド入力データを生成し、テンプレートフォームに JSON インポートして記事を作成できます。
           </p>
         </div>
 
-        {/* API Key Management */}
-        <Section title="API キー管理">
+        {/* New Workflow */}
+        <Section title="AI ツール連携ワークフロー">
+          <div className="rounded-lg bg-brand-50 border border-brand-200 px-4 py-3 mb-6">
+            <p className="text-sm text-brand-800">
+              <strong>API キー不要・curl 不要。</strong>テンプレートフォーム上の「AI ツール連携 / JSON インポート」パネルだけで完結します。
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <WorkflowStep number={1} title="テンプレートを選ぶ">
+              <p className="text-sm text-gray-600">
+                <Link to="/portal/templates" className="text-brand-600 hover:underline">テンプレート一覧</Link>
+                から書きたい記事のテーマに合うテンプレートを選び、フォームを開きます。
+              </p>
+            </WorkflowStep>
+
+            <WorkflowStep number={2} title="フィールド定義をコピー">
+              <p className="text-sm text-gray-600">
+                フォーム上部の「<strong>AI ツール連携 / JSON インポート</strong>」パネルを開き、「<strong>フィールド定義をコピー</strong>」ボタンをクリックします。
+              </p>
+            </WorkflowStep>
+
+            <WorkflowStep number={3} title="AI に書きたい内容のエッセンスと一緒に渡す">
+              <p className="mb-2 text-sm text-gray-600">
+                コピーしたフィールド定義を Gemini や ChatGPT に貼り付け、書きたい記事のエッセンスを添えて送信します。
+              </p>
+              <CodeBlock code={`[ここにフィールド定義を貼り付け]\n\n私は IT 企業のインフラエンジニアです。\n以下の内容で各フィールドの入力データを JSON で出力してください。\n\n・Cloudflare Access と Gateway を使って社内 VPN を廃止した\n・Azure AD 連携で SAML SSO を実装\n・VPN 機器の保守コスト年間 120 万円を削減\n・ログイン遅延が 2.5 秒→0.8 秒に改善`} />
+            </WorkflowStep>
+
+            <WorkflowStep number={4} title="JSON をインポート">
+              <p className="text-sm text-gray-600">
+                AI が出力した JSON をフォームの「<strong>JSON をインポート</strong>」欄に貼り付けてインポートすると、全フィールドが自動入力されます。
+                必要に応じて内容を編集してください。
+              </p>
+            </WorkflowStep>
+
+            <WorkflowStep number={5} title="送信して記事を生成">
+              <p className="text-sm text-gray-600">
+                「<strong>AI で下書き生成</strong>」をクリックすると、Workers AI が入力データをもとにブログ記事を自動生成し、下書きとして保存します。
+              </p>
+            </WorkflowStep>
+          </div>
+        </Section>
+
+        {/* API Key Management — now secondary */}
+        <Section title="API キー管理（上級者向け）">
+          <p className="mb-4 text-sm text-gray-600">
+            curl や Windsurf/Cascade などのツールから直接 API を呼びたい場合は、API キーを作成してください。
+            JSON インポートだけで十分な場合はこのセクションは不要です。
+          </p>
           <ApiKeyManager initialKeys={apiKeysList} siteUrl={siteUrl} />
         </Section>
 
-        {/* Quick Start */}
-        <Section title="クイックスタート">
+        {/* API Endpoints — collapsed for advanced users */}
+        <Section title="API エンドポイント（上級者向け）">
           <p className="mb-4 text-sm text-gray-600">
-            API キーを作成したら、<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">Authorization: Bearer YOUR_API_KEY</code> ヘッダーで API を呼べます。
+            API キーを使ってターミナルやコードから直接テンプレート情報を取得できます。
           </p>
-          <CodeBlock code={`# テンプレート一覧を取得\ncurl -s '${siteUrl}/api/v1/templates' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .\n\n# テンプレートの詳細（フィールド定義）を取得\ncurl -s '${siteUrl}/api/v1/templates/t-app-01' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`} />
-        </Section>
-
-        {/* Base URL */}
-        <Section title="ベース URL">
-          <CodeBlock code={siteUrl} />
-        </Section>
-
-        {/* Endpoints */}
-        <Section title="利用可能なエンドポイント">
           <div className="space-y-6">
+            <Endpoint
+              method="GET"
+              path="/api/v1/ai-guide"
+              description="全テンプレートのフィールド定義と手順を一括取得（推奨）"
+              curlExample={`curl -s '${siteUrl}/api/v1/ai-guide' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`}
+            />
             <Endpoint
               method="GET"
               path="/api/v1/templates"
-              description="有効なテンプレート一覧を取得"
+              description="テンプレート一覧を取得"
               curlExample={`curl -s '${siteUrl}/api/v1/templates' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`}
-              responseExample={`{\n  "templates": [\n    {\n      "id": "t-app-01",\n      "name": "Application Services 導入事例",\n      "categoryName": "Application Services",\n      "templateType": "case_study",\n      "estimatedMinutes": 30\n    },\n    ...\n  ]\n}`}
             />
-
             <Endpoint
               method="GET"
               path="/api/v1/templates/:id"
-              description="テンプレートの詳細とフィールド定義を取得 — AI ツールにこの情報を渡すとフィールドに合った入力データを生成できます"
+              description="テンプレートの詳細とフィールド定義を取得"
               curlExample={`curl -s '${siteUrl}/api/v1/templates/t-app-01' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`}
-              responseExample={`{\n  "id": "t-app-01",\n  "name": "Application Services 導入事例",\n  "templateType": "case_study",\n  "fields": [\n    {\n      "id": "service_name",\n      "label": "扱う Cloudflare サービス",\n      "type": "text",\n      "required": true\n    },\n    ...\n  ]\n}`}
             />
           </div>
         </Section>
-
-        {/* Workflow */}
-        <Section title="AI ツールとの連携ワークフロー">
-          <p className="mb-4 text-sm text-gray-600">
-            以下の手順で、お使いの AI ツールにテンプレートのフィールド定義を渡し、入力データを生成してもらえます。
-          </p>
-
-          <div className="space-y-6">
-            <WorkflowStep number={1} title="API キーを作成">
-              <p className="text-sm text-gray-600">
-                上の「API キー管理」セクションで API キーを作成し、安全な場所に保存してください。
-              </p>
-            </WorkflowStep>
-
-            <WorkflowStep number={2} title="テンプレートを選ぶ">
-              <p className="text-sm text-gray-600 mb-2">
-                <Link to="/portal/templates" className="text-brand-600 hover:underline">テンプレート一覧</Link>
-                から使いたいテンプレートの ID を確認するか、API で取得します。
-              </p>
-              <CodeBlock code={`curl -s '${siteUrl}/api/v1/templates' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq '.templates[] | {id, name}'`} />
-            </WorkflowStep>
-
-            <WorkflowStep number={3} title="フィールド定義を AI に渡す">
-              <p className="text-sm text-gray-600 mb-2">
-                テンプレートの詳細を取得し、その JSON を AI ツールに貼り付けます。
-              </p>
-              <CodeBlock code={`curl -s '${siteUrl}/api/v1/templates/t-app-01' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`} />
-            </WorkflowStep>
-
-            <WorkflowStep number={4} title="AI に入力データの生成を依頼する">
-              <p className="mb-2 text-sm text-gray-600">
-                AI ツールに以下のようなプロンプトを渡してください:
-              </p>
-              <CodeBlock code={`以下はテンプレートのフィールド定義です。各フィールドに対して、\n実際のエンジニアが書くようなリアルな入力データを生成してください。\n\n[ここにステップ3で取得した JSON を貼り付け]\n\n以下のルールに従ってください:\n- required: true のフィールドは必ず入力する\n- tag_select タイプは options から2〜4個選ぶ\n- textarea タイプはリアルな箇条書きや説明文で\n- 自分の経験に基づいた内容に書き換えても構いません`} />
-            </WorkflowStep>
-
-            <WorkflowStep number={5} title="テンプレートフォームに入力">
-              <p className="text-sm text-gray-600">
-                AI が生成したデータを
-                <Link to="/portal/templates" className="text-brand-600 hover:underline"> テンプレート入力フォーム</Link>
-                の各フィールドにコピペし、必要に応じて編集してから送信します。
-              </p>
-            </WorkflowStep>
-          </div>
-        </Section>
-
-        {/* AI Guide API */}
-        <Section title="AI ツール用ガイド API（推奨）">
-          <div className="rounded-lg bg-brand-50 border border-brand-200 px-4 py-3 mb-4">
-            <p className="text-sm text-brand-800">
-              <strong>1回の API コールで全テンプレートのフィールド定義と手順を取得できます。</strong><br />
-              Gemini や ChatGPT に以下の curl を実行させるだけで、テンプレートの構造を理解して入力データを生成できます。
-            </p>
-          </div>
-          <CodeBlock code={`curl -s '${siteUrl}/api/v1/ai-guide' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`} />
-        </Section>
-
-        {/* Copy-paste prompts */}
-        <Section title="AI ツール別コピペ用プロンプト">
-          {canTestGenerate && (
-            <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-              <p className="text-sm text-amber-800">
-                <strong>重要:</strong> Gemini や ChatGPT は HTTP リクエストを直接実行できません。
-                AI にはコマンドを<strong>生成してもらい</strong>、出力された curl コマンドを<strong>ご自身のターミナルで実行</strong>してください。
-              </p>
-            </div>
-          )}
-
-          {canTestGenerate && (
-            <div className="mb-6">
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">ワンステップ生成（最も簡単）</h3>
-              <p className="mb-2 text-sm text-gray-600">
-                以下の curl を<strong>ターミナルで直接実行</strong>するだけで、トピックに合った記事が自動生成されます。AI ツール不要です。
-              </p>
-              <CodeBlock code={`# Zero Trust の記事を自動生成（トピックを変えるだけ）\ncurl -s -X POST '${siteUrl}/api/v1/templates/quick-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"topic": "Zero Trust", "tone": "realistic"}' | jq .\n\n# 他のトピック例: "WAF", "Workers", "SASE", "CDN", "DNS"`} />
-            </div>
-          )}
-
-          <p className="mb-4 text-sm text-gray-600">
-            以下のプロンプトを AI ツールに貼り付けてください。<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">YOUR_API_KEY</code> を API キーに置き換えてください。
-          </p>
-          <div className="space-y-6">
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト</h3>
-              <CodeBlock code={canTestGenerate
-                ? `Cloudflare Solution Blog の記事を生成するための curl コマンドを作ってほしいです。\n\n以下の API で記事を生成できます（topic にトピックを指定するだけ）:\nPOST ${siteUrl}/api/v1/templates/quick-generate\nヘッダー: Authorization: Bearer YOUR_API_KEY, Content-Type: application/json\nボディ: {"topic": "書きたいトピック", "tone": "realistic"}\n\n以下の条件で、実行可能な curl コマンドを出力してください:\n- トピック: Zero Trust（Cloudflare Access / Gateway を使った導入事例）\n- tone: realistic\n- API Key: YOUR_API_KEY\n\n出力はターミナルで直接コピペ実行できる curl コマンドのみでお願いします。`
-                : `以下の curl コマンドを実行して、Cloudflare Solution Blog のテンプレート情報を取得してください。\n\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nレスポンスの JSON に含まれる guide.workflow の手順と templates の一覧を確認してください。\nその中から書きたいテーマに合うテンプレートを選び、そのテンプレートの fields 定義に従って、\n各フィールドにリアルなエンジニアの入力データを生成してください。\n\n出力形式: fields の id をキーとした JSON オブジェクト\n私は IT 企業のインフラエンジニアです。`} />
-            </div>
-
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">Windsurf / Cascade に渡すプロンプト</h3>
-              <CodeBlock code={canTestGenerate
-                ? `以下の curl コマンドを実行して、Cloudflare Solution Blog に下書き記事を作成してください。\n\ncurl -s -X POST '${siteUrl}/api/v1/templates/quick-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"topic": "Zero Trust", "tone": "realistic"}'\n\nレスポンスの editUrl を教えてください。`
-                : `以下の API を呼んで、テンプレートのフィールド定義を取得してください:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n取得した JSON の templates から適切なテンプレートを選び、\nfields 定義に基づいてリアルな入力データを JSON で生成してください。\n出力は { "フィールドID": "値", ... } の形式でお願いします。`} />
-            </div>
-          </div>
-        </Section>
-
-        {/* Security Notice */}
-        <div className="mb-10 rounded-xl border border-green-200 bg-green-50 p-5">
-          <h2 className="mb-3 text-base font-bold text-green-900">API キーを AI に渡しても大丈夫？</h2>
-          <p className="mb-3 text-sm leading-relaxed text-green-800">
-            はい、このサイトの API キーは<strong>安全に AI ツールへ渡せる</strong>設計になっています。
-          </p>
-          <ul className="mb-3 space-y-2 text-sm text-green-800">
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
-              <span><strong>できるのはテンプレート情報の閲覧と下書き作成だけ</strong> — 記事の公開・削除・ユーザー情報へのアクセスはできません</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
-              <span><strong>あなたのデータだけに限定</strong> — キーはあなたのアカウントに紐づいており、他のユーザーの記事やデータには一切触れません</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
-              <span><strong>いつでも無効化・再作成できます</strong> — 不安になったら下の一覧から「削除」するだけで即座に無効化されます</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
-              <span><strong>キーはサーバーに安全に保存</strong> — データベースにはハッシュ化された値のみ保存されるため、万が一の漏洩時もキー自体は復元できません</span>
-            </li>
-          </ul>
-          <p className="text-xs text-green-700">
-            &#128161; AI ツール（Gemini や ChatGPT）の会話履歴にキーが残ることがありますが、上記の通りできることは限定的です。気になる場合は、使用後にキーを削除して新しく作り直す運用もおすすめです。
-          </p>
-        </div>
 
         {/* Template list */}
         <Section title="利用可能なテンプレート">
@@ -428,7 +343,7 @@ function Endpoint({
   path: string;
   description: string;
   curlExample: string;
-  responseExample: string;
+  responseExample?: string;
 }) {
   const methodColor = method === "GET" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700";
   return (
@@ -445,10 +360,12 @@ function Endpoint({
           <p className="mb-1 text-xs font-medium text-gray-500">curl 例</p>
           <CodeBlock code={curlExample} />
         </div>
-        <div>
-          <p className="mb-1 text-xs font-medium text-gray-500">レスポンス例</p>
-          <CodeBlock code={responseExample} />
-        </div>
+        {responseExample && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-gray-500">レスポンス例</p>
+            <CodeBlock code={responseExample} />
+          </div>
+        )}
       </div>
     </div>
   );

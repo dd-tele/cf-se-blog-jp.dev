@@ -11,7 +11,7 @@ import {
   Link,
 } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
 import {
@@ -249,6 +249,70 @@ export default function TemplateInput() {
   const isSubmitting = navigation.state === "submitting";
   const typeInfo = TYPE_MAP[template.templateType] ?? TYPE_MAP.case_study;
 
+  // ─── Controlled state for all fields ───
+  const [customTitle, setCustomTitle] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>(() => {
+    const init: Record<string, any> = {};
+    for (const f of fields) {
+      if (f.type === "tag_select") init[f.id] = [];
+      else if (f.type === "url_list") init[f.id] = [""];
+      else init[f.id] = "";
+    }
+    return init;
+  });
+
+  const updateField = useCallback((fieldId: string, value: any) => {
+    setFieldValues((prev) => ({ ...prev, [fieldId]: value }));
+  }, []);
+
+  // ─── JSON import ───
+  const [jsonText, setJsonText] = useState("");
+  const [jsonImportOpen, setJsonImportOpen] = useState(false);
+  const [importMessage, setImportMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  const handleJsonImport = useCallback(() => {
+    setImportMessage(null);
+    try {
+      const data = JSON.parse(jsonText);
+      if (typeof data !== "object" || data === null) throw new Error("JSON はオブジェクトである必要があります");
+
+      let importedCount = 0;
+      const newValues = { ...fieldValues };
+      for (const f of fields) {
+        if (data[f.id] !== undefined) {
+          newValues[f.id] = data[f.id];
+          importedCount++;
+        }
+      }
+      setFieldValues(newValues);
+      if (data.custom_title) setCustomTitle(data.custom_title);
+      if (data.company_name) setCompanyName(data.company_name);
+
+      setImportMessage({ type: "ok", text: `${importedCount} フィールドをインポートしました` });
+    } catch (e: any) {
+      setImportMessage({ type: "error", text: `JSON パースエラー: ${e.message}` });
+    }
+  }, [jsonText, fieldValues, fields]);
+
+  // ─── Field definition copy ───
+  const [defCopied, setDefCopied] = useState(false);
+  const fieldDefinitionText = useCallback(() => {
+    const lines = fields.map((f) => {
+      let def = `- ${f.id}: ${f.label} (type: ${f.type}, required: ${f.required})`;
+      if (f.placeholder) def += `\n  ヒント: ${f.placeholder}`;
+      if (f.options) def += `\n  選択肢: [${f.options.join(", ")}]`;
+      return def;
+    });
+    return `テンプレート: ${template.name}\nタイプ: ${template.templateType}\n\n以下のフィールド定義に従って、各フィールドの値を JSON オブジェクトで出力してください。\nキーはフィールド ID、値は入力テキストです。\ntag_select は配列、url_list も配列、その他は文字列です。\ntextarea は箇条書きやメモ形式で、具体的な数値・製品名・設定値を含めてください。\n\n## フィールド一覧\n${lines.join("\n\n")}\n\n## 出力形式の例\n{\n  "フィールドID1": "値",\n  "フィールドID2": "- 箇条書き1\\n- 箇条書き2",\n  "custom_title": "記事タイトル（任意）",\n  "company_name": "会社名（任意）"\n}`;
+  }, [fields, template]);
+
+  const handleCopyFieldDef = useCallback(() => {
+    navigator.clipboard.writeText(fieldDefinitionText());
+    setDefCopied(true);
+    setTimeout(() => setDefCopied(false), 2000);
+  }, [fieldDefinitionText]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white">
@@ -284,6 +348,71 @@ export default function TemplateInput() {
           )}
         </div>
 
+        {/* JSON Import & AI Integration Panel */}
+        <div className="mb-8 rounded-xl border border-brand-200 bg-brand-50 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setJsonImportOpen(!jsonImportOpen)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-brand-800">AI ツール連携 / JSON インポート</span>
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-medium text-brand-700">NEW</span>
+            </div>
+            <svg className={`h-4 w-4 text-brand-600 transition-transform ${jsonImportOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </button>
+
+          {jsonImportOpen && (
+            <div className="border-t border-brand-200 px-4 py-4 space-y-4">
+              <p className="text-sm text-brand-800">
+                Gemini、ChatGPT、Claude などの AI にフィールド定義を渡して JSON を生成し、ここにインポートできます。
+              </p>
+
+              {/* Step 1: Copy field definition */}
+              <div>
+                <p className="mb-2 text-xs font-semibold text-brand-700">ステップ1: フィールド定義を AI に渡す</p>
+                <button
+                  type="button"
+                  onClick={handleCopyFieldDef}
+                  className="rounded-lg bg-white border border-brand-300 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100 transition-colors"
+                >
+                  {defCopied ? "コピーしました!" : "フィールド定義をコピー"}
+                </button>
+                <p className="mt-1 text-xs text-brand-600">
+                  コピーした内容を AI ツールに貼り付け、書きたい記事のエッセンスと一緒に送信してください。
+                </p>
+              </div>
+
+              {/* Step 2: Paste JSON */}
+              <div>
+                <p className="mb-2 text-xs font-semibold text-brand-700">ステップ2: AI が出力した JSON をインポート</p>
+                <textarea
+                  value={jsonText}
+                  onChange={(e) => setJsonText(e.target.value)}
+                  placeholder='{ "service_name": "Cloudflare Access", "current_issues": "- VPN の同時接続数が..." }'
+                  rows={5}
+                  className="w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-mono focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+                <div className="mt-2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleJsonImport}
+                    disabled={!jsonText.trim()}
+                    className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                  >
+                    JSON をインポート
+                  </button>
+                  {importMessage && (
+                    <span className={`text-xs font-medium ${importMessage.type === "ok" ? "text-green-600" : "text-red-600"}`}>
+                      {importMessage.text}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {actionData && "error" in actionData && (
           <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {actionData.error}
@@ -315,6 +444,8 @@ export default function TemplateInput() {
               type="text"
               id="custom_title"
               name="custom_title"
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
               placeholder="タイトルを入力（空欄の場合 AI が自動生成）"
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
@@ -335,6 +466,8 @@ export default function TemplateInput() {
               type="text"
               id="company_name"
               name="company_name"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
               placeholder="例: 株式会社〇〇"
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
@@ -344,7 +477,12 @@ export default function TemplateInput() {
           </div>
 
           {fields.map((field) => (
-            <FieldRenderer key={field.id} field={field} />
+            <FieldRenderer
+              key={field.id}
+              field={field}
+              value={fieldValues[field.id]}
+              onChange={(val) => updateField(field.id, val)}
+            />
           ))}
 
           <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
@@ -375,7 +513,15 @@ export default function TemplateInput() {
 
 // ─── Dynamic Field Renderer ────────────────────────────────
 
-function FieldRenderer({ field }: { field: ReturnType<typeof parseInputFields>[number] }) {
+function FieldRenderer({
+  field,
+  value,
+  onChange,
+}: {
+  field: ReturnType<typeof parseInputFields>[number];
+  value: any;
+  onChange: (val: any) => void;
+}) {
   const name = `field_${field.id}`;
   const baseInputClass =
     "w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
@@ -392,6 +538,8 @@ function FieldRenderer({ field }: { field: ReturnType<typeof parseInputFields>[n
           type="text"
           id={name}
           name={name}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
           required={field.required}
           placeholder={field.placeholder}
           className={baseInputClass}
@@ -402,6 +550,8 @@ function FieldRenderer({ field }: { field: ReturnType<typeof parseInputFields>[n
         <textarea
           id={name}
           name={name}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
           required={field.required}
           placeholder={field.placeholder}
           rows={4}
@@ -413,6 +563,8 @@ function FieldRenderer({ field }: { field: ReturnType<typeof parseInputFields>[n
         <textarea
           id={name}
           name={name}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
           required={field.required}
           placeholder={field.placeholder}
           rows={6}
@@ -424,6 +576,8 @@ function FieldRenderer({ field }: { field: ReturnType<typeof parseInputFields>[n
         <select
           id={name}
           name={name}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
           required={field.required}
           className={baseInputClass}
         >
@@ -437,11 +591,11 @@ function FieldRenderer({ field }: { field: ReturnType<typeof parseInputFields>[n
       )}
 
       {field.type === "tag_select" && field.options && (
-        <TagSelect name={name} options={field.options} required={field.required} />
+        <TagSelect name={name} options={field.options} required={field.required} selected={value ?? []} onSelectedChange={onChange} />
       )}
 
       {field.type === "url_list" && (
-        <UrlListInput name={name} />
+        <UrlListInput name={name} urls={value ?? [""]} onUrlsChange={onChange} />
       )}
     </div>
   );
@@ -451,13 +605,15 @@ function TagSelect({
   name,
   options,
   required,
+  selected,
+  onSelectedChange,
 }: {
   name: string;
   options: string[];
   required: boolean;
+  selected: string[];
+  onSelectedChange: (val: string[]) => void;
 }) {
-  const [selected, setSelected] = useState<string[]>([]);
-
   return (
     <div>
       <div className="flex flex-wrap gap-2">
@@ -479,9 +635,9 @@ function TagSelect({
                 checked={isActive}
                 onChange={(e) => {
                   if (e.target.checked) {
-                    setSelected([...selected, opt]);
+                    onSelectedChange([...selected, opt]);
                   } else {
-                    setSelected(selected.filter((s) => s !== opt));
+                    onSelectedChange(selected.filter((s) => s !== opt));
                   }
                 }}
                 className="sr-only"
@@ -498,9 +654,15 @@ function TagSelect({
   );
 }
 
-function UrlListInput({ name }: { name: string }) {
-  const [urls, setUrls] = useState<string[]>([""]);
-
+function UrlListInput({
+  name,
+  urls,
+  onUrlsChange,
+}: {
+  name: string;
+  urls: string[];
+  onUrlsChange: (val: string[]) => void;
+}) {
   return (
     <div className="space-y-2">
       {urls.map((url, i) => (
@@ -512,7 +674,7 @@ function UrlListInput({ name }: { name: string }) {
             onChange={(e) => {
               const newUrls = [...urls];
               newUrls[i] = e.target.value;
-              setUrls(newUrls);
+              onUrlsChange(newUrls);
             }}
             placeholder="https://..."
             className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -520,7 +682,7 @@ function UrlListInput({ name }: { name: string }) {
           {urls.length > 1 && (
             <button
               type="button"
-              onClick={() => setUrls(urls.filter((_, j) => j !== i))}
+              onClick={() => onUrlsChange(urls.filter((_, j) => j !== i))}
               className="rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50"
             >
               削除
@@ -530,7 +692,7 @@ function UrlListInput({ name }: { name: string }) {
       ))}
       <button
         type="button"
-        onClick={() => setUrls([...urls, ""])}
+        onClick={() => onUrlsChange([...urls, ""])}
         className="text-xs font-medium text-brand-600 hover:text-brand-700"
       >
         + URL を追加
