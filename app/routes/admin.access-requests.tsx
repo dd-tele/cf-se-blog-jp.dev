@@ -147,6 +147,9 @@ export default function AdminAccessRequests() {
               <Link to="/admin/presentation" className="text-gray-500 hover:text-gray-700">
                 プレゼン
               </Link>
+              <Link to="/admin/template-api" className="text-gray-500 hover:text-gray-700">
+                Template API
+              </Link>
               <Link to="/portal" className="text-gray-500 hover:text-gray-700">
                 ポータル
               </Link>

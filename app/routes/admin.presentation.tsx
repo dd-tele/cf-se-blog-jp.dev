@@ -93,6 +93,9 @@ export default function AdminPresentation() {
               <Link to="/admin/presentation" className="font-medium text-brand-600">
                 プレゼン
               </Link>
+              <Link to="/admin/template-api" className="text-gray-500 hover:text-gray-700">
+                Template API
+              </Link>
               <Link to="/portal" className="text-gray-500 hover:text-gray-700">
                 ポータル
               </Link>
