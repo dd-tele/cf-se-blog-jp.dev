@@ -94,12 +94,12 @@ export default function PortalTemplateApiGuide() {
                 <li>ブログサイトにログインした状態でブラウザを開く</li>
                 <li>F12 キーで DevTools を開く</li>
                 <li><strong>Application</strong> タブ → <strong>Cookies</strong> → サイト URL を選択</li>
-                <li><code className="bg-gray-100 px-1 py-0.5 rounded text-xs">__session</code> の値をコピー</li>
+                <li><code className="bg-gray-100 px-1 py-0.5 rounded text-xs">__cf_blog_session</code> の値をコピー</li>
               </ol>
             </div>
             <div>
               <p className="mb-2 text-sm text-gray-600">コピーした値で cookie.txt を作成:</p>
-              <CodeBlock code={`echo "${siteUrl}\tFALSE\t/\tTRUE\t0\t__session\tYOUR_SESSION_VALUE" > cookie.txt`} />
+              <CodeBlock code={`echo "${siteUrl}\tFALSE\t/\tTRUE\t0\t__cf_blog_session\tYOUR_SESSION_VALUE" > cookie.txt`} />
             </div>
           </div>
         </Section>

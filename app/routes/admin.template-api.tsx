@@ -214,10 +214,10 @@ curl -s -X POST '${siteUrl}/api/v1/templates/t-dev-01/test-generate' \\
                 ターミナルで以下のコマンドを実行してください。Cookie ファイルはブラウザから取得します。
               </p>
               <CodeBlock>{`# 1. ブラウザの Cookie を取得（Chrome DevTools → Application → Cookies）
-#    __session の値をコピー
+#    __cf_blog_session の値をコピー
 
 # 2. Cookie ファイルを作成
-echo "${siteUrl}\tFALSE\t/\tTRUE\t0\t__session\tYOUR_SESSION_VALUE" > cookie.txt
+echo "${siteUrl}\tFALSE\t/\tTRUE\t0\t__cf_blog_session\tYOUR_SESSION_VALUE" > cookie.txt
 
 # 3. テンプレート一覧を確認
 curl -s '${siteUrl}/api/v1/templates' -b 'cookie.txt' | jq '.templates[] | {id, name, templateType}'
@@ -238,7 +238,7 @@ curl -s -X POST '${siteUrl}/api/v1/templates/t-zt-01/test-generate' \\
               <CodeBlock>{`以下の API を使って、Cloudflare のテックブログ記事を自動生成してください。
 
 ベース URL: ${siteUrl}
-認証: Cookie ヘッダーに __session=YOUR_SESSION_VALUE を設定
+認証: Cookie ヘッダーに __cf_blog_session=YOUR_SESSION_VALUE を設定
 
 手順:
 1. GET /api/v1/templates でテンプレート一覧を取得
