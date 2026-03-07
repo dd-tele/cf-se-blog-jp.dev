@@ -48,6 +48,35 @@ export default function PortalTemplateApiGuide() {
           </p>
         </div>
 
+        {/* Security Notice */}
+        <div className="mb-10 rounded-xl border border-green-200 bg-green-50 p-5">
+          <h2 className="mb-3 text-base font-bold text-green-900">API キーを AI に渡しても大丈夫？</h2>
+          <p className="mb-3 text-sm leading-relaxed text-green-800">
+            はい、このサイトの API キーは<strong>安全に AI ツールへ渡せる</strong>設計になっています。
+          </p>
+          <ul className="mb-3 space-y-2 text-sm text-green-800">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>できるのはテンプレート情報の閲覧と下書き作成だけ</strong> — 記事の公開・削除・ユーザー情報へのアクセスはできません</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>あなたのデータだけに限定</strong> — キーはあなたのアカウントに紐づいており、他のユーザーの記事やデータには一切触れません</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>いつでも無効化・再作成できます</strong> — 不安になったら下の一覧から「削除」するだけで即座に無効化されます</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-green-600">&#10003;</span>
+              <span><strong>キーはサーバーに安全に保存</strong> — データベースにはハッシュ化された値のみ保存されるため、万が一の漏洩時もキー自体は復元できません</span>
+            </li>
+          </ul>
+          <p className="text-xs text-green-700">
+            &#128161; AI ツール（Gemini や ChatGPT）の会話履歴にキーが残ることがありますが、上記の通りできることは限定的です。気になる場合は、使用後にキーを削除して新しく作り直す運用もおすすめです。
+          </p>
+        </div>
+
         {/* API Key Management */}
         <Section title="API キー管理">
           <ApiKeyManager initialKeys={apiKeysList} siteUrl={siteUrl} />
