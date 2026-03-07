@@ -232,6 +232,25 @@ export const notificationSettings = sqliteTable("notification_settings", {
     .default(sql`(datetime('now'))`),
 });
 
+// ─── API Keys ─────────────────────────────────────────────
+export const apiKeys = sqliteTable("api_keys", {
+  id: text("id").primaryKey(),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  key_prefix: text("key_prefix").notNull(),
+  key_hash: text("key_hash").notNull(),
+  last_used_at: text("last_used_at"),
+  is_active: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 // ─── Audit Logs ────────────────────────────────────────────
 export const auditLogs = sqliteTable("audit_logs", {
   id: text("id").primaryKey(),

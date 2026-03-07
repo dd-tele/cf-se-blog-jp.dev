@@ -7,6 +7,7 @@ import ai from "./routes/ai";
 import upload from "./routes/upload";
 import r2 from "./routes/r2";
 import templatesApi from "./routes/templates";
+import apiKeysRoute from "./routes/api-keys";
 
 const app = new Hono<HonoEnv>();
 
@@ -16,8 +17,8 @@ app.use(
   "/api/*",
   cors({
     origin: "*",
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type"],
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -26,6 +27,7 @@ app.route("/api/v1/chat", chat);
 app.route("/api/v1/ai", ai);
 app.route("/api/upload-image", upload);
 app.route("/api/v1/templates", templatesApi);
+app.route("/api/v1/api-keys", apiKeysRoute);
 app.route("/r2", r2);
 
 // ─── Health check ────────────────────────────────────────────
