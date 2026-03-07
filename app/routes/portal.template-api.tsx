@@ -132,17 +132,36 @@ export default function PortalTemplateApiGuide() {
           </div>
         </Section>
 
-        {/* Prompt templates */}
-        <Section title="AI ツール別プロンプト例">
+        {/* AI Guide API */}
+        <Section title="AI ツール用ガイド API（推奨）">
+          <div className="rounded-lg bg-brand-50 border border-brand-200 px-4 py-3 mb-4">
+            <p className="text-sm text-brand-800">
+              <strong>1回の API コールで全テンプレートのフィールド定義と手順を取得できます。</strong><br />
+              Gemini や ChatGPT に以下の curl を実行させるだけで、テンプレートの構造を理解して入力データを生成できます。
+            </p>
+          </div>
+          <CodeBlock code={`curl -s '${siteUrl}/api/v1/ai-guide' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`} />
+        </Section>
+
+        {/* Copy-paste prompts */}
+        <Section title="AI ツール別コピペ用プロンプト">
+          <p className="mb-4 text-sm text-gray-600">
+            以下のプロンプトをそのまま AI ツールに貼り付けてください。<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">YOUR_API_KEY</code> の部分を上で作成した API キーに置き換えてください。
+          </p>
           <div className="space-y-6">
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini / ChatGPT / Claude に渡すプロンプト</h3>
-              <CodeBlock code={`Cloudflare Solution Blog のテンプレートを使って記事を書きたいです。\n\n以下の API からテンプレートのフィールド定義を取得しました:\n[ここに GET /api/v1/templates/:id のレスポンスを貼り付け]\n\nこのテンプレートの各フィールドに対して、以下の条件で入力データを生成してください:\n- 私は [あなたの会社名] の [あなたの職種] です\n- [使った Cloudflare サービス] を [目的] のために導入しました\n- リアルなエンジニアの記述として、箇条書きや数値データを含めてください\n- 各フィールドの placeholder を参考に、具体的な内容を書いてください`} />
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト（推奨）</h3>
+              <CodeBlock code={`以下の curl コマンドを実行して、Cloudflare Solution Blog のテンプレート情報を取得してください。\n\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nレスポンスの JSON に含まれる guide.workflow の手順と templates の一覧を確認してください。\nその中から「SASE」に関するテンプレートを選び、そのテンプレートの fields 定義に従って、\n各フィールドにリアルなエンジニアの入力データを生成してください。\n\n出力形式: fields の id をキーとした JSON オブジェクト\n私は IT 企業のインフラエンジニアです。`} />
             </div>
 
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini（API 直接呼び出し）に渡すプロンプト</h3>
-              <CodeBlock code={`以下の curl で Cloudflare Solution Blog のテンプレート情報を取得してください:\n\ncurl -s '${siteUrl}/api/v1/templates' \\\n  -H 'Authorization: Bearer YOUR_API_KEY'\n\n取得したテンプレート一覧から適切なものを選び、\ncurl -s '${siteUrl}/api/v1/templates/TEMPLATE_ID' \\\n  -H 'Authorization: Bearer YOUR_API_KEY'\nでフィールド定義を取得してください。\n\n取得したフィールド定義をもとに、各フィールドに入力するリアルなデータを\nJSON 形式で生成してください。私は IT 企業のインフラエンジニアです。`} />
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">ChatGPT / Claude に渡すプロンプト</h3>
+              <CodeBlock code={`Cloudflare Solution Blog というテックブログの記事を書くために、テンプレートの入力データを作成してほしいです。\n\n以下の API を呼ぶとテンプレート一覧とフィールド定義が取得できます:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nこの API を実行し、レスポンスに含まれる templates から書きたいテーマに合うものを選び、\nそのテンプレートの fields に従って各フィールドの入力データを JSON で生成してください。\ntextarea フィールドはリアルな箇条書きで、具体的な数値・製品名・設定値を含めてください。`} />
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">Windsurf / Cascade に渡すプロンプト</h3>
+              <CodeBlock code={`以下の API を呼んで、テンプレートのフィールド定義を取得してください:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n取得した JSON の templates から適切なテンプレートを選び、\nfields 定義に基づいてリアルな入力データを JSON で生成してください。\n出力は { "フィールドID": "値", ... } の形式でお願いします。`} />
             </div>
           </div>
         </Section>
