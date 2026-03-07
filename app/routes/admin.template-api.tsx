@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
 import { getActiveTemplates } from "~/lib/templates.server";
+import { listApiKeys } from "~/lib/api-keys.server";
 
 export const meta: MetaFunction = () => [
   { title: "Template API ドキュメント — Cloudflare Solution Blog" },
@@ -78,15 +79,27 @@ export default function TemplateApiDocs() {
         <Section title="概要">
           <p className="text-sm text-gray-600 leading-relaxed">
             この API を使うと、テンプレートのフィールド定義を取得し、AI にダミー入力を生成させてから記事を作成できます。
-            Windsurf、ChatGPT、Claude、その他の生成 AI 環境から <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">curl</code> や
-            HTTP リクエストで利用できます。
+            Gemini、ChatGPT、Claude、Windsurf などの生成 AI 環境から API キーで認証して利用できます。
           </p>
-          <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-            <p className="text-sm text-amber-800">
-              <strong>認証が必要です。</strong> すべてのエンドポイントはログインセッション Cookie による認証が必要です。
-              ブラウザでログイン済みの Cookie を使うか、下記のセッション取得方法を参照してください。
+          <div className="mt-4 rounded-lg bg-brand-50 border border-brand-200 px-4 py-3">
+            <p className="text-sm text-brand-800">
+              <strong>認証方法:</strong> <code className="bg-white px-1 py-0.5 rounded text-xs">Authorization: Bearer YOUR_API_KEY</code> ヘッダーを付けてください。
+              API キーは <Link to="/portal/template-api" className="underline font-medium">ポータルの Template API ガイド</Link> から作成できます。
             </p>
           </div>
+        </Section>
+
+        {/* AI Guide API */}
+        <Section title="AI ツール用ガイド API（推奨）">
+          <div className="rounded-lg bg-brand-50 border border-brand-200 px-4 py-3 mb-4">
+            <p className="text-sm text-brand-800">
+              <strong>1回の API コールで全テンプレートのフィールド定義と手順を取得できます。</strong>
+              Gemini や ChatGPT に以下の curl を実行させるだけで、テンプレートの構造を理解して記事を作成できます。
+              admin/SE ユーザーの場合、POST で下書き作成までの手順も含まれます。
+            </p>
+          </div>
+          <CodeBlock>{`curl -s '${siteUrl}/api/v1/ai-guide' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`}</CodeBlock>
         </Section>
 
         {/* Base URL */}
@@ -99,16 +112,31 @@ export default function TemplateApiDocs() {
           <div className="space-y-6">
             <Endpoint
               method="GET"
+              path="/api/v1/ai-guide"
+              description="AI ツール用ガイド — 全テンプレートのフィールド定義と手順を一括取得（推奨）"
+              curlExample={`curl -s '${siteUrl}/api/v1/ai-guide' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`}
+              responseExample={`{
+  "guide": {
+    "system": "Cloudflare Solution Blog",
+    "workflow": ["1. テンプレートを選ぶ", "2. fields を確認", ...],
+    "test_generate_api": { ... }
+  },
+  "templates": [ { "id": "t-zt-01", "fields": [...] }, ... ]
+}`}
+            />
+
+            <Endpoint
+              method="GET"
               path="/api/v1/templates"
               description="有効なテンプレート一覧を取得"
               curlExample={`curl -s '${siteUrl}/api/v1/templates' \\
-  -b 'cookie.txt' | jq .`}
+  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`}
               responseExample={`{
   "templates": [
     {
       "id": "t-app-01",
       "name": "Application Services 導入事例",
-      "description": "WAF, CDN, ... の導入事例テンプレート",
       "categoryName": "Application Services",
       "templateType": "case_study",
       "estimatedMinutes": 30
@@ -123,7 +151,7 @@ export default function TemplateApiDocs() {
               path="/api/v1/templates/:id"
               description="テンプレートの詳細とフィールド定義を取得"
               curlExample={`curl -s '${siteUrl}/api/v1/templates/t-app-01' \\
-  -b 'cookie.txt' | jq .`}
+  -H 'Authorization: Bearer YOUR_API_KEY' | jq .`}
               responseExample={`{
   "id": "t-app-01",
   "name": "Application Services 導入事例",
@@ -147,19 +175,19 @@ export default function TemplateApiDocs() {
               description="AI がダミー入力を生成し、記事を自動作成（admin/se のみ）"
               curlExample={`# すべて AI に任せる（デフォルト: realistic トーン）
 curl -s -X POST '${siteUrl}/api/v1/templates/t-zt-01/test-generate' \\
-  -H 'Content-Type: application/json' \\
-  -b 'cookie.txt' | jq .
+  -H 'Authorization: Bearer YOUR_API_KEY' \\
+  -H 'Content-Type: application/json' | jq .
 
 # トーンを指定（casual = いい加減な入力）
 curl -s -X POST '${siteUrl}/api/v1/templates/t-app-01/test-generate' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' \\
   -H 'Content-Type: application/json' \\
-  -b 'cookie.txt' \\
   -d '{"tone": "casual"}' | jq .
 
 # 一部フィールドを自分で指定、残りは AI 生成
 curl -s -X POST '${siteUrl}/api/v1/templates/t-dev-01/test-generate' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' \\
   -H 'Content-Type: application/json' \\
-  -b 'cookie.txt' \\
   -d '{
     "company_name": "株式会社テスト",
     "tone": "detailed",
@@ -205,54 +233,84 @@ curl -s -X POST '${siteUrl}/api/v1/templates/t-dev-01/test-generate' \\
           </table>
         </Section>
 
-        {/* Usage from AI environments */}
-        <Section title="生成 AI 環境からの利用方法">
+        {/* AI tool copy-paste prompts */}
+        <Section title="AI ツール別コピペ用プロンプト">
+          <p className="mb-4 text-sm text-gray-600">
+            以下のプロンプトをそのまま AI ツールに貼り付けてください。<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">YOUR_API_KEY</code> の部分を API キーに置き換えてください。
+          </p>
           <div className="space-y-6">
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">Windsurf / Cascade から使う場合</h3>
-              <p className="mb-2 text-sm text-gray-600">
-                ターミナルで以下のコマンドを実行してください。Cookie ファイルはブラウザから取得します。
-              </p>
-              <CodeBlock>{`# 1. ブラウザの Cookie を取得（Chrome DevTools → Application → Cookies）
-#    __cf_blog_session の値をコピー
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト（推奨）</h3>
+              <CodeBlock>{`以下の手順に従って、Cloudflare Solution Blog に下書き記事を作成してください。
 
-# 2. Cookie ファイルを作成
-echo "${siteUrl}\tFALSE\t/\tTRUE\t0\t__cf_blog_session\tYOUR_SESSION_VALUE" > cookie.txt
+ステップ1: テンプレート情報を取得
+curl -s '${siteUrl}/api/v1/ai-guide' \\
+  -H 'Authorization: Bearer YOUR_API_KEY'
 
-# 3. テンプレート一覧を確認
-curl -s '${siteUrl}/api/v1/templates' -b 'cookie.txt' | jq '.templates[] | {id, name, templateType}'
+ステップ2: レスポンスの JSON を確認し、templates の中から書きたいテーマに合うテンプレートを選んでください。
 
-# 4. テスト記事を生成
-curl -s -X POST '${siteUrl}/api/v1/templates/t-zt-01/test-generate' \\
+ステップ3: 選んだテンプレートの fields 定義に従って、各フィールドにリアルなエンジニアの入力データを生成してください。
+textarea は箇条書きで、具体的な数値・製品名・設定値を含めてください。
+
+ステップ4: 生成した入力データを overrides として POST し、下書き記事を作成してください。
+curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' \\
   -H 'Content-Type: application/json' \\
-  -b 'cookie.txt' \\
-  -d '{"tone": "casual"}' | jq .`}</CodeBlock>
+  -d '{
+    "tone": "realistic",
+    "company_name": "株式会社テスト",
+    "overrides": {
+      "フィールドID1": "値 1",
+      "フィールドID2": "値 2"
+    }
+  }'
+
+TEMPLATE_ID はステップ2で選んだテンプレートの id に置き換えてください。
+overrides の中身はステップ3で生成したデータです。
+
+私は IT 企業のインフラエンジニアです。Zero Trust に関するテンプレートで記事を作成してください。`}</CodeBlock>
             </div>
 
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">ChatGPT / Claude 等から使う場合</h3>
-              <p className="mb-2 text-sm text-gray-600">
-                生成 AI に以下のプロンプトを与えてください。AI がテンプレートのフィールドに合わせた入力データを生成し、
-                API を叩くコマンドを出力します。
-              </p>
-              <CodeBlock>{`以下の API を使って、Cloudflare のテックブログ記事を自動生成してください。
-
-ベース URL: ${siteUrl}
-認証: Cookie ヘッダーに __cf_blog_session=YOUR_SESSION_VALUE を設定
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">ChatGPT / Claude に渡すプロンプト</h3>
+              <CodeBlock>{`Cloudflare Solution Blog に下書き記事を API で作成してください。
 
 手順:
-1. GET /api/v1/templates でテンプレート一覧を取得
-2. 使いたいテンプレートの ID で GET /api/v1/templates/:id を叩いてフィールド定義を取得
-3. 各フィールドに対してリアルなダミーデータを JSON で作成
-4. POST /api/v1/templates/:id/test-generate に以下の JSON を送信:
-   {
-     "tone": "realistic",
-     "company_name": "任意の会社名",
-     "overrides": { フィールドID: 値, ... }
-   }
+1. まず以下の API でテンプレート情報を取得:
+   curl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'
 
-overrides を空にすると AI が全フィールドを自動生成します。
-tone は realistic / casual / detailed / minimal から選べます。`}</CodeBlock>
+2. templates の中から適切なテンプレートを選ぶ
+
+3. 選んだテンプレートの fields に従って入力データを JSON で生成
+   - required: true のフィールドは必須
+   - textarea はリアルな箇条書きで、数値・製品名を含める
+   - tag_select は options から2〜4個選ぶ
+
+4. 以下の curl で下書きを作成:
+   curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
+     -H 'Authorization: Bearer YOUR_API_KEY' \\
+     -H 'Content-Type: application/json' \\
+     -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'
+
+5. レスポンスの editUrl を報告してください`}</CodeBlock>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">Windsurf / Cascade に渡すプロンプト</h3>
+              <CodeBlock>{`以下の手順で Cloudflare Solution Blog に下書き記事を作成してください。
+
+1. テンプレート情報を取得:
+curl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'
+
+2. templates から適切なテンプレートを選び、fields に基づいて入力データを JSON で生成
+
+3. 下書き記事を作成:
+curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'
+
+4. レスポンスの editUrl を教えてください`}</CodeBlock>
             </div>
           </div>
         </Section>

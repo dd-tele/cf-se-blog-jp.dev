@@ -12,6 +12,7 @@ const aiGuide = new Hono<HonoEnv>();
 aiGuide.get("/", requireAuth, async (c) => {
   const user = c.var.user!;
   const siteUrl = c.env.SITE_URL || "https://blog.jp.dev";
+  const canTestGenerate = user.role === "admin" || user.role === "se";
   const list = await getActiveTemplates(c.env.DB);
 
   const templatesData = list.map((t) => {
@@ -43,13 +44,21 @@ aiGuide.get("/", requireAuth, async (c) => {
         email: user.email,
         role: user.role,
       },
-      workflow: [
-        "1. 下の templates 一覧から書きたい記事に合うテンプレートを選ぶ",
-        "2. そのテンプレートの fields を確認する",
-        "3. 各 field に対して、実際のエンジニアが書くリアルな入力データを生成する",
-        `4. ブラウザで ${siteUrl}/portal/templates/{テンプレートID} を開き、各フィールドに生成したデータを貼り付けて送信する`,
-        "5. AI が下書き記事を自動生成するので、編集して公開する",
-      ],
+      workflow: canTestGenerate
+        ? [
+            "1. 下の templates 一覧から書きたい記事に合うテンプレートを選ぶ",
+            "2. そのテンプレートの fields を確認する",
+            "3. 各 field に対して、実際のエンジニアが書くリアルな入力データを JSON で生成する",
+            `4. POST ${siteUrl}/api/v1/templates/{テンプレートID}/test-generate に overrides として送信すると、AI が記事を自動生成して下書き保存する`,
+            `5. レスポンスの editUrl（${siteUrl}/portal/edit/{postId}）で記事を編集・公開する`,
+          ]
+        : [
+            "1. 下の templates 一覧から書きたい記事に合うテンプレートを選ぶ",
+            "2. そのテンプレートの fields を確認する",
+            "3. 各 field に対して、実際のエンジニアが書くリアルな入力データを生成する",
+            `4. ブラウザで ${siteUrl}/portal/templates/{テンプレートID} を開き、各フィールドに生成したデータを貼り付けて送信する`,
+            "5. AI が下書き記事を自動生成するので、編集して公開する",
+          ],
       field_types_guide: {
         text: "1行のテキスト入力",
         textarea: "複数行のテキスト。箇条書きやメモ形式で入力する。実際のエンジニアが書くようなリアルな内容で。",
@@ -67,6 +76,37 @@ aiGuide.get("/", requireAuth, async (c) => {
         "テンプレートの templateType が case_study なら導入事例風、solution ならソリューション紹介風、tips なら Tips 風に書くこと",
         "自分の経験がある場合はそれを反映してよい",
       ],
+      ...(canTestGenerate
+        ? {
+            test_generate_api: {
+              description:
+                "入力データを overrides に指定して POST すると、AI が記事全文を生成し下書き保存します。overrides を空にすると AI が全フィールドを自動生成します。",
+              endpoint: "POST /api/v1/templates/{テンプレートID}/test-generate",
+              auth: "Authorization: Bearer YOUR_API_KEY",
+              request_body: {
+                tone: "realistic | casual | detailed | minimal（デフォルト: realistic）",
+                company_name: "会社名（任意）",
+                overrides: "{ フィールドID: 値, ... }  — fields の id をキーにした JSON。指定しなかったフィールドは AI が自動生成",
+              },
+              curl_example: `curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"tone": "realistic", "overrides": { ... }}'`,
+              response: {
+                success: true,
+                postId: "生成された記事のID",
+                title: "自動生成されたタイトル",
+                editUrl: "/portal/edit/{postId} — この URL で記事を編集・公開",
+              },
+              tone_options: {
+                realistic: "実際のエンジニアが書くようなリアルな内容。数値データ含む（デフォルト）",
+                casual: "雑なメモ書き風。箇条書き・省略・ラフな表現",
+                detailed: "非常に詳細で丁寧。背景説明が豊富",
+                minimal: "最低限の情報のみ。1〜2行の短文",
+              },
+            },
+          }
+        : {}),
     },
     templates: templatesData,
   });

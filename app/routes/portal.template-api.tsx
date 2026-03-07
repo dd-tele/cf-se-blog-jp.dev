@@ -15,11 +15,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const templatesList = await getActiveTemplates(db);
   const apiKeysList = await listApiKeys(db, user.id);
   const siteUrl = context.cloudflare.env.SITE_URL || "https://blog.jp.dev";
-  return { user, templatesList, apiKeysList, siteUrl };
+  const canTestGenerate = user.role === "admin" || user.role === "se";
+  return { user, templatesList, apiKeysList, siteUrl, canTestGenerate };
 }
 
 export default function PortalTemplateApiGuide() {
-  const { user, templatesList, apiKeysList, siteUrl } = useLoaderData<typeof loader>();
+  const { user, templatesList, apiKeysList, siteUrl, canTestGenerate } = useLoaderData<typeof loader>();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,17 +152,23 @@ export default function PortalTemplateApiGuide() {
           <div className="space-y-6">
             <div>
               <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト（推奨）</h3>
-              <CodeBlock code={`以下の curl コマンドを実行して、Cloudflare Solution Blog のテンプレート情報を取得してください。\n\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nレスポンスの JSON に含まれる guide.workflow の手順と templates の一覧を確認してください。\nその中から「SASE」に関するテンプレートを選び、そのテンプレートの fields 定義に従って、\n各フィールドにリアルなエンジニアの入力データを生成してください。\n\n出力形式: fields の id をキーとした JSON オブジェクト\n私は IT 企業のインフラエンジニアです。`} />
+              <CodeBlock code={canTestGenerate
+                ? `以下の手順に従って、Cloudflare Solution Blog に下書き記事を作成してください。\n\nステップ1: テンプレート情報を取得\ncurl -s '${siteUrl}/api/v1/ai-guide' \\\n  -H 'Authorization: Bearer YOUR_API_KEY'\n\nステップ2: レスポンスの JSON を確認し、templates の中から書きたいテーマに合うテンプレートを選んでください。\n\nステップ3: 選んだテンプレートの fields 定義に従って、各フィールドにリアルなエンジニアの入力データを生成してください。\ntextarea は箇条書きで、具体的な数値・製品名・設定値を含めてください。\n\nステップ4: 生成した入力データを overrides として POST し、下書き記事を作成してください。\ncurl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    "tone": "realistic",\n    "company_name": "株式会社テスト",\n    "overrides": {\n      "フィールドID1": "値1",\n      "フィールドID2": "値2"\n    }\n  }'\n\nTEMPLATE_ID はステップ2で選んだテンプレートの id に置き換えてください。\noverrides の中身はステップ3で生成したデータです。\n\n私は IT 企業のインフラエンジニアです。Zero Trust に関するテンプレートで記事を作成してください。`
+                : `以下の curl コマンドを実行して、Cloudflare Solution Blog のテンプレート情報を取得してください。\n\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nレスポンスの JSON に含まれる guide.workflow の手順と templates の一覧を確認してください。\nその中から書きたいテーマに合うテンプレートを選び、そのテンプレートの fields 定義に従って、\n各フィールドにリアルなエンジニアの入力データを生成してください。\n\n出力形式: fields の id をキーとした JSON オブジェクト\n私は IT 企業のインフラエンジニアです。`} />
             </div>
 
             <div>
               <h3 className="mb-2 text-sm font-semibold text-gray-700">ChatGPT / Claude に渡すプロンプト</h3>
-              <CodeBlock code={`Cloudflare Solution Blog というテックブログの記事を書くために、テンプレートの入力データを作成してほしいです。\n\n以下の API を呼ぶとテンプレート一覧とフィールド定義が取得できます:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nこの API を実行し、レスポンスに含まれる templates から書きたいテーマに合うものを選び、\nそのテンプレートの fields に従って各フィールドの入力データを JSON で生成してください。\ntextarea フィールドはリアルな箇条書きで、具体的な数値・製品名・設定値を含めてください。`} />
+              <CodeBlock code={canTestGenerate
+                ? `Cloudflare Solution Blog に下書き記事を API で作成してください。\n\n手順:\n1. まず以下の API でテンプレート情報を取得:\n   curl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n2. templates の中から適切なテンプレートを選ぶ\n\n3. 選んだテンプレートの fields に従って入力データを JSON で生成\n   - required: true のフィールドは必須\n   - textarea はリアルな箇条書きで、数値・製品名を含める\n   - tag_select は options から2〜4個選ぶ\n\n4. 以下の curl で下書きを作成:\n   curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\\n     -H 'Authorization: Bearer YOUR_API_KEY' \\\n     -H 'Content-Type: application/json' \\\n     -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'\n\n5. レスポンスの editUrl を報告してください`
+                : `Cloudflare Solution Blog というテックブログの記事を書くために、テンプレートの入力データを作成してほしいです。\n\n以下の API を呼ぶとテンプレート一覧とフィールド定義が取得できます:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nこの API を実行し、レスポンスに含まれる templates から書きたいテーマに合うものを選び、\nそのテンプレートの fields に従って各フィールドの入力データを JSON で生成してください。\ntextarea フィールドはリアルな箇条書きで、具体的な数値・製品名・設定値を含めてください。`} />
             </div>
 
             <div>
               <h3 className="mb-2 text-sm font-semibold text-gray-700">Windsurf / Cascade に渡すプロンプト</h3>
-              <CodeBlock code={`以下の API を呼んで、テンプレートのフィールド定義を取得してください:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n取得した JSON の templates から適切なテンプレートを選び、\nfields 定義に基づいてリアルな入力データを JSON で生成してください。\n出力は { "フィールドID": "値", ... } の形式でお願いします。`} />
+              <CodeBlock code={canTestGenerate
+                ? `以下の手順で Cloudflare Solution Blog に下書き記事を作成してください。\n\n1. テンプレート情報を取得:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n2. templates から適切なテンプレートを選び、fields に基づいて入力データを JSON で生成\n\n3. 下書き記事を作成:\ncurl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'\n\n4. レスポンスの editUrl を教えてください`
+                : `以下の API を呼んで、テンプレートのフィールド定義を取得してください:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n取得した JSON の templates から適切なテンプレートを選び、\nfields 定義に基づいてリアルな入力データを JSON で生成してください。\n出力は { "フィールドID": "値", ... } の形式でお願いします。`} />
             </div>
           </div>
         </Section>
