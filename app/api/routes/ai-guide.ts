@@ -78,31 +78,33 @@ aiGuide.get("/", requireAuth, async (c) => {
       ],
       ...(canTestGenerate
         ? {
+            quick_generate_api: {
+              description:
+                "最も簡単な方法。topic キーワードを渡すだけでテンプレート自動選択→入力データ自動生成→記事作成まで一括実行します。テンプレート ID を知る必要はありません。",
+              endpoint: `POST ${siteUrl}/api/v1/templates/quick-generate`,
+              auth: "Authorization: Bearer YOUR_API_KEY",
+              request_body: {
+                topic: "記事のトピック（例: 'Zero Trust', 'WAF', 'Workers', 'SASE'）— 必須",
+                tone: "realistic | casual | detailed | minimal（デフォルト: realistic）",
+                company_name: "会社名（任意）",
+              },
+              curl_example: `curl -s -X POST '${siteUrl}/api/v1/templates/quick-generate' -H 'Authorization: Bearer YOUR_API_KEY' -H 'Content-Type: application/json' -d '{"topic": "Zero Trust", "tone": "realistic"}'`,
+              response_example: {
+                success: true,
+                postId: "記事ID",
+                title: "自動生成されたタイトル",
+                editUrl: "/portal/edit/{postId}",
+              },
+            },
             test_generate_api: {
               description:
-                "入力データを overrides に指定して POST すると、AI が記事全文を生成し下書き保存します。overrides を空にすると AI が全フィールドを自動生成します。",
-              endpoint: "POST /api/v1/templates/{テンプレートID}/test-generate",
+                "テンプレート ID を指定して記事を生成する上級者向け API。overrides で入力データを細かく制御できます。",
+              endpoint: `POST ${siteUrl}/api/v1/templates/{テンプレートID}/test-generate`,
               auth: "Authorization: Bearer YOUR_API_KEY",
               request_body: {
                 tone: "realistic | casual | detailed | minimal（デフォルト: realistic）",
                 company_name: "会社名（任意）",
                 overrides: "{ フィールドID: 値, ... }  — fields の id をキーにした JSON。指定しなかったフィールドは AI が自動生成",
-              },
-              curl_example: `curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
-  -H 'Authorization: Bearer YOUR_API_KEY' \\
-  -H 'Content-Type: application/json' \\
-  -d '{"tone": "realistic", "overrides": { ... }}'`,
-              response: {
-                success: true,
-                postId: "生成された記事のID",
-                title: "自動生成されたタイトル",
-                editUrl: "/portal/edit/{postId} — この URL で記事を編集・公開",
-              },
-              tone_options: {
-                realistic: "実際のエンジニアが書くようなリアルな内容。数値データ含む（デフォルト）",
-                casual: "雑なメモ書き風。箇条書き・省略・ラフな表現",
-                detailed: "非常に詳細で丁寧。背景説明が豊富",
-                minimal: "最低限の情報のみ。1〜2行の短文",
               },
             },
           }

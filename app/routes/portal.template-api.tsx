@@ -146,28 +146,40 @@ export default function PortalTemplateApiGuide() {
 
         {/* Copy-paste prompts */}
         <Section title="AI ツール別コピペ用プロンプト">
+          {canTestGenerate && (
+            <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
+              <p className="text-sm text-amber-800">
+                <strong>重要:</strong> Gemini や ChatGPT は HTTP リクエストを直接実行できません。
+                AI にはコマンドを<strong>生成してもらい</strong>、出力された curl コマンドを<strong>ご自身のターミナルで実行</strong>してください。
+              </p>
+            </div>
+          )}
+
+          {canTestGenerate && (
+            <div className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">ワンステップ生成（最も簡単）</h3>
+              <p className="mb-2 text-sm text-gray-600">
+                以下の curl を<strong>ターミナルで直接実行</strong>するだけで、トピックに合った記事が自動生成されます。AI ツール不要です。
+              </p>
+              <CodeBlock code={`# Zero Trust の記事を自動生成（トピックを変えるだけ）\ncurl -s -X POST '${siteUrl}/api/v1/templates/quick-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"topic": "Zero Trust", "tone": "realistic"}' | jq .\n\n# 他のトピック例: "WAF", "Workers", "SASE", "CDN", "DNS"`} />
+            </div>
+          )}
+
           <p className="mb-4 text-sm text-gray-600">
-            以下のプロンプトをそのまま AI ツールに貼り付けてください。<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">YOUR_API_KEY</code> の部分を上で作成した API キーに置き換えてください。
+            以下のプロンプトを AI ツールに貼り付けてください。<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">YOUR_API_KEY</code> を API キーに置き換えてください。
           </p>
           <div className="space-y-6">
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト（推奨）</h3>
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト</h3>
               <CodeBlock code={canTestGenerate
-                ? `以下の手順に従って、Cloudflare Solution Blog に下書き記事を作成してください。\n\nステップ1: テンプレート情報を取得\ncurl -s '${siteUrl}/api/v1/ai-guide' \\\n  -H 'Authorization: Bearer YOUR_API_KEY'\n\nステップ2: レスポンスの JSON を確認し、templates の中から書きたいテーマに合うテンプレートを選んでください。\n\nステップ3: 選んだテンプレートの fields 定義に従って、各フィールドにリアルなエンジニアの入力データを生成してください。\ntextarea は箇条書きで、具体的な数値・製品名・設定値を含めてください。\n\nステップ4: 生成した入力データを overrides として POST し、下書き記事を作成してください。\ncurl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    "tone": "realistic",\n    "company_name": "株式会社テスト",\n    "overrides": {\n      "フィールドID1": "値1",\n      "フィールドID2": "値2"\n    }\n  }'\n\nTEMPLATE_ID はステップ2で選んだテンプレートの id に置き換えてください。\noverrides の中身はステップ3で生成したデータです。\n\n私は IT 企業のインフラエンジニアです。Zero Trust に関するテンプレートで記事を作成してください。`
+                ? `Cloudflare Solution Blog の記事を生成するための curl コマンドを作ってほしいです。\n\n以下の API で記事を生成できます（topic にトピックを指定するだけ）:\nPOST ${siteUrl}/api/v1/templates/quick-generate\nヘッダー: Authorization: Bearer YOUR_API_KEY, Content-Type: application/json\nボディ: {"topic": "書きたいトピック", "tone": "realistic"}\n\n以下の条件で、実行可能な curl コマンドを出力してください:\n- トピック: Zero Trust（Cloudflare Access / Gateway を使った導入事例）\n- tone: realistic\n- API Key: YOUR_API_KEY\n\n出力はターミナルで直接コピペ実行できる curl コマンドのみでお願いします。`
                 : `以下の curl コマンドを実行して、Cloudflare Solution Blog のテンプレート情報を取得してください。\n\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nレスポンスの JSON に含まれる guide.workflow の手順と templates の一覧を確認してください。\nその中から書きたいテーマに合うテンプレートを選び、そのテンプレートの fields 定義に従って、\n各フィールドにリアルなエンジニアの入力データを生成してください。\n\n出力形式: fields の id をキーとした JSON オブジェクト\n私は IT 企業のインフラエンジニアです。`} />
-            </div>
-
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">ChatGPT / Claude に渡すプロンプト</h3>
-              <CodeBlock code={canTestGenerate
-                ? `Cloudflare Solution Blog に下書き記事を API で作成してください。\n\n手順:\n1. まず以下の API でテンプレート情報を取得:\n   curl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n2. templates の中から適切なテンプレートを選ぶ\n\n3. 選んだテンプレートの fields に従って入力データを JSON で生成\n   - required: true のフィールドは必須\n   - textarea はリアルな箇条書きで、数値・製品名を含める\n   - tag_select は options から2〜4個選ぶ\n\n4. 以下の curl で下書きを作成:\n   curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\\n     -H 'Authorization: Bearer YOUR_API_KEY' \\\n     -H 'Content-Type: application/json' \\\n     -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'\n\n5. レスポンスの editUrl を報告してください`
-                : `Cloudflare Solution Blog というテックブログの記事を書くために、テンプレートの入力データを作成してほしいです。\n\n以下の API を呼ぶとテンプレート一覧とフィールド定義が取得できます:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\nこの API を実行し、レスポンスに含まれる templates から書きたいテーマに合うものを選び、\nそのテンプレートの fields に従って各フィールドの入力データを JSON で生成してください。\ntextarea フィールドはリアルな箇条書きで、具体的な数値・製品名・設定値を含めてください。`} />
             </div>
 
             <div>
               <h3 className="mb-2 text-sm font-semibold text-gray-700">Windsurf / Cascade に渡すプロンプト</h3>
               <CodeBlock code={canTestGenerate
-                ? `以下の手順で Cloudflare Solution Blog に下書き記事を作成してください。\n\n1. テンプレート情報を取得:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n2. templates から適切なテンプレートを選び、fields に基づいて入力データを JSON で生成\n\n3. 下書き記事を作成:\ncurl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'\n\n4. レスポンスの editUrl を教えてください`
+                ? `以下の curl コマンドを実行して、Cloudflare Solution Blog に下書き記事を作成してください。\n\ncurl -s -X POST '${siteUrl}/api/v1/templates/quick-generate' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"topic": "Zero Trust", "tone": "realistic"}'\n\nレスポンスの editUrl を教えてください。`
                 : `以下の API を呼んで、テンプレートのフィールド定義を取得してください:\ncurl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'\n\n取得した JSON の templates から適切なテンプレートを選び、\nfields 定義に基づいてリアルな入力データを JSON で生成してください。\n出力は { "フィールドID": "値", ... } の形式でお願いします。`} />
             </div>
           </div>

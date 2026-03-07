@@ -235,82 +235,58 @@ curl -s -X POST '${siteUrl}/api/v1/templates/t-dev-01/test-generate' \\
 
         {/* AI tool copy-paste prompts */}
         <Section title="AI ツール別コピペ用プロンプト">
+          <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
+            <p className="text-sm text-amber-800">
+              <strong>重要:</strong> Gemini や ChatGPT は HTTP リクエストを直接実行できません。
+              AI にはコマンドを<strong>生成してもらい</strong>、出力された curl コマンドを<strong>ご自身のターミナルで実行</strong>してください。
+            </p>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="mb-2 text-sm font-semibold text-gray-700">ワンステップ生成（最も簡単・AI 不要）</h3>
+            <p className="mb-2 text-sm text-gray-600">
+              以下の curl を<strong>ターミナルで直接実行</strong>するだけで、トピックに合った記事が自動生成されます。
+            </p>
+            <CodeBlock>{`# Zero Trust の記事を自動生成（トピックを変えるだけ）
+curl -s -X POST '${siteUrl}/api/v1/templates/quick-generate' \\
+  -H 'Authorization: Bearer YOUR_API_KEY' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"topic": "Zero Trust", "tone": "realistic"}' | jq .
+
+# 他のトピック例: "WAF", "Workers", "SASE", "CDN", "DNS"`}</CodeBlock>
+          </div>
+
           <p className="mb-4 text-sm text-gray-600">
-            以下のプロンプトをそのまま AI ツールに貼り付けてください。<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">YOUR_API_KEY</code> の部分を API キーに置き換えてください。
+            AI ツールを活用したい場合は、以下のプロンプトを貼り付けてください。<code className="bg-gray-100 px-1 py-0.5 rounded text-xs">YOUR_API_KEY</code> を API キーに置き換えてください。
           </p>
           <div className="space-y-6">
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト（推奨）</h3>
-              <CodeBlock>{`以下の手順に従って、Cloudflare Solution Blog に下書き記事を作成してください。
+              <h3 className="mb-2 text-sm font-semibold text-gray-700">Gemini に渡すプロンプト</h3>
+              <CodeBlock>{`Cloudflare Solution Blog の記事を生成するための curl コマンドを作ってほしいです。
 
-ステップ1: テンプレート情報を取得
-curl -s '${siteUrl}/api/v1/ai-guide' \\
-  -H 'Authorization: Bearer YOUR_API_KEY'
+以下の API で記事を生成できます（topic にトピックを指定するだけ）:
+POST ${siteUrl}/api/v1/templates/quick-generate
+ヘッダー: Authorization: Bearer YOUR_API_KEY, Content-Type: application/json
+ボディ: {"topic": "書きたいトピック", "tone": "realistic"}
 
-ステップ2: レスポンスの JSON を確認し、templates の中から書きたいテーマに合うテンプレートを選んでください。
+以下の条件で、実行可能な curl コマンドを出力してください:
+- トピック: Zero Trust（Cloudflare Access / Gateway を使った導入事例）
+- tone: realistic
+- API Key: YOUR_API_KEY
 
-ステップ3: 選んだテンプレートの fields 定義に従って、各フィールドにリアルなエンジニアの入力データを生成してください。
-textarea は箇条書きで、具体的な数値・製品名・設定値を含めてください。
-
-ステップ4: 生成した入力データを overrides として POST し、下書き記事を作成してください。
-curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
-  -H 'Authorization: Bearer YOUR_API_KEY' \\
-  -H 'Content-Type: application/json' \\
-  -d '{
-    "tone": "realistic",
-    "company_name": "株式会社テスト",
-    "overrides": {
-      "フィールドID1": "値 1",
-      "フィールドID2": "値 2"
-    }
-  }'
-
-TEMPLATE_ID はステップ2で選んだテンプレートの id に置き換えてください。
-overrides の中身はステップ3で生成したデータです。
-
-私は IT 企業のインフラエンジニアです。Zero Trust に関するテンプレートで記事を作成してください。`}</CodeBlock>
-            </div>
-
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-700">ChatGPT / Claude に渡すプロンプト</h3>
-              <CodeBlock>{`Cloudflare Solution Blog に下書き記事を API で作成してください。
-
-手順:
-1. まず以下の API でテンプレート情報を取得:
-   curl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'
-
-2. templates の中から適切なテンプレートを選ぶ
-
-3. 選んだテンプレートの fields に従って入力データを JSON で生成
-   - required: true のフィールドは必須
-   - textarea はリアルな箇条書きで、数値・製品名を含める
-   - tag_select は options から2〜4個選ぶ
-
-4. 以下の curl で下書きを作成:
-   curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
-     -H 'Authorization: Bearer YOUR_API_KEY' \\
-     -H 'Content-Type: application/json' \\
-     -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'
-
-5. レスポンスの editUrl を報告してください`}</CodeBlock>
+出力はターミナルで直接コピペ実行できる curl コマンドのみでお願いします。`}</CodeBlock>
             </div>
 
             <div>
               <h3 className="mb-2 text-sm font-semibold text-gray-700">Windsurf / Cascade に渡すプロンプト</h3>
-              <CodeBlock>{`以下の手順で Cloudflare Solution Blog に下書き記事を作成してください。
+              <CodeBlock>{`以下の curl コマンドを実行して、Cloudflare Solution Blog に下書き記事を作成してください。
 
-1. テンプレート情報を取得:
-curl -s '${siteUrl}/api/v1/ai-guide' -H 'Authorization: Bearer YOUR_API_KEY'
-
-2. templates から適切なテンプレートを選び、fields に基づいて入力データを JSON で生成
-
-3. 下書き記事を作成:
-curl -s -X POST '${siteUrl}/api/v1/templates/TEMPLATE_ID/test-generate' \\
+curl -s -X POST '${siteUrl}/api/v1/templates/quick-generate' \\
   -H 'Authorization: Bearer YOUR_API_KEY' \\
   -H 'Content-Type: application/json' \\
-  -d '{"tone": "realistic", "overrides": { 生成した入力データ }}'
+  -d '{"topic": "Zero Trust", "tone": "realistic"}'
 
-4. レスポンスの editUrl を教えてください`}</CodeBlock>
+レスポンスの editUrl を教えてください。`}</CodeBlock>
             </div>
           </div>
         </Section>
