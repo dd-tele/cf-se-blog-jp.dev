@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
@@ -70,6 +70,10 @@ export default function AdminPresentation() {
     [],
   );
 
+  // Wheel / trackpad gesture — debounced so one swipe = one slide
+  const wheelLock = useRef(false);
+  const mainRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
@@ -91,6 +95,39 @@ export default function AdminPresentation() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [go]);
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      // Allow normal scroll if slide content is scrollable
+      const inner = el.firstElementChild as HTMLElement | null;
+      if (inner) {
+        const canScrollDown = inner.scrollHeight > inner.clientHeight + 1;
+        if (canScrollDown) {
+          const atTop = inner.scrollTop <= 0;
+          const atBottom = inner.scrollTop + inner.clientHeight >= inner.scrollHeight - 1;
+          // Only navigate when at scroll boundary in the swipe direction
+          if (e.deltaY > 0 && !atBottom) return;
+          if (e.deltaY < 0 && !atTop) return;
+        }
+      }
+
+      if (wheelLock.current) return;
+      const threshold = 30;
+      if (Math.abs(e.deltaY) < threshold) return;
+
+      wheelLock.current = true;
+      go(e.deltaY > 0 ? 1 : -1);
+      setTimeout(() => {
+        wheelLock.current = false;
+      }, 600);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: true });
+    return () => el.removeEventListener("wheel", onWheel);
   }, [go]);
 
   // ─── Build slides array ──────────────────────────────────────
@@ -130,11 +167,20 @@ export default function AdminPresentation() {
   slides.push(
     <div key="why" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={1} title="このブログが目指す課題解決" />
+      <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
+        Solution Engineer は日々の業務で多様な技術課題に向き合いますが、その知見やノウハウは個人に閉じがちです。
+        このプラットフォームは <strong className="text-gray-900">「知見の民主化」</strong> をテーマに、4 つの課題を解決します。
+      </p>
       <div className="grid gap-6 sm:grid-cols-2">
-        <ProblemCard number={1} problem="事例や実際の現場での実装例を検索する労力が大きい" solution="ブログとして公開し、キーワード＋セマンティック検索で事例をすぐに発見。AI チャットで追加の質問にもリアルタイム対応。" />
-        <ProblemCard number={2} problem="記事化に時間がかかる" solution="テンプレート + AI ドラフト生成で、メモ書きレベルの入力から記事を自動作成。" />
-        <ProblemCard number={3} problem="エンジニア同士の接点が限られている" solution="投稿者や会社のアウェアネスを高め、エンジニア同士の接点を創出。新たな試みの参考や共有の場に。" />
-        <ProblemCard number={4} problem="技術共有やイベント情報が分散している" solution="コミュニティイベントや Cloudflare 主催イベントのハブとなるプラットフォームを目指す。" />
+        <ProblemCard number={1} problem="事例や実際の現場での実装例を検索する労力が大きい" solution="キーワード検索に加え Vectorize によるセマンティック検索で、意味的に近い事例をヒット。記事ページの AI チャット Q&A では、記事内容を優先しつつ Cloudflare 全般の知識で補足し、質問にリアルタイム回答。" />
+        <ProblemCard number={2} problem="記事化に時間がかかり、後回しになる" solution="6 種類のテンプレート（概要紹介・技術解説・設定手順など）から選択し、メモ書きレベルの入力だけで Llama 3.3 70B が Markdown 記事を自動生成。タグ提案・文章改善もワンクリック。" />
+        <ProblemCard number={3} problem="エンジニア同士の接点が限られている" solution="投稿者プロフィール（ニックネーム・会社・専門分野）を公開し、記事からワンクリックで著者ページへ遷移。誰がどんな分野に強いかを可視化し、チーム間コラボレーションを促進。" />
+        <ProblemCard number={4} problem="技術共有やイベント情報が分散している" solution="ブログ記事・RSS フィード・セマンティック検索を軸に、Cloudflare 技術のナレッジハブとして機能。将来的にコミュニティイベント連携やニュースレター配信も計画中。" />
+      </div>
+      <div className="mt-8 rounded-xl border border-brand-200 bg-brand-50 p-5">
+        <p className="text-center text-base font-semibold text-brand-800">
+          目標：SE の技術力をチーム全体の資産に変換し、お客様提案のスピードと品質を向上させる
+        </p>
       </div>
     </div>,
   );
@@ -143,11 +189,41 @@ export default function AdminPresentation() {
   slides.push(
     <div key="philosophy" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={2} title="設計思想" />
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <PhilosophyCard number={1} title="Better Internet" desc="Cloudflare のミッションを体現するプラットフォーム" />
-        <PhilosophyCard number={2} title="Blog as a Work" desc="ブログ執筆は業務の一環。テンプレートで敷居を下げる" />
-        <PhilosophyCard number={3} title="Engineer Engagement" desc="SE 同士の知見共有とお客様との接点を強化" />
-        <PhilosophyCard number={4} title="Easy Publication" desc="AI がドラフトを生成、ワンクリックで公開" />
+      <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
+        プラットフォームの設計は <strong className="text-gray-900">4 つの柱</strong> に基づいています。
+        すべての技術選定・UX 設計はこれらの原則に照らして判断しています。
+      </p>
+      <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <PhilosophyCard number={1} title="Better Internet" desc="Cloudflare の「help build a better Internet」を自ら体現。100% Cloudflare スタックでゼロトラスト・エッジ最適化・AI を実証。" />
+        <PhilosophyCard number={2} title="Blog as a Work" desc="ブログ執筆は業務の一環。テンプレート + AI ドラフトで執筆時間を大幅削減し、誰でも気軽にナレッジを発信できる文化を作る。" />
+        <PhilosophyCard number={3} title="Engineer Engagement" desc="著者プロフィール・専門分野の可視化でエンジニア同士の接点を創出。記事を通じてお客様にも SE の専門性を伝える。" />
+        <PhilosophyCard number={4} title="Easy Publication" desc="メモ書き → AI ドラフト → レビュー → ワンクリック公開。技術ブログの敷居を限りなく下げ、知見共有を日常に。" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h4 className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400">アーキテクチャ原則</h4>
+          <ul className="space-y-1.5 text-sm text-gray-600">
+            <li>• サーバーレス・エッジファースト — コールドスタートなし</li>
+            <li>• 全サービス Cloudflare で完結 — 外部依存ゼロ</li>
+            <li>• TypeScript フルスタック型安全</li>
+          </ul>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h4 className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400">セキュリティ原則</h4>
+          <ul className="space-y-1.5 text-sm text-gray-600">
+            <li>• Zero Trust（Cloudflare Access + RBAC）</li>
+            <li>• 多層防御（WAF → Turnstile → Guard → Gateway）</li>
+            <li>• Fail-open 設計 — 障害時は可用性優先</li>
+          </ul>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h4 className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400">UX 原則</h4>
+          <ul className="space-y-1.5 text-sm text-gray-600">
+            <li>• 最小限のステップで記事公開</li>
+            <li>• AI は補助。最終判断は人間が行う</li>
+            <li>• レスポンシブ & アクセシブル</li>
+          </ul>
+        </div>
       </div>
     </div>,
   );
@@ -156,12 +232,30 @@ export default function AdminPresentation() {
   slides.push(
     <div key="stats" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={3} title="現在の実績（ライブデータ）" />
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
+        以下の数値は D1 データベースからリアルタイムに取得しています。プレゼンテーション表示時点の最新値です。
+      </p>
+      <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="公開記事" value={stats.posts.published ?? 0} sub={`/ ${stats.posts.total ?? 0} 件`} color="blue" />
+        <StatCard label="累計閲覧数" value={stats.posts.totalViews ?? 0} sub="PV" color="blue" />
         <StatCard label="登録ユーザー" value={stats.users.total ?? 0} sub="名" color="purple" />
         <StatCard label="AI ドラフト生成" value={stats.drafts.completed ?? 0} sub={`/ ${stats.drafts.total ?? 0} 回`} color="amber" />
         <StatCard label="Q&A スレッド" value={stats.threads.total ?? 0} sub={`(Active: ${stats.threads.active ?? 0})`} color="green" />
         <StatCard label="テンプレート" value={stats.templates ?? 0} sub="種類" color="red" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
+          <h4 className="mb-1 text-sm font-bold text-blue-800">記事</h4>
+          <p className="text-sm leading-relaxed text-gray-600">テンプレート AI で生成 → レビュー → 公開のフローで蓄積中。下書き含め着実に増加。</p>
+        </div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <h4 className="mb-1 text-sm font-bold text-amber-800">AI ドラフト</h4>
+          <p className="text-sm leading-relaxed text-gray-600">Llama 3.3 70B による自動生成。完了率が高いほどテンプレートの品質が良い証拠。</p>
+        </div>
+        <div className="rounded-xl border border-green-200 bg-green-50 p-5">
+          <h4 className="mb-1 text-sm font-bold text-green-800">Q&A チャット</h4>
+          <p className="text-sm leading-relaxed text-gray-600">記事ごとの AI チャット。24h TTL で自動削除されるため Active 数はリアルタイムの利用状況を反映。</p>
+        </div>
       </div>
     </div>,
   );
@@ -170,38 +264,47 @@ export default function AdminPresentation() {
   slides.push(
     <div key="stack" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={4} title="技術スタック — 100% Cloudflare" />
+      <p className="mb-6 max-w-4xl text-lg leading-relaxed text-gray-600">
+        外部クラウドやサードパーティ SaaS を一切使わず、<strong className="text-gray-900">Cloudflare のサービスだけ</strong>でフルスタック Web アプリケーションを構築。
+        フロントエンド・API・DB・ストレージ・AI・認証・セキュリティすべてがエッジで動作します。
+      </p>
       <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
         <div className="grid divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <div className="p-8">
             <h3 className="mb-5 text-sm font-semibold uppercase tracking-widest text-gray-400">フロントエンド / API</h3>
             <ul className="space-y-4">
-              <StackItem name="Remix v2" desc="SSR + ネストルーティング" />
+              <StackItem name="Remix v2" desc="SSR + ネストルーティング + Vite" />
               <StackItem name="Hono" desc="API レイヤー、streamSSE、型安全バインディング" highlight />
-              <StackItem name="Tailwind CSS" desc="ユーティリティ CSS + Typography" />
-              <StackItem name="TypeScript" desc="フルスタック型安全" />
+              <StackItem name="Tailwind CSS" desc="ユーティリティ CSS + Typography プラグイン" />
+              <StackItem name="TypeScript" desc="フルスタック型安全（Drizzle スキーマ〜UI まで）" />
+              <StackItem name="Drizzle ORM" desc="D1 用 SQL ビルダー + マイグレーション" />
             </ul>
           </div>
           <div className="p-8">
-            <h3 className="mb-5 text-sm font-semibold uppercase tracking-widest text-gray-400">Cloudflare サービス</h3>
+            <h3 className="mb-5 text-sm font-semibold uppercase tracking-widest text-gray-400">Cloudflare サービス（17 種）</h3>
             <ul className="space-y-4">
-              <StackItem name="Pages" desc="ホスティング + CI/CD" />
-              <StackItem name="D1" desc="SQLite DB（Drizzle ORM）" />
-              <StackItem name="R2" desc="画像ストレージ（S3 互換）" />
-              <StackItem name="Workers AI" desc="Llama 3.3 70B + Llama Guard 3" highlight />
-              <StackItem name="Vectorize" desc="ベクトル検索・関連記事推薦" />
-              <StackItem name="KV" desc="セッション / キャッシュ / ドラフト" />
-              <StackItem name="Access" desc="Zero Trust 認証（SSO）+ API 連携" />
-              <StackItem name="Email Workers" desc="通知メール送信" highlight />
-              <StackItem name="WAF" desc="OWASP Top 10 / カスタムルール" />
+              <StackItem name="Pages" desc="ホスティング + GitHub CI/CD" />
+              <StackItem name="D1" desc="SQLite DB — 13 テーブル、Drizzle ORM" />
+              <StackItem name="R2" desc="画像 / アバターストレージ（S3 互換）" />
+              <StackItem name="Workers AI" desc="Llama 3.3 70B（ドラフト/チャット）+ Llama Guard 3 8B（モデレーション）+ bge-base-en（Embedding）" highlight />
+              <StackItem name="Vectorize" desc="ベクトル検索 — セマンティック検索 + 関連記事推薦" />
+              <StackItem name="KV" desc="セッション / レート制限 / キャッシュ" />
+              <StackItem name="Access" desc="Zero Trust 認証（Google SSO）+ RBAC + API 連携" />
+              <StackItem name="Email Workers" desc="申請承認・セキュリティ通知メール送信" highlight />
+              <StackItem name="WAF" desc="OWASP Top 10 + カスタムルール" />
               <StackItem name="Bot Management" desc="自動化攻撃検知・軽減" />
-              <StackItem name="API Shield" desc="OpenAPI スキーマバリデーション" highlight />
-              <StackItem name="Turnstile" desc="チャット Bot 保護（invisible）" highlight />
-              <StackItem name="AI Gateway" desc="AI ガードレール / ログ / 分析" highlight />
+              <StackItem name="API Shield" desc="OpenAPI 3.0 スキーマで全 16 EP を検証" highlight />
+              <StackItem name="Turnstile" desc="invisible CAPTCHA — チャット Bot 保護" highlight />
+              <StackItem name="AI Gateway" desc="AI ガードレール / ログ / レイテンシ分析" highlight />
             </ul>
           </div>
         </div>
       </div>
-      <div className="mt-6 text-right">
+      <div className="mt-6 flex items-center justify-between">
+        <div className="flex gap-3">
+          <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">赤字 = 最近追加</span>
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">GitHub Actions で自動デプロイ</span>
+        </div>
         <Link to="/admin/presentation/stack" className="inline-flex items-center gap-1.5 rounded-lg bg-gray-800 px-6 py-3 text-base font-bold text-white shadow-sm transition-colors hover:bg-gray-700">
           技術スタック詳細を見る →
         </Link>
@@ -234,16 +337,24 @@ export default function AdminPresentation() {
       <p className="mb-6 text-base leading-relaxed text-gray-600">
         Cloudflare Workers に最適化された超軽量フレームワーク
         <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
-        を API レイヤーに採用。Remix の SSR/UI 層と組み合わせたハイブリッド構成。
+        を API レイヤーに採用。Remix が SSR / UI / ルーティングを担当し、Hono が API ロジック・ストリーミング・ミドルウェアを担当する
+        <strong className="text-gray-900"> ハイブリッドアーキテクチャ</strong>。
       </p>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <HonoCard number={1} title="型安全バインディング" desc="c.env.DB、c.env.AI 等、全 CF サービスに型付きアクセス" />
-        <HonoCard number={2} title="streamSSE" desc="AI チャットをリアルタイム配信。ReadableStream 手動構築が不要" />
-        <HonoCard number={3} title="共通ミドルウェア" desc="認証・認可・CORS・ロガーを宣言的に適用" />
-        <HonoCard number={4} title="超軽量・高速" desc="依存ゼロ、バンドル極小。Workers の起動を最小化" />
+      <div className="mb-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <HonoCard number={1} title="型安全バインディング" desc="HonoEnv 型で c.env.DB / c.env.AI / c.env.R2 等すべての CF バインディングに型付きアクセス。実行時エラーを防止。" />
+        <HonoCard number={2} title="streamSSE ヘルパー" desc="AI チャット応答を Server-Sent Events でリアルタイム配信。ReadableStream の手動構築が不要で、エラーハンドリングも組み込み。" />
+        <HonoCard number={3} title="共通ミドルウェア" desc="optionalAuth / requireAuth / requireRole の認証チェーン + CORS + logger を宣言的にルートへ適用。" />
+        <HonoCard number={4} title="超軽量・高速" desc="依存ゼロ、14KB gzip。V8 Isolate の起動コストを最小化。Remix との共存でもバンドルサイズ影響は極小。" />
       </div>
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-400">API エンドポイント</h4>
+      <div className="mb-6 rounded-xl border border-red-200 bg-red-50/50 p-5">
+        <h4 className="mb-2 text-sm font-bold text-red-800">Remix ↔ Hono 統合パターン</h4>
+        <p className="text-sm leading-relaxed text-gray-600">
+          Remix のルートファイル（例: <code className="text-xs">api.v1.chat.tsx</code>）は薄いシムで、リクエストを <code className="text-xs">app.fetch(request, env)</code> で Hono に委譲。
+          Vite が <code className="text-xs">~/</code> パスエイリアスを解決するため、Pages Functions ではなく Remix ルート経由で統合。
+        </p>
+      </div>
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-400">API エンドポイント（11 routes）</h4>
         <div className="grid gap-3 text-base sm:grid-cols-2">
           <Endpoint method="POST" path="/api/v1/chat" desc="AI チャット Q&A（SSE）" />
           <Endpoint method="POST" path="/api/v1/ai/suggest-tags" desc="タグ提案" />
@@ -349,15 +460,43 @@ export default function AdminPresentation() {
 
   /* ── Slide 8: Article Creation Flow ── */
   slides.push(
-    <div key="flow" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10 flex flex-col items-center justify-center">
+    <div key="flow" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={8} title="記事作成フロー" />
-      <div className="w-full overflow-hidden rounded-2xl border bg-white shadow-sm">
+      <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
+        「メモ書きレベルの入力」から「公開記事」まで、<strong className="text-gray-900">5 ステップ</strong>で完結。
+        AI がドラフトを生成するため、執筆にかかる時間を大幅に短縮します。
+      </p>
+      <div className="mb-8 w-full overflow-hidden rounded-2xl border bg-white shadow-sm">
         <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
           <FlowStep step={1} title="テンプレート選択" desc="6種類から選択" />
           <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" />
           <FlowStep step={3} title="AI ドラフト" desc="Llama 3.3 70B が記事化" />
           <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタ" />
           <FlowStep step={5} title="公開" desc="ワンクリック" />
+        </div>
+      </div>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-amber-800">Step 1–2: テンプレート & 入力</h4>
+          <p className="text-sm leading-relaxed text-gray-600">
+            概要紹介・技術解説・設定手順・ベストプラクティス・トラブルシューティング・イベントレポートの 6 種から選択。
+            各テンプレートは専用フォームで、タイトル・要点・メモを入力するだけ。文章力は不要。
+          </p>
+        </div>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-blue-800">Step 3: AI ドラフト生成</h4>
+          <p className="text-sm leading-relaxed text-gray-600">
+            Llama 3.3 70B がテンプレートの構造に沿って Markdown 記事を自動生成。
+            Cloudflare 事例スタイルに最適化されたプロンプトエンジニアリング。
+            タグ提案（suggest-tags）・文章改善（improve）もワンクリックで利用可能。
+          </p>
+        </div>
+        <div className="rounded-xl border border-green-200 bg-green-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-green-800">Step 4–5: 編集 & 公開</h4>
+          <p className="text-sm leading-relaxed text-gray-600">
+            リッチ Markdown エディタで自由に編集。R2 への画像アップロード対応。
+            プレビューで確認後、ワンクリックで公開。公開後は Vectorize に自動インデックスされ、検索・Q&A の対象に。
+          </p>
         </div>
       </div>
     </div>,
@@ -498,7 +637,7 @@ export default function AdminPresentation() {
       </header>
 
       {/* ─ Slide viewport ─ */}
-      <main className="relative flex-1 overflow-hidden">
+      <main ref={mainRef} className="relative flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">{slides[current]}</div>
       </main>
 
