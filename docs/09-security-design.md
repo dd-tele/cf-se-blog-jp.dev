@@ -499,6 +499,40 @@ export const securityHeaders: HeadersInit = {
 };
 ```
 
+### 5.3 API Shield (Schema Validation)
+
+> **実装状況:** OpenAPI 3.0 スキーマ (`api-shield-schema.json`) を Cloudflare API Shield に登録済み。全 API エンドポイントのメソッド・パス・リクエストボディ・パラメータを検証。
+
+**登録スキーマ概要:**
+
+| カテゴリ | エンドポイント数 | 主な保護対象 |
+|---|---|---|
+| Chat | 2 (GET/POST) | AI チャット Q&A — postId/message バリデーション |
+| AI | 3 (POST) | タグ提案・文章改善・トレンドレポート — リクエストボディ検証 |
+| Templates | 5 (GET/POST) | テンプレート CRUD + AI 記事生成 — パスパラメータ + ボディ検証 |
+| API Keys | 3 (GET/POST/DELETE) | API キー管理 — パスパラメータ + ボディ検証 |
+| Upload | 1 (POST) | 画像アップロード — メソッド + パス検証（multipart/form-data はアプリ側で検証） |
+| System | 2 (GET) | ヘルスチェック + R2 オブジェクト配信 |
+
+**認証スキーム定義:**
+
+```yaml
+securitySchemes:
+  bearerAuth:     # Personal API Key (cfbk_ プレフィックス)
+    type: http
+    scheme: bearer
+  cookieAuth:     # セッション Cookie (__cf_blog_session)
+    type: apiKey
+    in: cookie
+  cfAccess:       # Cloudflare Access JWT (CF_Authorization)
+    type: apiKey
+    in: cookie
+```
+
+**注意事項:**
+- `multipart/form-data` は API Shield のスキーマバリデーション非対応のため、`/api/upload-image` のボディ検証はアプリ側（MIME タイプ・サイズ制限）で実施
+- スキーマファイル: `api-shield-schema.json`（リポジトリルート）
+
 ---
 
 ## 6. 監査 & コンプライアンス

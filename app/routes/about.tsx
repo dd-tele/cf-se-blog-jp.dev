@@ -167,6 +167,12 @@ export default function AboutPage() {
               tags={["WAF", "Bot対策", "API保護"]}
             />
             <TechCard
+              color="sky"
+              title="API Shield"
+              description="OpenAPI 3.0 スキーマを登録し、全 API エンドポイントのメソッド・パス・リクエストボディをエッジで検証。スキーマに合致しないリクエストを自動ブロック。"
+              tags={["Schema Validation", "OpenAPI 3.0", "API保護"]}
+            />
+            <TechCard
               color="slate"
               title="KV (Key-Value)"
               description="セッション管理とページキャッシュに使用。エッジ上での低レイテンシなデータアクセスを実現。"
@@ -491,7 +497,7 @@ export default function AboutPage() {
                 <li>カスタムドメインに WAF を適用</li>
                 <li>OWASP Top 10 防御（SQLi / XSS 等）</li>
                 <li>Bot Management で自動化攻撃を検知・軽減</li>
-                <li>API エンドポイントの不正リクエスト保護</li>
+                <li>API Shield — OpenAPI スキーマで全エンドポイントを検証</li>
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -555,6 +561,7 @@ export default function AboutPage() {
                 <SpecRow label="API レイヤー" value="Hono — streamSSE, 型付き Bindings, ミドルウェア" />
                 <SpecRow label="AI モデル" value="Meta Llama 3.3 70B Instruct fp8-fast (Workers AI)" />
                 <SpecRow label="ベクトル検索" value="Cloudflare Vectorize" />
+                <SpecRow label="API 保護" value="API Shield — OpenAPI 3.0 スキーマバリデーション (16 エンドポイント)" />
                 <SpecRow label="認証" value="Cloudflare Access (Zero Trust)" />
                 <SpecRow label="セッション" value="Cloudflare KV" />
                 <SpecRow label="メール通知" value="Email Workers (send_email) + Email Routing API" />
@@ -610,6 +617,7 @@ function TechCard({
     cyan: "border-cyan-200 bg-cyan-50/50",
     red: "border-red-200 bg-red-50/50",
     teal: "border-teal-200 bg-teal-50/50",
+    sky: "border-sky-200 bg-sky-50/50",
   };
   const tagColorMap: Record<string, string> = {
     blue: "bg-blue-100 text-blue-700",
@@ -623,6 +631,7 @@ function TechCard({
     cyan: "bg-cyan-100 text-cyan-700",
     red: "bg-red-100 text-red-700",
     teal: "bg-teal-100 text-teal-700",
+    sky: "bg-sky-100 text-sky-700",
   };
 
   return (

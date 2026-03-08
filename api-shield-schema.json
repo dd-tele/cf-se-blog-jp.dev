@@ -1,0 +1,740 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Cloudflare Solution Blog API",
+    "description": "Cloudflare SE Blog Platform の API スキーマ。Cloudflare API Shield で利用するための OpenAPI 定義。",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Blog Admin"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://cf-se-blog-jp.dev",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "ヘルスチェック",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["ok"] }
+                  },
+                  "required": ["status"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat": {
+      "get": {
+        "operationId": "getChatMessages",
+        "summary": "チャットスレッドのメッセージ取得",
+        "tags": ["Chat"],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "記事 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "スレッドのメッセージ一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "threadId": { "type": "string" },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "role": { "type": "string", "enum": ["user", "ai", "se"] },
+                          "content": { "type": "string" },
+                          "created_at": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "operationId": "sendChatMessage",
+        "summary": "AI チャット Q&A（SSE ストリーミング）",
+        "tags": ["Chat"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "postId": { "type": "string", "description": "記事 ID" },
+                  "message": { "type": "string", "description": "ユーザーメッセージ（最大1000文字）", "maxLength": 1000 }
+                },
+                "required": ["postId", "message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE ストリーミング応答",
+            "content": {
+              "text/event-stream": {
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/ai/suggest-tags": {
+      "post": {
+        "operationId": "suggestTags",
+        "summary": "AI タグ提案",
+        "tags": ["AI"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": { "type": "string", "description": "タグ提案対象の記事コンテンツ" }
+                },
+                "required": ["content"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "タグ提案結果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/ai/improve": {
+      "post": {
+        "operationId": "improveText",
+        "summary": "AI 文章改善",
+        "tags": ["AI"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": { "type": "string", "description": "改善対象のテキスト" }
+                },
+                "required": ["text"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "改善されたテキスト",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "improved": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/ai/trend-report": {
+      "post": {
+        "operationId": "generateTrendReport",
+        "summary": "トレンドレポート生成（admin/se のみ）",
+        "tags": ["AI"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "トレンドレポート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "report": { "type": "object" },
+                    "articleCount": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/templates": {
+      "get": {
+        "operationId": "listTemplates",
+        "summary": "アクティブなテンプレート一覧",
+        "tags": ["Templates"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "テンプレート一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "templates": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/TemplateSummary" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "get": {
+        "operationId": "getTemplate",
+        "summary": "テンプレート詳細（フィールド定義付き）",
+        "tags": ["Templates"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "テンプレート ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "テンプレート詳細",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TemplateDetail" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/templates/{id}/test-generate": {
+      "post": {
+        "operationId": "testGenerateArticle",
+        "summary": "テンプレートから記事を AI 生成（admin/se のみ）",
+        "tags": ["Templates"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "テンプレート ID"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "overrides": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "description": "フィールド ID をキーとした入力値のオーバーライド"
+                  },
+                  "tone": {
+                    "type": "string",
+                    "enum": ["realistic", "casual", "detailed", "minimal"],
+                    "default": "realistic",
+                    "description": "生成トーン"
+                  },
+                  "company_name": {
+                    "type": "string",
+                    "description": "会社名（任意）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "記事生成結果",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenerateResult" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/templates/quick-generate": {
+      "post": {
+        "operationId": "quickGenerateArticle",
+        "summary": "トピック指定でテンプレート自動選択＆記事生成（admin/se のみ）",
+        "tags": ["Templates"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "topic": {
+                    "type": "string",
+                    "description": "記事のトピック（例: 'Zero Trust', 'WAF', 'Workers'）"
+                  },
+                  "tone": {
+                    "type": "string",
+                    "enum": ["realistic", "casual", "detailed", "minimal"],
+                    "default": "realistic"
+                  },
+                  "company_name": { "type": "string", "description": "会社名（任意）" },
+                  "overrides": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "description": "フィールド入力値のオーバーライド"
+                  }
+                },
+                "required": ["topic"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "記事生成結果",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenerateResult" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/ai-guide": {
+      "get": {
+        "operationId": "getAiGuide",
+        "summary": "AI ツール向け完全ガイド（テンプレート一覧＋使い方）",
+        "tags": ["Templates"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "AI ガイド + テンプレート一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "guide": { "type": "object" },
+                    "templates": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/TemplateDetail" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/api-keys": {
+      "get": {
+        "operationId": "listApiKeys",
+        "summary": "自分の API キー一覧",
+        "tags": ["API Keys"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "API キー一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "keys": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ApiKeyInfo" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "operationId": "createApiKey",
+        "summary": "新しい API キーを作成",
+        "tags": ["API Keys"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "default": "My API Key",
+                    "description": "キーの表示名"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "作成された API キー（キー値は一度だけ表示）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "name": { "type": "string" },
+                    "key": { "type": "string", "description": "cfbk_ プレフィックス付きの完全なキー（一度だけ表示）" },
+                    "prefix": { "type": "string", "description": "キーの先頭部分（cfbk_XXXX...）" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/api-keys/{id}": {
+      "delete": {
+        "operationId": "revokeApiKey",
+        "summary": "API キーを無効化",
+        "tags": ["API Keys"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "API キー ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "無効化成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/upload-image": {
+      "post": {
+        "operationId": "uploadImage",
+        "summary": "画像アップロード（R2）— multipart/form-data（ボディ検証はアプリ側で実施）",
+        "tags": ["Upload"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "アップロード成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": { "type": "string", "format": "uri", "description": "アップロードされた画像の URL" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/r2/{key}": {
+      "get": {
+        "operationId": "serveR2Object",
+        "summary": "R2 オブジェクト配信（画像等）",
+        "tags": ["Upload"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "R2 オブジェクトキー（例: images/xxxxx.png）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "オブジェクト本体",
+            "content": {
+              "image/*": {
+                "schema": { "type": "string", "format": "binary" }
+              },
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": { "type": "string", "example": "public, max-age=31536000, immutable" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Personal API Key (cfbk_ プレフィックス)"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__cf_blog_session",
+        "description": "セッション Cookie（ブラウザ認証）"
+      },
+      "cfAccess": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "CF_Authorization",
+        "description": "Cloudflare Access JWT Cookie"
+      }
+    },
+    "schemas": {
+      "TemplateSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "categoryName": { "type": "string" },
+          "templateType": { "type": "string", "enum": ["case_study", "solution", "tips"] },
+          "estimatedMinutes": { "type": "integer" }
+        }
+      },
+      "TemplateDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "categoryName": { "type": "string" },
+          "templateType": { "type": "string" },
+          "estimatedMinutes": { "type": "integer" },
+          "fields": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TemplateField" }
+          }
+        }
+      },
+      "TemplateField": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["text", "textarea", "select", "tag_select", "url_list", "code", "checkbox"]
+          },
+          "required": { "type": "boolean" },
+          "placeholder": { "type": "string", "nullable": true },
+          "options": {
+            "type": "array",
+            "items": { "type": "string" },
+            "nullable": true
+          }
+        }
+      },
+      "GenerateResult": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "postId": { "type": "string" },
+          "title": { "type": "string" },
+          "templateId": { "type": "string" },
+          "templateName": { "type": "string" },
+          "topic": { "type": "string" },
+          "tone": { "type": "string" },
+          "generatedInputs": { "type": "object", "additionalProperties": {} },
+          "latencyMs": { "type": "integer" },
+          "editUrl": { "type": "string" }
+        }
+      },
+      "ApiKeyInfo": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "keyPrefix": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "lastUsedAt": { "type": "string", "nullable": true }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        },
+        "required": ["error"]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "リクエストが不正",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "認証が必要",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "権限不足（admin/se ロール必要）",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "リソースが見つからない",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "レート制限超過",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "サーバーエラー",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -127,6 +127,7 @@ export default function AdminPresentation() {
             <Badge>Email Workers</Badge>
             <Badge>Personal API Keys</Badge>
             <Badge>Author Profiles</Badge>
+            <Badge>API Shield</Badge>
           </div>
         </section>
 
@@ -418,6 +419,10 @@ export default function AdminPresentation() {
               items={["Llama Guard 3 8B", "スパムフィルター", "フラグ & 手動レビュー"]}
             />
             <SecurityCard
+              title="API Shield"
+              items={["OpenAPI 3.0 スキーマで全 16 エンドポイントを検証", "メソッド・パス・リクエストボディのバリデーション", "スキーマ不一致リクエストを自動ブロック", "Bearer / Cookie / CF Access 3 種の認証定義"]}
+            />
+            <SecurityCard
               title="API キー & エッジ性能"
               items={["Bearer トークン (cfbk_) + SHA-256 ハッシュ保存", "Session Cookie とのデュアル認証", "V8 Isolates（コールドスタートなし）", "KV キャッシュ + グローバル CDN"]}
             />
@@ -490,6 +495,20 @@ export default function AdminPresentation() {
               ]}
               files={["app/api/middleware.ts", "app/lib/api-keys.server.ts"]}
               color="amber"
+            />
+
+            {/* API Shield */}
+            <TechDetail
+              title="API Shield — OpenAPI スキーマバリデーション"
+              problem="API エンドポイントに対する不正なリクエスト（未定義パス・不正メソッド・不正ボディ）をエッジレベルでブロックしたい"
+              solutions={[
+                "OpenAPI 3.0 スキーマ (api-shield-schema.json) を作成し、全 16 エンドポイントのメソッド・パス・パラメータ・ボディを定義",
+                "Cloudflare API Shield にスキーマを登録、Schema Validation を有効化",
+                "multipart/form-data は API Shield 非対応のため、/api/upload-image のボディ検証はアプリ側（MIME タイプ・10MB 制限）で実施",
+                "Bearer (cfbk_) / Session Cookie / CF Access JWT の 3 種の securitySchemes を定義",
+              ]}
+              files={["api-shield-schema.json"]}
+              color="blue"
             />
           </div>
         </section>
