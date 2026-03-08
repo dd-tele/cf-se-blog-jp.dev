@@ -567,23 +567,27 @@ export default function AboutPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                <SpecRow label="フレームワーク" value="Remix v2 (Vite) + Hono (API)" />
-                <SpecRow label="ランタイム" value="Cloudflare Workers (V8 Isolates)" />
-                <SpecRow label="データベース" value="Cloudflare D1 (SQLite at edge)" />
-                <SpecRow label="ORM" value="Drizzle ORM" />
-                <SpecRow label="ストレージ" value="Cloudflare R2 (S3 互換)" />
-                <SpecRow label="API レイヤー" value="Hono — streamSSE, 型付き Bindings, ミドルウェア" />
-                <SpecRow label="AI モデル" value="Meta Llama 3.3 70B Instruct fp8-fast (Workers AI)" />
-                <SpecRow label="ベクトル検索" value="Cloudflare Vectorize" />
-                <SpecRow label="API 保護" value="API Shield (Schema Validation) + Turnstile (Bot保護) + AI Gateway (Guardrails)" />
-                <SpecRow label="認証" value="Cloudflare Access (Zero Trust)" />
-                <SpecRow label="セッション" value="Cloudflare KV" />
+                <SpecRow label="フレームワーク" value="Remix v2 (Vite) + Hono (API Layer)" />
+                <SpecRow label="ランタイム" value="Cloudflare Workers (V8 Isolates — コールドスタートなし)" />
+                <SpecRow label="ホスティング" value="Cloudflare Pages (SSR + CDN 静的配信)" />
+                <SpecRow label="データベース" value="Cloudflare D1 (SQLite at edge) + Drizzle ORM" />
+                <SpecRow label="ストレージ" value="Cloudflare R2 (S3 互換・エグレス無料)" />
+                <SpecRow label="API レイヤー" value="Hono — streamSSE, 型付き Bindings, CORS / Auth / Logger ミドルウェア" />
+                <SpecRow label="AI モデル" value="Llama 3.3 70B fp8-fast (ドラフト・チャット) + Llama Guard 3 8B (モデレーション)" />
+                <SpecRow label="AI Gateway" value="AI 呼び出しの一元管理 — ログ・分析・レート制限・ガードレール（稼働中）" />
+                <SpecRow label="ベクトル検索" value="Cloudflare Vectorize — セマンティック検索 + RAG チャット Q&A" />
+                <SpecRow label="WAF / DDoS" value="OWASP Core Ruleset + Bot Management + カスタムルール" />
+                <SpecRow label="API Shield" value="OpenAPI 3.0 スキーマで全 16 エンドポイントをエッジ検証" />
+                <SpecRow label="Turnstile" value="チャット Bot 保護 (invisible モード・稼働中)" />
+                <SpecRow label="認証" value="Cloudflare Access (Zero Trust / Google SSO)" />
+                <SpecRow label="認可" value="RBAC (admin / se / user) + Personal API Keys (Bearer cfbk_)" />
+                <SpecRow label="セッション / キャッシュ" value="Cloudflare KV (グローバル分散)" />
                 <SpecRow label="メール通知" value="Email Workers (send_email) + Email Routing API" />
                 <SpecRow label="投稿者申請" value="/apply → Email 検証 → 管理者承認 → Access ポリシー自動追加" />
                 <SpecRow label="CSS" value="Tailwind CSS v3 + Typography plugin" />
                 <SpecRow label="Markdown" value="marked + DOMPurify (XSS 対策)" />
-                <SpecRow label="言語" value="TypeScript 5.7" />
-                <SpecRow label="デプロイ" value="Wrangler CLI → Cloudflare Pages" />
+                <SpecRow label="言語" value="TypeScript 5.7 (フルスタック型安全)" />
+                <SpecRow label="CI/CD" value="GitHub Actions → Wrangler CLI → Cloudflare Pages" />
               </tbody>
             </table>
           </div>

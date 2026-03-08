@@ -712,7 +712,7 @@ function SlideHeader({ number, title }: { number: number; title: string }) {
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-sm font-bold text-brand-700">
         {number}
       </span>
-      <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+      <h2 className="text-3xl font-bold text-gray-900">{title}</h2>
     </div>
   );
 }
@@ -731,10 +731,10 @@ function ProblemCard({
       <span className="mb-4 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-gray-500">
         {number}
       </span>
-      <h3 className="mb-2 text-sm font-bold text-red-600">課題</h3>
-      <p className="mb-4 text-sm font-medium text-gray-900">{problem}</p>
-      <h3 className="mb-2 text-sm font-bold text-green-600">解決</h3>
-      <p className="text-sm text-gray-600">{solution}</p>
+      <h3 className="mb-2 text-base font-bold text-red-600">課題</h3>
+      <p className="mb-4 text-base font-medium text-gray-900">{problem}</p>
+      <h3 className="mb-2 text-base font-bold text-green-600">解決</h3>
+      <p className="text-base text-gray-600">{solution}</p>
     </div>
   );
 }
