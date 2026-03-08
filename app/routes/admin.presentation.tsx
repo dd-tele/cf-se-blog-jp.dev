@@ -168,18 +168,24 @@ export default function AdminPresentation() {
     <div key="why" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={1} title="このブログが目指す課題解決" />
       <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
-        Solution Engineer は日々の業務で多様な技術課題に向き合いますが、その知見やノウハウは個人に閉じがちです。
-        このプラットフォームは <strong className="text-gray-900">「知見の民主化」</strong> をテーマに、4 つの課題を解決します。
+        Cloudflare を導入済み・検討中のすべてのユーザーが、<strong className="text-gray-900">現場のリアルな技術適用や導入体験</strong>を共有し、
+        相互に学び合える<strong className="text-gray-900">ナレッジハブ</strong>を目指しています。
+        個人や組織に閉じがちな知見をオープンにし、コミュニティ全体の技術品質を底上げします。
       </p>
       <div className="grid gap-6 sm:grid-cols-2">
-        <ProblemCard number={1} problem="事例や実際の現場での実装例を検索する労力が大きい" solution="キーワード検索に加え Vectorize によるセマンティック検索で、意味的に近い事例をヒット。記事ページの AI チャット Q&A では、記事内容を優先しつつ Cloudflare 全般の知識で補足し、質問にリアルタイム回答。" />
-        <ProblemCard number={2} problem="記事化に時間がかかり、後回しになる" solution="6 種類のテンプレート（概要紹介・技術解説・設定手順など）から選択し、メモ書きレベルの入力だけで Llama 3.3 70B が Markdown 記事を自動生成。タグ提案・文章改善もワンクリック。" />
-        <ProblemCard number={3} problem="エンジニア同士の接点が限られている" solution="投稿者プロフィール（ニックネーム・会社・専門分野）を公開し、記事からワンクリックで著者ページへ遷移。誰がどんな分野に強いかを可視化し、チーム間コラボレーションを促進。" />
-        <ProblemCard number={4} problem="技術共有やイベント情報が分散している" solution="ブログ記事・RSS フィード・セマンティック検索を軸に、Cloudflare 技術のナレッジハブとして機能。将来的にコミュニティイベント連携やニュースレター配信も計画中。" />
+        <ProblemCard number={1} problem="現場のリアルな導入事例・技術適用が見つからない" solution="キーワード + Vectorize セマンティック検索で、意味的に近い事例をすばやく発見。記事ごとの AI チャット Q&A で疑問をその場で解消。導入のリアルを記事として蓄積・共有。" />
+        <ProblemCard number={2} problem="知見の発信に時間がかかり、後回しになる" solution="6 種類のテンプレートから選択し、メモ書きレベルの入力だけで Llama 3.3 70B が Markdown 記事を自動生成。タグ提案・文章改善もワンクリック。発信のハードルを限りなく下げる。" />
+        <ProblemCard number={3} problem="ユーザー同士・エンジニア同士の接点が限られている" solution="投稿者プロフィール（会社・専門分野）を公開し、記事から著者ページへ遷移。誰がどんな分野で実績があるかを可視化し、企業や立場を超えた相互支援・コラボレーションを促進。" />
+        <ProblemCard number={4} problem="導入判断に必要な実践情報が分散している" solution="ブログ記事・RSS フィード・セマンティック検索を軸に、Cloudflare 技術の実践ナレッジハブとして機能。導入検討中のユーザーにも、現場発のリアルな情報を提供。" />
       </div>
-      <div className="mt-8 rounded-xl border border-brand-200 bg-brand-50 p-5">
-        <p className="text-center text-base font-semibold text-brand-800">
-          目標：SE の技術力をチーム全体の資産に変換し、お客様提案のスピードと品質を向上させる
+      <div className="mt-8 space-y-3">
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-5">
+          <p className="text-center text-base font-semibold text-brand-800">
+            現場の知見共有 → 技術品質の向上 → 各社の課題解決 → より優れたコスト構造とアーキテクチャの採用
+          </p>
+        </div>
+        <p className="text-center text-sm text-gray-500">
+          その先に、<span className="font-semibold text-brand-700">より良いインターネット環境の構築</span>へつながることを願っています。
         </p>
       </div>
     </div>,
