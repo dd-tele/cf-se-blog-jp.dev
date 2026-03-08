@@ -144,8 +144,8 @@ export default function AdminPresentation() {
         Solution Blog Platform
       </h1>
       <p className="mb-10 max-w-3xl text-xl leading-relaxed text-white/90 sm:text-2xl">
-        SE が持つ技術ナレッジを、AI の力で効率よく記事化し、
-        チーム全体の技術力とお客様への価値を高めるプラットフォーム。
+        現場のリアルな技術適用・導入知見を共有し、相互に学び合うナレッジハブ。
+        コミュニティ全体の技術品質を底上げし、より良いインターネット環境の構築へ。
       </p>
       <div className="flex flex-wrap justify-center gap-3">
         <Badge>100% Cloudflare Stack</Badge>
@@ -178,14 +178,20 @@ export default function AdminPresentation() {
         <ProblemCard number={3} problem="ユーザー同士・エンジニア同士の接点が限られている" solution="投稿者プロフィール（会社・専門分野）を公開し、記事から著者ページへ遷移。誰がどんな分野で実績があるかを可視化し、企業や立場を超えた相互支援・コラボレーションを促進。" />
         <ProblemCard number={4} problem="導入判断に必要な実践情報が分散している" solution="ブログ記事・RSS フィード・セマンティック検索を軸に、Cloudflare 技術の実践ナレッジハブとして機能。導入検討中のユーザーにも、現場発のリアルな情報を提供。" />
       </div>
-      <div className="mt-8 space-y-3">
-        <div className="rounded-xl border border-brand-200 bg-brand-50 p-5">
-          <p className="text-center text-base font-semibold text-brand-800">
-            現場の知見共有 → 技術品質の向上 → 各社の課題解決 → より優れたコスト構造とアーキテクチャの採用
-          </p>
+      <div className="mt-10">
+        <div className="rounded-2xl border-2 border-brand-300 bg-gradient-to-r from-brand-50 to-orange-50 px-6 py-8 shadow-sm">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-4 text-lg font-bold text-brand-800 sm:text-xl lg:text-2xl">
+            <span className="rounded-lg bg-white px-4 py-2 shadow-sm ring-1 ring-brand-200">現場の知見共有</span>
+            <span className="text-brand-400">→</span>
+            <span className="rounded-lg bg-white px-4 py-2 shadow-sm ring-1 ring-brand-200">技術品質の向上</span>
+            <span className="text-brand-400">→</span>
+            <span className="rounded-lg bg-white px-4 py-2 shadow-sm ring-1 ring-brand-200">各社の課題解決</span>
+            <span className="text-brand-400">→</span>
+            <span className="rounded-lg bg-white px-4 py-2 shadow-sm ring-1 ring-brand-200">より優れたコスト構造とアーキテクチャ</span>
+          </div>
         </div>
-        <p className="text-center text-sm text-gray-500">
-          その先に、<span className="font-semibold text-brand-700">より良いインターネット環境の構築</span>へつながることを願っています。
+        <p className="mt-5 text-center text-base font-medium text-gray-600 sm:text-lg">
+          その先に、<span className="font-bold text-brand-700">より良いインターネット環境の構築</span>へつながることを願っています。
         </p>
       </div>
     </div>,
