@@ -13,19 +13,20 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin"]);
+  const user = await requireRole(request, ["admin", "se"]);
   const db = context.cloudflare.env.DB;
   const allPosts = await getAllPostsForAdmin(db);
   return { user, allPosts };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const user = await requireRole(request, ["admin"]);
+  const user = await requireRole(request, ["admin", "se"]);
   const db = context.cloudflare.env.DB;
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
 
   if (intent === "delete") {
+    if (user.role !== "admin") return { error: "削除は Admin のみ実行できます" };
     const postId = formData.get("postId") as string;
     if (!postId) return { error: "投稿IDが指定されていません" };
     try {
@@ -65,12 +66,16 @@ export default function AdminIndex() {
               <Link to="/admin" className="font-medium text-brand-600">
                 投稿管理
               </Link>
-              <Link to="/admin/access-requests" className="text-gray-500 hover:text-gray-700">
-                投稿者申請
-              </Link>
-              <Link to="/admin/users" className="text-gray-500 hover:text-gray-700">
-                ユーザー管理
-              </Link>
+              {user.role === "admin" && (
+                <Link to="/admin/access-requests" className="text-gray-500 hover:text-gray-700">
+                  投稿者申請
+                </Link>
+              )}
+              {user.role === "admin" && (
+                <Link to="/admin/users" className="text-gray-500 hover:text-gray-700">
+                  ユーザー管理
+                </Link>
+              )}
               <Link to="/admin/ai-insights" className="text-gray-500 hover:text-gray-700">
                 AI インサイト
               </Link>
@@ -206,13 +211,15 @@ export default function AdminIndex() {
                           >
                             編集
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmId(post.id)}
-                            className="rounded bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
-                          >
-                            削除
-                          </button>
+                          {user.role === "admin" && (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmId(post.id)}
+                              className="rounded bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
+                            >
+                              削除
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>

@@ -7,7 +7,7 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin", "ae"]);
+  const user = await requireRole(request, ["admin", "se", "ae"]);
   return { user };
 }
 

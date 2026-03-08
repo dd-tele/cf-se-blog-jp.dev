@@ -11,7 +11,7 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin", "ae"]);
+  const user = await requireRole(request, ["admin", "se", "ae"]);
   const db = context.cloudflare.env.DB;
   const d = getDb(db);
 
