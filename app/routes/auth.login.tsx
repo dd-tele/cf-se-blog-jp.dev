@@ -3,6 +3,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/cloudflare";
+import { useState, useEffect } from "react";
 import { Form, useLoaderData, useSearchParams } from "@remix-run/react";
 import {
   createUserSession,
@@ -15,6 +16,7 @@ import {
   verifyAccessJWT,
   resolveRole,
   buildSessionUserFromAccess,
+  type VerifyResult,
 } from "~/lib/access.server";
 import { ensureUser } from "~/lib/posts.server";
 
@@ -54,20 +56,25 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // Production: authenticate via Cloudflare Access JWT
   if (isAccessConfigured(env)) {
     const jwt = getAccessJWT(request);
+    const url = new URL(request.url);
+    const returnTo = url.searchParams.get("returnTo") || "/portal";
+    const retryCount = parseInt(url.searchParams.get("retry") || "0", 10);
+
     if (jwt) {
       try {
-        const payload = await verifyAccessJWT(
+        const result: VerifyResult = await verifyAccessJWT(
           jwt,
           env.CF_ACCESS_TEAM_DOMAIN!,
           env.CF_ACCESS_AUD!
         );
-        if (payload) {
+
+        if (result.ok) {
           const role = resolveRole(
-            payload.email,
+            result.payload.email,
             env.ADMIN_EMAILS,
             env.SE_EMAIL_DOMAINS
           );
-          const sessionUser = buildSessionUserFromAccess(payload, role);
+          const sessionUser = buildSessionUserFromAccess(result.payload, role);
 
           // Ensure user exists in D1 and reflect DB profile
           const dbUser = await ensureUser(env.DB, sessionUser);
@@ -83,17 +90,35 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
             if (dbUser.role) sessionUser.role = dbUser.role as typeof sessionUser.role;
           }
 
-          const url = new URL(request.url);
-          const returnTo = url.searchParams.get("returnTo") || "/portal";
-
           // Create session and redirect (works for document requests)
           return createUserSession(sessionUser, returnTo);
         }
-        // JWT present but payload verification failed
-        console.error("[Access Auth] JWT verification returned null — aud/iss/exp mismatch?");
+
+        // JWT present but verification failed
+        console.warn(`[Access Auth] JWT verification failed: ${result.reason} (retry=${retryCount})`);
+
+        // For expired/transient failures, redirect to re-trigger Access auth
+        // Access will intercept, refresh the JWT, and redirect back
+        if (retryCount < 2 && ["expired", "kid_mismatch", "bad_signature"].includes(result.reason)) {
+          return redirect(
+            `/auth/login?returnTo=${encodeURIComponent(returnTo)}&retry=${retryCount + 1}`
+          );
+        }
+
+        // After retries or for non-transient errors, show error with auto-retry
+        const reasonLabel: Record<string, string> = {
+          expired: "JWT の有効期限切れ（再試行しましたが更新されませんでした）",
+          kid_mismatch: "署名鍵が一致しません",
+          bad_signature: "JWT の署名が無効です",
+          bad_aud: "Audience が一致しません — CF_ACCESS_AUD の設定を確認してください",
+          bad_iss: "Issuer が一致しません — CF_ACCESS_TEAM_DOMAIN の設定を確認してください",
+          malformed: "JWT の形式が不正です",
+          invalid: "JWT の検証中にエラーが発生しました",
+        };
         return {
           mode: "error" as const,
-          error: "Cloudflare Access の JWT 検証に失敗しました。CF_ACCESS_AUD の設定を確認してください。",
+          error: `Cloudflare Access の認証に失敗しました: ${reasonLabel[result.reason] || result.reason}`,
+          autoRetry: ["expired", "kid_mismatch", "bad_signature"].includes(result.reason),
         };
       } catch (err) {
         if (err instanceof Response) throw err;
@@ -101,16 +126,15 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         return {
           mode: "error" as const,
           error: `認証エラー: ${err instanceof Error ? err.message : "Unknown error"}`,
+          autoRetry: false,
         };
       }
     }
 
     // No JWT yet — redirect to Access-protected path to trigger login,
     // but only once to avoid redirect loops.
-    const url = new URL(request.url);
     const alreadyRedirected = url.searchParams.get("ar") === "1";
     if (!alreadyRedirected) {
-      const returnTo = url.searchParams.get("returnTo") || "/portal";
       // Redirect to Access-protected path; Access should intercept and show IdP login.
       // After auth, Access redirects back here with CF_Authorization cookie.
       return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}&ar=1`);
@@ -120,6 +144,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     return {
       mode: "error" as const,
       error: "Cloudflare Access の JWT が取得できません。Access Application のパス設定を確認してください。",
+      autoRetry: false,
     };
   }
 
@@ -147,35 +172,7 @@ export default function LoginPage() {
 
   // Error mode — show Access configuration error
   if (data.mode === "error") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Cloudflare Solution Blog
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">認証エラー</p>
-          </div>
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {data.error}
-          </div>
-          <div className="mt-4 flex flex-col items-center gap-2">
-            <a
-              href="/auth/logout"
-              className="text-sm font-medium text-red-600 hover:text-red-700 underline"
-            >
-              ログアウトして別のアカウントでログイン
-            </a>
-            <a
-              href="/"
-              className="text-sm text-brand-600 hover:text-brand-700 underline"
-            >
-              トップページに戻る
-            </a>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoginError error={data.error} autoRetry={"autoRetry" in data && !!data.autoRetry} returnTo={returnTo} />;
   }
 
   // Dev mode — show mock login
@@ -231,6 +228,63 @@ export default function LoginPage() {
               </button>
             </Form>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginError({ error, autoRetry, returnTo }: { error: string; autoRetry: boolean; returnTo: string }) {
+  const [countdown, setCountdown] = useState(autoRetry ? 3 : 0);
+
+  useEffect(() => {
+    if (!autoRetry || countdown <= 0) return;
+    const timer = setTimeout(() => {
+      if (countdown === 1) {
+        window.location.href = `/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
+      } else {
+        setCountdown(countdown - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [autoRetry, countdown, returnTo]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Cloudflare Solution Blog
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">認証エラー</p>
+        </div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+        {autoRetry && countdown > 0 && (
+          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm text-blue-700">
+            {countdown} 秒後に自動で再試行します…
+          </div>
+        )}
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <a
+            href={`/auth/login?returnTo=${encodeURIComponent(returnTo)}`}
+            className="rounded-lg bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+          >
+            再試行する
+          </a>
+          <a
+            href="/auth/logout"
+            className="text-sm font-medium text-red-600 hover:text-red-700 underline"
+          >
+            ログアウトして別のアカウントでログイン
+          </a>
+          <a
+            href="/"
+            className="text-sm text-brand-600 hover:text-brand-700 underline"
+          >
+            トップページに戻る
+          </a>
         </div>
       </div>
     </div>

@@ -33,8 +33,8 @@ interface CertsResponse {
 let cachedKeys: { keys: JWK[]; fetchedAt: number } | null = null;
 const KEY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
-async function getPublicKeys(teamDomain: string): Promise<JWK[]> {
-  if (cachedKeys && Date.now() - cachedKeys.fetchedAt < KEY_CACHE_TTL) {
+async function getPublicKeys(teamDomain: string, forceRefresh = false): Promise<JWK[]> {
+  if (!forceRefresh && cachedKeys && Date.now() - cachedKeys.fetchedAt < KEY_CACHE_TTL) {
     return cachedKeys.keys;
   }
 
@@ -74,26 +74,36 @@ async function importKey(jwk: JWK): Promise<CryptoKey> {
  * Verify and decode the Cloudflare Access JWT.
  * Returns the payload if valid, null otherwise.
  */
+export type VerifyResult =
+  | { ok: true; payload: AccessJWTPayload }
+  | { ok: false; reason: "expired" | "invalid" | "kid_mismatch" | "bad_signature" | "bad_aud" | "bad_iss" | "malformed" };
+
 export async function verifyAccessJWT(
   token: string,
   teamDomain: string,
   aud: string
-): Promise<AccessJWTPayload | null> {
+): Promise<VerifyResult> {
   try {
     const parts = token.split(".");
-    if (parts.length !== 3) return null;
+    if (parts.length !== 3) return { ok: false, reason: "malformed" };
 
     const [headerB64, payloadB64, signatureB64] = parts;
 
     // Decode header to get kid
     const header = JSON.parse(new TextDecoder().decode(base64UrlDecode(headerB64)));
     const kid = header.kid as string;
-    if (!kid) return null;
+    if (!kid) return { ok: false, reason: "malformed" };
 
     // Fetch public keys and find matching key
-    const keys = await getPublicKeys(teamDomain);
-    const jwk = keys.find((k) => k.kid === kid);
-    if (!jwk) return null;
+    let keys = await getPublicKeys(teamDomain);
+    let jwk = keys.find((k) => k.kid === kid);
+
+    // If kid not found, force-refresh keys (key rotation)
+    if (!jwk) {
+      keys = await getPublicKeys(teamDomain, true);
+      jwk = keys.find((k) => k.kid === kid);
+      if (!jwk) return { ok: false, reason: "kid_mismatch" };
+    }
 
     // Verify signature
     const key = await importKey(jwk);
@@ -106,7 +116,7 @@ export async function verifyAccessJWT(
       signature.buffer as ArrayBuffer,
       data.buffer as ArrayBuffer
     );
-    if (!valid) return null;
+    if (!valid) return { ok: false, reason: "bad_signature" };
 
     // Decode and validate payload
     const payload = JSON.parse(
@@ -114,19 +124,19 @@ export async function verifyAccessJWT(
     ) as AccessJWTPayload;
 
     // Verify audience
-    if (!payload.aud || !payload.aud.includes(aud)) return null;
+    if (!payload.aud || !payload.aud.includes(aud)) return { ok: false, reason: "bad_aud" };
 
     // Verify expiration
-    if (payload.exp && payload.exp < Date.now() / 1000) return null;
+    if (payload.exp && payload.exp < Date.now() / 1000) return { ok: false, reason: "expired" };
 
     // Verify issuer
     const expectedIssuer = `https://${teamDomain}.cloudflareaccess.com`;
-    if (payload.iss !== expectedIssuer) return null;
+    if (payload.iss !== expectedIssuer) return { ok: false, reason: "bad_iss" };
 
-    return payload;
+    return { ok: true, payload };
   } catch (e) {
-    console.error("[JWT] verification error");
-    return null;
+    console.error("[JWT] verification error:", e);
+    return { ok: false, reason: "invalid" };
   }
 }
 
