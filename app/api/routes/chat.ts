@@ -183,11 +183,25 @@ chat.post("/", optionalAuth, async (c) => {
             }
           }
         }
-
-        await stream.writeSSE({ data: "[DONE]" });
       } catch (e) {
         console.error("Stream transform error:", e);
+        await stream.writeSSE({
+          data: JSON.stringify({
+            error: "AI Gateway またはモデルからの応答が中断されました。内容を変えて再度お試しください。",
+          }),
+        });
       }
+
+      // If stream completed but produced no content, notify the client
+      if (!fullResponse.trim()) {
+        await stream.writeSSE({
+          data: JSON.stringify({
+            error: "AI からの応答を取得できませんでした。メッセージの内容がガードレールにより制限された可能性があります。内容を変えて再度お試しください。",
+          }),
+        });
+      }
+
+      await stream.writeSSE({ data: "[DONE]" });
 
       // Save AI response to DB
       if (fullResponse.trim()) {
@@ -200,8 +214,14 @@ chat.post("/", optionalAuth, async (c) => {
     });
   } catch (e: any) {
     console.error("Chat AI error:", e);
+    const errMsg = (e?.message || "").toLowerCase();
+    const isGuardrail = errMsg.includes("guard") || errMsg.includes("block") || errMsg.includes("gateway");
     return c.json(
-      { error: "回答の生成中にエラーが発生しました。しばらくしてから再度お試しください。" },
+      {
+        error: isGuardrail
+          ? "AI Gateway のガードレールによりリクエストがブロックされました。メッセージの内容を変えて再度お試しください。"
+          : "回答の生成中にエラーが発生しました。しばらくしてから再度お試しください。",
+      },
       500
     );
   }

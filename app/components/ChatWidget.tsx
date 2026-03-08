@@ -154,7 +154,9 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey }: Props) {
           if (payload === "[DONE]") continue;
           try {
             const parsed = JSON.parse(payload);
-            if (parsed.text) {
+            if (parsed.error) {
+              setError(parsed.error);
+            } else if (parsed.text) {
               accumulated += parsed.text;
               setStreamingContent(accumulated);
             }
