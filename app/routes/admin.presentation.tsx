@@ -288,9 +288,9 @@ export default function AdminPresentation() {
             <FeatureRow
               number="02"
               title="AI チャット Q&A"
-              desc="記事ページに埋め込まれたチャットウィジェット。読者の質問に対し、記事コンテキストに厳密にグラウンディングされた回答を SSE ストリーミングでリアルタイム配信。Llama Guard でコンテンツモデレーション。"
+              desc="記事ページのフローティングウィジェット。記事コンテキスト優先 + Cloudflare 全般の知識で補足回答。Vectorize RAG + SSE ストリーミング。Turnstile Bot 保護 → 入力バリデーション → KV レート制限 → Llama Guard モデレーション → AI Gateway ガードレールの多層防御。24h TTL で自動クリーンアップ。"
               color="blue"
-              tags={["Hono streamSSE", "RAG", "Llama Guard"]}
+              tags={["Hono streamSSE", "RAG", "Llama Guard", "AI Gateway", "Turnstile"]}
             />
             {/* Feature 3: Related Posts */}
             <FeatureRow
@@ -320,9 +320,9 @@ export default function AdminPresentation() {
             <FeatureRow
               number="06"
               title="管理 & モデレーション"
-              desc="投稿管理、ユーザー管理、Q&A スレッド管理（削除・フラグ）、AI インサイトダッシュボード、トレンドレポート生成。4週間経過した Active スレッドは自動削除。"
+              desc="投稿管理、ユーザー管理、Q&A スレッド管理（削除・フラグ）、AI インサイトダッシュボード、トレンドレポート生成。24 時間経過したスレッドは自動削除。フラグ付きメッセージは証跡として管理画面で確認可能。"
               color="red"
-              tags={["Admin", "User Mgmt", "Auto-expire"]}
+              tags={["Admin", "User Mgmt", "24h TTL"]}
             />
             {/* Feature 7: Author Profiles */}
             <FeatureRow
@@ -393,9 +393,94 @@ export default function AdminPresentation() {
           </div>
         </section>
 
-        {/* ───────────────── Slide 8: Article Creation Flow ───────────────── */}
+        {/* ───────────────── Slide 8: AI Chatbot Deep Dive ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={7} title="記事作成フロー" />
+          <SlideHeader number={7} title="AI チャットボット — 実装 & チューニング" />
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            記事ページのフローティングウィジェットで読者の質問にリアルタイム回答。記事コンテキスト優先 + Cloudflare 全般の知識で補足する
+            ハイブリッド RAG 構成。多層セキュリティと AI Gateway による可観測性を両立。
+          </p>
+
+          {/* Security Pipeline */}
+          <div className="mb-6 overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="border-b bg-gray-50 px-6 py-3">
+              <h3 className="text-sm font-bold text-gray-900">リクエスト処理パイプライン（6 段階防御）</h3>
+            </div>
+            <div className="grid grid-cols-2 divide-x divide-y sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
+              <PipelineStep step={1} label="Turnstile" desc="invisible CAPTCHA" color="blue" />
+              <PipelineStep step={2} label="バリデーション" desc="1,000字 + スパム検出" color="gray" />
+              <PipelineStep step={3} label="KV レート制限" desc="10回/分/IP" color="amber" />
+              <PipelineStep step={4} label="Llama Guard" desc="コンテンツモデレーション" color="red" />
+              <PipelineStep step={5} label="RAG コンテキスト" desc="Vectorize + 記事本文" color="purple" />
+              <PipelineStep step={6} label="Llama 3.3 70B" desc="SSE ストリーミング回答" color="green" />
+            </div>
+          </div>
+
+          {/* Tuning Table */}
+          <div className="mb-6 overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="border-b bg-gray-50 px-6 py-3">
+              <h3 className="text-sm font-bold text-gray-900">チューニングポイント & 改善履歴</h3>
+            </div>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b bg-gray-50/50">
+                  <th className="px-4 py-2 text-left font-semibold">項目</th>
+                  <th className="px-4 py-2 text-left font-semibold">Before → After</th>
+                  <th className="px-4 py-2 text-left font-semibold">効果</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <tr><td className="px-4 py-1.5 font-medium">回答スコープ</td><td className="px-4 py-1.5">記事のみ → 記事優先 + CF 全般知識</td><td className="px-4 py-1.5">幅広い質問に回答可能</td></tr>
+                <tr><td className="px-4 py-1.5 font-medium">max_tokens</td><td className="px-4 py-1.5">1,024 → 2,048</td><td className="px-4 py-1.5">詳細な回答・コード例</td></tr>
+                <tr><td className="px-4 py-1.5 font-medium">AI 回答保存</td><td className="px-4 py-1.5">fire-and-forget → await</td><td className="px-4 py-1.5">リフレッシュ後も回答が残る</td></tr>
+                <tr><td className="px-4 py-1.5 font-medium">スレッド TTL</td><td className="px-4 py-1.5">28 日 → 24 時間</td><td className="px-4 py-1.5">ストレージ節約・プライバシー</td></tr>
+                <tr><td className="px-4 py-1.5 font-medium">入力欄</td><td className="px-4 py-1.5">単行 input → 自動リサイズ textarea</td><td className="px-4 py-1.5">長文の可視性・改行対応</td></tr>
+                <tr><td className="px-4 py-1.5 font-medium">エラーハンドリング</td><td className="px-4 py-1.5">無応答 → SSE error イベント</td><td className="px-4 py-1.5">ユーザーに理由を表示</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* AI Gateway Behavior */}
+          <div className="overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/30 shadow-sm">
+            <div className="border-b border-amber-200 bg-amber-100/50 px-6 py-3">
+              <h3 className="text-sm font-bold text-amber-900">AI Gateway — 挙動例</h3>
+            </div>
+            <div className="grid gap-4 p-6 sm:grid-cols-2">
+              <div className="rounded-lg border border-amber-200 bg-white p-4">
+                <h4 className="mb-1 text-xs font-bold text-green-700">正常フロー</h4>
+                <p className="text-xs leading-relaxed text-gray-600">
+                  全 AI 呼び出しが Gateway 経由 → ダッシュボードでリクエスト数・レイテンシ・トークン消費をリアルタイム監視。
+                  <code className="text-[10px]">ai.run(model, input, {`{ gateway: { id } }`})</code> で有効化。
+                </p>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-white p-4">
+                <h4 className="mb-1 text-xs font-bold text-red-700">ガードレールブロック</h4>
+                <p className="text-xs leading-relaxed text-gray-600">
+                  不適切コンテンツ検知 → ストリーム空/中断 → サーバーが検知し SSE error イベント送信
+                  → 「内容を変えて再度お試しください」と赤バーで表示。例外時は gateway/guard/block キーワードで判定。
+                </p>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-white p-4">
+                <h4 className="mb-1 text-xs font-bold text-blue-700">二重モデレーション</h4>
+                <p className="text-xs leading-relaxed text-gray-600">
+                  Llama Guard（コンテンツ分類・Fail-open）+ AI Gateway（ガードレール）の多層構成。
+                  フラグ付きメッセージは DB に証跡保存、管理画面で確認可能。
+                </p>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-white p-4">
+                <h4 className="mb-1 text-xs font-bold text-purple-700">ダッシュボード監視</h4>
+                <p className="text-xs leading-relaxed text-gray-600">
+                  リクエスト数・成功/失敗率・レイテンシ・トークン消費・モデル別コスト・
+                  ガードレール発動回数・キャッシュヒット率をリアルタイムで確認可能。
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 9: Article Creation Flow ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={8} title="記事作成フロー" />
           <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
             <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
               <FlowStep step={1} title="テンプレート選択" desc="6種類から選択" />
@@ -407,9 +492,9 @@ export default function AdminPresentation() {
           </div>
         </section>
 
-        {/* ───────────────── Slide 9: Security ───────────────── */}
+        {/* ───────────────── Slide 10: Security ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={8} title="セキュリティ & インフラ" />
+          <SlideHeader number={9} title="セキュリティ & インフラ" />
           <div className="grid gap-4 sm:grid-cols-2">
             <SecurityCard
               title="Cloudflare Access"
@@ -442,9 +527,9 @@ export default function AdminPresentation() {
           </div>
         </section>
 
-        {/* ───────────────── Slide 10: Technical Deep-Dive ───────────────── */}
+        {/* ───────────────── Slide 11: Technical Deep-Dive ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={9} title="技術実装の工夫 — エラー回避 & 細かな改善" />
+          <SlideHeader number={10} title="技術実装の工夫 — エラー回避 & 細かな改善" />
           <div className="space-y-4">
             {/* JWT Resilience */}
             <TechDetail
@@ -554,9 +639,9 @@ export default function AdminPresentation() {
           </div>
         </section>
 
-        {/* ───────────────── Slide 11: Challenges ───────────────── */}
+        {/* ───────────────── Slide 12: Challenges ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={10} title="現在の課題と取り組み" />
+          <SlideHeader number={11} title="現在の課題と取り組み" />
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
               <h3 className="mb-2 text-sm font-bold text-amber-800">課題</h3>
@@ -607,9 +692,9 @@ export default function AdminPresentation() {
           </div>
         </section>
 
-        {/* ───────────────── Slide 11: Roadmap ───────────────── */}
+        {/* ───────────────── Slide 13: Roadmap ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={11} title="ロードマップ" />
+          <SlideHeader number={12} title="ロードマップ" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <RoadmapPhase
               phase="Phase 1"
@@ -638,7 +723,7 @@ export default function AdminPresentation() {
           </div>
         </section>
 
-        {/* ───────────────── Slide 12: Call to Action ───────────────── */}
+        {/* ───────────────── Slide 14: Call to Action ───────────────── */}
         <section className="slide mb-16 rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 text-white shadow-xl sm:p-16">
           <h2 className="mb-6 text-3xl font-extrabold sm:text-4xl">
             一緒に作りませんか？
@@ -924,6 +1009,36 @@ function FlowStep({
       </span>
       <h3 className="text-sm font-bold text-gray-900">{title}</h3>
       <p className="mt-1 text-xs text-gray-500">{desc}</p>
+    </div>
+  );
+}
+
+function PipelineStep({
+  step,
+  label,
+  desc,
+  color,
+}: {
+  step: number;
+  label: string;
+  desc: string;
+  color: string;
+}) {
+  const colors: Record<string, string> = {
+    blue: "bg-blue-100 text-blue-700",
+    gray: "bg-gray-100 text-gray-700",
+    amber: "bg-amber-100 text-amber-700",
+    red: "bg-red-100 text-red-700",
+    purple: "bg-purple-100 text-purple-700",
+    green: "bg-green-100 text-green-700",
+  };
+  return (
+    <div className="flex flex-col items-center px-3 py-4 text-center">
+      <span className={`mb-1.5 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${colors[color] || colors.gray}`}>
+        {step}
+      </span>
+      <h4 className="text-xs font-bold text-gray-900">{label}</h4>
+      <p className="mt-0.5 text-[10px] text-gray-500">{desc}</p>
     </div>
   );
 }

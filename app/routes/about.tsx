@@ -555,6 +555,163 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* AI Chatbot Deep Dive */}
+        <section className="mb-20">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900">AI チャットボット — 実装・改善・チューニング</h2>
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            各記事ページにフローティングチャットウィジェットを設置。読者が記事内容や Cloudflare 全般について質問でき、
+            AI がリアルタイムでストリーミング回答します。セキュリティ・モデレーション・UX を多層的に設計しています。
+          </p>
+
+          {/* Implementation Overview */}
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-blue-700">アーキテクチャ</h3>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li>Hono <code className="text-xs">streamSSE</code> による SSE ストリーミング</li>
+                <li>Llama 3.3 70B fp8-fast（回答生成）</li>
+                <li>Llama Guard 3 8B（コンテンツモデレーション）</li>
+                <li>RAG: Vectorize で記事コンテキスト + 関連記事を自動取得</li>
+                <li>会話履歴 10 件を保持してコンテキスト継続</li>
+                <li>D1 に質問・回答を永続化（24 時間 TTL で自動削除）</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-green-700">セキュリティ多層防御</h3>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li><strong>Turnstile</strong> — invisible CAPTCHA で Bot を排除</li>
+                <li><strong>入力バリデーション</strong> — 1,000 文字制限 + スパムパターン検出</li>
+                <li><strong>KV レート制限</strong> — IP あたり 10 回/分</li>
+                <li><strong>Llama Guard</strong> — 有害コンテンツを自動フラグ & 拒否</li>
+                <li><strong>AI Gateway</strong> — ガードレール・ログ・レート制限</li>
+                <li>フラグ付きメッセージは DB に証跡保存（管理画面で確認可能）</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-purple-700">UX 改善ポイント</h3>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li>自動リサイズ <code className="text-xs">textarea</code> — 長文入力でも全文が見える</li>
+                <li>Shift+Enter で改行、Enter で送信</li>
+                <li>サジェスト質問ボタン（3 種）で入力の敷居を低下</li>
+                <li>SSE ストリーミング中のタイピングアニメーション</li>
+                <li>ガードレール/エラー時のわかりやすいメッセージ表示</li>
+                <li>SE・Admin による人間の回答も対応（緑バッジ表示）</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Tuning & Improvements */}
+          <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-b bg-gray-50 px-6 py-3">
+              <h3 className="font-bold text-gray-900">チューニングポイント & 改善履歴</h3>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50/50">
+                  <th className="px-6 py-2 text-left font-semibold text-gray-700">項目</th>
+                  <th className="px-6 py-2 text-left font-semibold text-gray-700">Before</th>
+                  <th className="px-6 py-2 text-left font-semibold text-gray-700">After</th>
+                  <th className="px-6 py-2 text-left font-semibold text-gray-700">効果</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <tr className="hover:bg-gray-50/50">
+                  <td className="whitespace-nowrap px-6 py-2 font-medium text-gray-900">回答スコープ</td>
+                  <td className="px-6 py-2 text-gray-600">記事コンテキストのみ（厳格なグラウンディング）</td>
+                  <td className="px-6 py-2 text-gray-600">記事優先 + Cloudflare 全般の知識で補足</td>
+                  <td className="px-6 py-2 text-gray-600">幅広い質問に回答可能に</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="whitespace-nowrap px-6 py-2 font-medium text-gray-900">max_tokens</td>
+                  <td className="px-6 py-2 text-gray-600">1,024</td>
+                  <td className="px-6 py-2 text-gray-600">2,048</td>
+                  <td className="px-6 py-2 text-gray-600">詳細な回答・コード例が可能に</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="whitespace-nowrap px-6 py-2 font-medium text-gray-900">AI 回答の永続化</td>
+                  <td className="px-6 py-2 text-gray-600">fire-and-forget（消失リスク）</td>
+                  <td className="px-6 py-2 text-gray-600">await で確実に D1 保存</td>
+                  <td className="px-6 py-2 text-gray-600">リフレッシュ後も回答が残る</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="whitespace-nowrap px-6 py-2 font-medium text-gray-900">スレッド TTL</td>
+                  <td className="px-6 py-2 text-gray-600">28 日</td>
+                  <td className="px-6 py-2 text-gray-600">24 時間（自動クリーンアップ）</td>
+                  <td className="px-6 py-2 text-gray-600">ストレージ節約・プライバシー向上</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="whitespace-nowrap px-6 py-2 font-medium text-gray-900">入力フィールド</td>
+                  <td className="px-6 py-2 text-gray-600">単行 input（長文が見切れる）</td>
+                  <td className="px-6 py-2 text-gray-600">自動リサイズ textarea（max 6rem）</td>
+                  <td className="px-6 py-2 text-gray-600">長文の可視性・改行対応</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="whitespace-nowrap px-6 py-2 font-medium text-gray-900">エラーハンドリング</td>
+                  <td className="px-6 py-2 text-gray-600">ガードレールブロック時は無応答</td>
+                  <td className="px-6 py-2 text-gray-600">SSE error イベントでユーザーに通知</td>
+                  <td className="px-6 py-2 text-gray-600">「内容を変えてお試しください」と案内</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="whitespace-nowrap px-6 py-2 font-medium text-gray-900">temperature</td>
+                  <td className="px-6 py-2 text-gray-600" colSpan={2}>0.3（低温＝事実重視・安定出力）</td>
+                  <td className="px-6 py-2 text-gray-600">ハルシネーション抑制</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* AI Gateway Behavior Examples */}
+          <div className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50/50 shadow-sm">
+            <div className="border-b border-amber-200 bg-amber-100/50 px-6 py-3">
+              <h3 className="font-bold text-amber-900">AI Gateway — 挙動例とエラーハンドリング</h3>
+            </div>
+            <div className="p-6">
+              <p className="mb-4 text-sm text-gray-700">
+                AI Gateway は Workers AI への全リクエストを中継し、ガードレール・ログ・キャッシュ・レート制限を適用します。
+                <code className="mx-1 text-xs">ai.run()</code> の第3引数に <code className="text-xs">{`{ gateway: { id: "..." } }`}</code> を渡すだけで有効化されます。
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-amber-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-bold text-amber-800">正常フロー</h4>
+                  <p className="text-xs leading-relaxed text-gray-600">
+                    ユーザー入力 → Turnstile 検証 → バリデーション → KV レート制限
+                    → Llama Guard モデレーション（AI Gateway 経由）
+                    → RAG コンテキスト取得 → Llama 3.3 70B で回答生成（AI Gateway 経由・SSE ストリーミング）
+                    → D1 に保存。AI Gateway ダッシュボードでリクエスト数・レイテンシ・トークン消費量をリアルタイム監視可能。
+                  </p>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-bold text-amber-800">ガードレールブロック時</h4>
+                  <p className="text-xs leading-relaxed text-gray-600">
+                    AI Gateway のガードレールが不適切コンテンツを検知
+                    → ストリームが空/中断 → サーバーが空レスポンスを検知
+                    → SSE で <code>{"{ error: \"AI からの応答を取得できませんでした...\" }"}</code> を送信
+                    → フロントエンドが赤いエラーバーに「内容を変えて再度お試しください」と表示。
+                    ai.run() 自体が例外をスローする場合も、エラーメッセージから gateway/guard/block を検知して専用メッセージを返却。
+                  </p>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-bold text-amber-800">モデレーション（Llama Guard）との併用</h4>
+                  <p className="text-xs leading-relaxed text-gray-600">
+                    Llama Guard 3 8B が「unsafe」を返した場合 → ユーザーメッセージを flagged=true で D1 に保存
+                    → 「利用規約に反する可能性があるため送信できません」と即座に拒否。
+                    Llama Guard 自体のエラーは Fail-open 設計（false negative 優先）で処理を続行。
+                    二重防御: Llama Guard（コンテンツ分類）+ AI Gateway（ガードレール）の多層構成。
+                  </p>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-bold text-amber-800">AI Gateway ダッシュボードで確認可能な情報</h4>
+                  <p className="text-xs leading-relaxed text-gray-600">
+                    リクエスト数・成功/失敗率・平均レイテンシ・トークン消費量・
+                    モデル別コスト分析・ガードレール発動回数・キャッシュヒット率。
+                    全ログはリアルタイムで記録され、異常検知やコスト最適化に活用可能。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Specs Table */}
         <section className="mb-20">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">仕様一覧</h2>
