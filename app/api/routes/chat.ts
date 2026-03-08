@@ -13,6 +13,7 @@ import {
   getRAGContext,
   buildChatSystemPrompt,
   generateChatResponseStream,
+  deleteExpiredActiveThreads,
 } from "~/lib/chat.server";
 import { writeAuditLog } from "~/lib/audit.server";
 import { verifyTurnstileToken } from "~/lib/turnstile.server";
@@ -26,6 +27,9 @@ chat.get("/", optionalAuth, async (c) => {
 
   const db = c.env.DB;
   try {
+    // Opportunistic cleanup of expired threads (24h TTL)
+    deleteExpiredActiveThreads(db).catch(() => {});
+
     const threadId = await getOrCreateThread(db, postId);
     const messages = await getThreadMessages(db, threadId);
     const publicMessages = messages.filter((m) => !m.flagged);
@@ -203,13 +207,17 @@ chat.post("/", optionalAuth, async (c) => {
 
       await stream.writeSSE({ data: "[DONE]" });
 
-      // Save AI response to DB
+      // Save AI response to DB (must await — otherwise Workers may terminate before D1 write)
       if (fullResponse.trim()) {
-        saveMessage(db, threadId, {
-          role: "ai",
-          content: fullResponse,
-          metadata: { model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
-        }).catch((e) => console.error("Failed to save AI response:", e));
+        try {
+          await saveMessage(db, threadId, {
+            role: "ai",
+            content: fullResponse,
+            metadata: { model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
+          });
+        } catch (e) {
+          console.error("Failed to save AI response:", e);
+        }
       }
     });
   } catch (e: any) {

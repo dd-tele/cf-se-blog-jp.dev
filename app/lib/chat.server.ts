@@ -9,7 +9,7 @@ const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODERATION_MODEL = "@cf/meta/llama-guard-3-8b";
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_MESSAGES_PER_MINUTE = 10;
-const ACTIVE_THREAD_TTL_DAYS = 28; // 4 weeks
+const ACTIVE_THREAD_TTL_HOURS = 24; // 24 hours
 
 // ─── Types ──────────────────────────────────────────────────
 export interface ChatMessage {
@@ -375,21 +375,21 @@ export async function deleteMessage(
     .run();
 }
 
-// ─── Auto-expire: delete active threads older than 4 weeks ───
+// ─── Auto-expire: delete threads older than 24 hours ───
 export async function deleteExpiredActiveThreads(
   db: D1Database
 ): Promise<number> {
   const cutoff = new Date(
-    Date.now() - ACTIVE_THREAD_TTL_DAYS * 24 * 60 * 60 * 1000
+    Date.now() - ACTIVE_THREAD_TTL_HOURS * 60 * 60 * 1000
   )
     .toISOString()
     .replace("T", " ")
     .slice(0, 19);
 
-  // Find expired active threads
+  // Find all threads older than the TTL
   const expired = await db
     .prepare(
-      "SELECT id FROM qa_threads WHERE status = 'active' AND created_at < ?"
+      "SELECT id FROM qa_threads WHERE created_at < ?"
     )
     .bind(cutoff)
     .all<{ id: string }>();

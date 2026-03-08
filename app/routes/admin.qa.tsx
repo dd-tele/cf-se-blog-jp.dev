@@ -28,7 +28,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const status = url.searchParams.get("status") ?? "all";
   const threadId = url.searchParams.get("thread");
 
-  // Auto-expire: delete active threads older than 4 weeks
+  // Auto-expire: delete threads older than 24 hours
   const expiredCount = await deleteExpiredActiveThreads(db);
 
   const threads = await listThreads(db, { status, limit: 30 });
