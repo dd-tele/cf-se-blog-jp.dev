@@ -705,14 +705,14 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
   const aO = `${prefix}arrowOrange`;
   const aT = `${prefix}arrowTeal`;
   return (
-    <svg viewBox="0 0 1060 660" className="w-full" xmlns="http://www.w3.org/2000/svg">
-      <rect width="1060" height="660" fill="#fafafa" rx="12" />
+    <svg viewBox="0 0 1060 720" className="w-full" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1060" height="720" fill="#fafafa" rx="12" />
       <text x="530" y="30" textAnchor="middle" fill="#1e293b" fontSize="13" fontWeight="700">System Architecture — Cloudflare SE Blog Platform</text>
 
       {/* Lane backgrounds */}
       <rect x="10" y="50" width="1040" height="230" rx="10" fill="#3b82f6" fillOpacity="0.03" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="6" />
       <text x="24" y="70" fill="#3b82f6" fontSize="9" fontWeight="700" letterSpacing="1">PUBLIC — READ ONLY + ACCESS REQUEST</text>
-      <rect x="10" y="330" width="1040" height="310" rx="10" fill="#f97316" fillOpacity="0.03" stroke="#f97316" strokeWidth="0.5" strokeDasharray="6" />
+      <rect x="10" y="330" width="1040" height="370" rx="10" fill="#f97316" fillOpacity="0.03" stroke="#f97316" strokeWidth="0.5" strokeDasharray="6" />
       <text x="24" y="350" fill="#ea580c" fontSize="9" fontWeight="700" letterSpacing="1">AUTHENTICATED — INVITED ENGINEERS</text>
 
       {/* Public visitor */}
@@ -753,14 +753,18 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
       <line x1="145" y1="235" x2="195" y2="235" stroke="#5eead4" strokeWidth="2" markerEnd={`url(#${aT})`} />
       <line x1="145" y1="470" x2="195" y2="470" stroke="#fdba74" strokeWidth="2" markerEnd={`url(#${aO})`} />
 
-      {/* WAF + Bot Management */}
+      {/* WAF + Bot Management + API Shield + Turnstile */}
       <g>
-        <rect x="195" y="80" width="125" height="510" rx="12" fill="#ef4444" fillOpacity="0.06" stroke="#ef4444" strokeWidth="1.5" />
+        <rect x="195" y="80" width="125" height="570" rx="12" fill="#ef4444" fillOpacity="0.06" stroke="#ef4444" strokeWidth="1.5" />
         <text x="257" y="108" textAnchor="middle" fill="#dc2626" fontSize="12" fontWeight="700">WAF</text>
         <text x="257" y="124" textAnchor="middle" fill="#b91c1c" fontSize="8">OWASP Top 10</text>
         <text x="257" y="138" textAnchor="middle" fill="#b91c1c" fontSize="8">DDoS 防御</text>
         <rect x="210" y="148" width="95" height="22" rx="6" fill="#fef2f2" stroke="#fecaca" strokeWidth="1" />
         <text x="257" y="163" textAnchor="middle" fill="#dc2626" fontSize="8" fontWeight="600">Bot Management</text>
+        <rect x="210" y="178" width="95" height="22" rx="6" fill="#e0f2fe" stroke="#7dd3fc" strokeWidth="1" />
+        <text x="257" y="193" textAnchor="middle" fill="#0369a1" fontSize="8" fontWeight="600">API Shield</text>
+        <rect x="210" y="208" width="95" height="22" rx="6" fill="#f0fdf4" stroke="#86efac" strokeWidth="1" />
+        <text x="257" y="223" textAnchor="middle" fill="#166534" fontSize="8" fontWeight="600">Turnstile</text>
         <text x="257" y="300" textAnchor="middle" fill="#991b1b" fontSize="7" fontWeight="500">全トラフィック適用</text>
       </g>
 
@@ -824,9 +828,9 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
       {/* Arrows: Pages → Backend Services */}
       <line x1="705" y1="220" x2="760" y2="140" stroke="#cbd5e1" strokeWidth="2" markerEnd={`url(#${a})`} />
       <line x1="705" y1="250" x2="760" y2="240" stroke="#cbd5e1" strokeWidth="2" markerEnd={`url(#${a})`} />
-      <line x1="705" y1="295" x2="760" y2="340" stroke="#cbd5e1" strokeWidth="2" markerEnd={`url(#${a})`} />
-      <line x1="705" y1="325" x2="760" y2="435" stroke="#cbd5e1" strokeWidth="1.5" markerEnd={`url(#${a})`} />
-      <line x1="705" y1="355" x2="760" y2="530" stroke="#14b8a6" strokeWidth="1.5" markerEnd={`url(#${aT})`} />
+      <line x1="705" y1="295" x2="760" y2="305" stroke="#a855f7" strokeWidth="2" markerEnd={`url(#${a})`} />
+      <line x1="705" y1="325" x2="760" y2="465" stroke="#cbd5e1" strokeWidth="1.5" markerEnd={`url(#${a})`} />
+      <line x1="705" y1="355" x2="760" y2="560" stroke="#14b8a6" strokeWidth="1.5" markerEnd={`url(#${aT})`} />
 
       {/* D1 Database */}
       <g>
@@ -850,57 +854,65 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
         <text x="822" y="255" textAnchor="middle" fill="#059669" fontSize="8">メディア管理</text>
       </g>
 
+      {/* AI Gateway */}
+      <g>
+        <rect x="760" y="290" width="125" height="38" rx="8" fill="#a855f7" fillOpacity="0.1" stroke="#a855f7" strokeWidth="1.5" />
+        <text x="822" y="314" textAnchor="middle" fill="#7e22ce" fontSize="9" fontWeight="700">AI Gateway</text>
+      </g>
+      {/* Arrow: AI Gateway → Workers AI */}
+      <line x1="822" y1="328" x2="822" y2="345" stroke="#a855f7" strokeWidth="1.5" markerEnd={`url(#${a})`} />
       {/* Workers AI */}
       <g>
-        <rect x="760" y="300" width="125" height="70" rx="10" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1.5" />
-        <text x="822" y="325" textAnchor="middle" fill="#b45309" fontSize="10" fontWeight="700">Workers AI</text>
-        <text x="822" y="341" textAnchor="middle" fill="#d97706" fontSize="8">Llama 3.3 70B</text>
-        <text x="822" y="357" textAnchor="middle" fill="#d97706" fontSize="8">ドラフト / Chat Q&amp;A</text>
+        <rect x="760" y="345" width="125" height="70" rx="10" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1.5" />
+        <text x="822" y="370" textAnchor="middle" fill="#b45309" fontSize="10" fontWeight="700">Workers AI</text>
+        <text x="822" y="386" textAnchor="middle" fill="#d97706" fontSize="8">Llama 3.3 70B</text>
+        <text x="822" y="402" textAnchor="middle" fill="#d97706" fontSize="8">ドラフト / Chat Q&amp;A</text>
       </g>
+      <text x="822" y="333" textAnchor="middle" fill="#9333ea" fontSize="6">Guardrails / Log</text>
 
       {/* KV */}
       <g>
-        <rect x="760" y="405" width="125" height="50" rx="10" fill="#64748b" fillOpacity="0.1" stroke="#64748b" strokeWidth="1.5" />
-        <text x="822" y="427" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="700">KV</text>
-        <text x="822" y="443" textAnchor="middle" fill="#64748b" fontSize="8">セッション / キャッシュ</text>
+        <rect x="760" y="440" width="125" height="50" rx="10" fill="#64748b" fillOpacity="0.1" stroke="#64748b" strokeWidth="1.5" />
+        <text x="822" y="462" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="700">KV</text>
+        <text x="822" y="478" textAnchor="middle" fill="#64748b" fontSize="8">セッション / キャッシュ</text>
       </g>
 
       {/* Email Worker */}
       <g>
-        <rect x="760" y="490" width="125" height="80" rx="10" fill="#14b8a6" fillOpacity="0.1" stroke="#14b8a6" strokeWidth="1.5" />
-        <text x="822" y="513" textAnchor="middle" fill="#0d9488" fontSize="10" fontWeight="700">Email Worker</text>
-        <text x="822" y="529" textAnchor="middle" fill="#14b8a6" fontSize="7.5">send_email binding</text>
-        <text x="822" y="543" textAnchor="middle" fill="#14b8a6" fontSize="7.5">承認通知メール送信</text>
-        <text x="822" y="557" textAnchor="middle" fill="#14b8a6" fontSize="7">noreply@cf-se-blog-jp.dev</text>
+        <rect x="760" y="520" width="125" height="80" rx="10" fill="#14b8a6" fillOpacity="0.1" stroke="#14b8a6" strokeWidth="1.5" />
+        <text x="822" y="543" textAnchor="middle" fill="#0d9488" fontSize="10" fontWeight="700">Email Worker</text>
+        <text x="822" y="559" textAnchor="middle" fill="#14b8a6" fontSize="7.5">send_email binding</text>
+        <text x="822" y="573" textAnchor="middle" fill="#14b8a6" fontSize="7.5">承認通知メール送信</text>
+        <text x="822" y="587" textAnchor="middle" fill="#14b8a6" fontSize="7">noreply@cf-se-blog-jp.dev</text>
       </g>
       {/* Arrow: Email Worker → Email Routing */}
-      <line x1="885" y1="530" x2="910" y2="530" stroke="#14b8a6" strokeWidth="1.5" markerEnd={`url(#${aT})`} />
+      <line x1="885" y1="560" x2="910" y2="560" stroke="#14b8a6" strokeWidth="1.5" markerEnd={`url(#${aT})`} />
       <g>
-        <rect x="910" y="505" width="110" height="50" rx="10" fill="#14b8a6" fillOpacity="0.06" stroke="#14b8a6" strokeWidth="1" strokeDasharray="4" />
-        <text x="965" y="525" textAnchor="middle" fill="#0d9488" fontSize="8" fontWeight="600">Email Routing</text>
-        <text x="965" y="541" textAnchor="middle" fill="#14b8a6" fontSize="7">宛先検証・配信</text>
+        <rect x="910" y="535" width="110" height="50" rx="10" fill="#14b8a6" fillOpacity="0.06" stroke="#14b8a6" strokeWidth="1" strokeDasharray="4" />
+        <text x="965" y="555" textAnchor="middle" fill="#0d9488" fontSize="8" fontWeight="600">Email Routing</text>
+        <text x="965" y="571" textAnchor="middle" fill="#14b8a6" fontSize="7">宛先検証・配信</text>
       </g>
 
       {/* Vectorize */}
-      <line x1="885" y1="335" x2="910" y2="335" stroke="#cbd5e1" strokeWidth="1.5" markerEnd={`url(#${a})`} />
+      <line x1="885" y1="380" x2="910" y2="380" stroke="#cbd5e1" strokeWidth="1.5" markerEnd={`url(#${a})`} />
       <g>
-        <rect x="910" y="310" width="100" height="50" rx="10" fill="#ec4899" fillOpacity="0.1" stroke="#ec4899" strokeWidth="1.5" />
-        <text x="960" y="332" textAnchor="middle" fill="#be185d" fontSize="9" fontWeight="700">Vectorize</text>
-        <text x="960" y="348" textAnchor="middle" fill="#db2777" fontSize="7">関連記事 / RAG</text>
+        <rect x="910" y="355" width="100" height="50" rx="10" fill="#ec4899" fillOpacity="0.1" stroke="#ec4899" strokeWidth="1.5" />
+        <text x="960" y="377" textAnchor="middle" fill="#be185d" fontSize="9" fontWeight="700">Vectorize</text>
+        <text x="960" y="393" textAnchor="middle" fill="#db2777" fontSize="7">関連記事 / RAG</text>
       </g>
 
       {/* Legend */}
       <g>
-        <rect x="510" y="560" width="195" height="90" rx="8" fill="#fff" stroke="#e2e8f0" strokeWidth="1" />
-        <text x="525" y="578" fill="#475569" fontSize="8" fontWeight="700">LEGEND</text>
-        <line x1="525" y1="590" x2="555" y2="590" stroke="#93c5fd" strokeWidth="2" />
-        <text x="562" y="594" fill="#64748b" fontSize="7">閲覧ユーザー（認証不要・読み取り専用）</text>
-        <line x1="525" y1="606" x2="555" y2="606" stroke="#5eead4" strokeWidth="2" />
-        <text x="562" y="610" fill="#64748b" fontSize="7">投稿者申請者（/apply → Email 検証）</text>
-        <line x1="525" y1="622" x2="555" y2="622" stroke="#fdba74" strokeWidth="2" />
-        <text x="562" y="626" fill="#64748b" fontSize="7">招待エンジニア（CF Access 認証・投稿可能）</text>
-        <line x1="525" y1="638" x2="555" y2="638" stroke="#cbd5e1" strokeWidth="2" />
-        <text x="562" y="642" fill="#64748b" fontSize="7">内部サービス間通信</text>
+        <rect x="510" y="620" width="195" height="90" rx="8" fill="#fff" stroke="#e2e8f0" strokeWidth="1" />
+        <text x="525" y="638" fill="#475569" fontSize="8" fontWeight="700">LEGEND</text>
+        <line x1="525" y1="650" x2="555" y2="650" stroke="#93c5fd" strokeWidth="2" />
+        <text x="562" y="654" fill="#64748b" fontSize="7">閲覧ユーザー（認証不要・読み取り専用）</text>
+        <line x1="525" y1="666" x2="555" y2="666" stroke="#5eead4" strokeWidth="2" />
+        <text x="562" y="670" fill="#64748b" fontSize="7">投稿者申請者（/apply → Email 検証）</text>
+        <line x1="525" y1="682" x2="555" y2="682" stroke="#fdba74" strokeWidth="2" />
+        <text x="562" y="686" fill="#64748b" fontSize="7">招待エンジニア（CF Access 認証・投稿可能）</text>
+        <line x1="525" y1="698" x2="555" y2="698" stroke="#cbd5e1" strokeWidth="2" />
+        <text x="562" y="702" fill="#64748b" fontSize="7">内部サービス間通信</text>
       </g>
 
       {/* Arrow markers */}

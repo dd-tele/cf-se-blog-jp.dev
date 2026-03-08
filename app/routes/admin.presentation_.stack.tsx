@@ -254,6 +254,51 @@ export default function PresentationStack() {
               ]}
               color="orange"
             />
+
+            <TechCard
+              name="API Shield — スキーマバリデーション"
+              subtitle="API エンドポイント保護"
+              role="全 API エンドポイントのメソッド・パス・リクエストボディを OpenAPI 3.0 スキーマでエッジ検証。スキーマに合致しないリクエストを自動ブロック。"
+              why="アプリケーションに到達する前にエッジレベルで不正なリクエストを排除でき、Workers の処理負荷を削減。OpenAPI 標準に準拠しているため、API ドキュメントとバリデーションルールを一元管理可能。"
+              details={[
+                "OpenAPI 3.0 スキーマ (api-shield-schema.json) を Cloudflare API Shield に登録",
+                "全 16 エンドポイントのメソッド・パス・パラメータ・ボディを定義・検証",
+                "Bearer (cfbk_) / Session Cookie / CF Access JWT の 3 種の securitySchemes を定義",
+                "multipart/form-data は API Shield 非対応のため、アプリ側（MIME タイプ・10MB 制限）で検証",
+              ]}
+              color="orange"
+            />
+
+            <TechCard
+              name="Turnstile — Bot 保護"
+              subtitle="CAPTCHA 代替（invisible モード）"
+              role="チャット Q&A フォームにおけるボットによる自動投稿を検知・ブロック。ユーザーに操作を要求しない invisible モードで UX を維持。"
+              why="従来の CAPTCHA（reCAPTCHA 等）はユーザー体験を著しく損なう。Turnstile は Cloudflare のネットワークインテリジェンスを活用し、ブラウザのシグナルだけでボットを判定。invisible モードではユーザーに一切の操作を要求せず、バックグラウンドでチャレンジを実行。"
+              details={[
+                "invisible モード — ユーザーに操作を要求せずバックグラウンドでチャレンジを実行",
+                "チャットパネル展開時に動的にスクリプトロード＆ウィジェット描画",
+                "メッセージ送信時に turnstileToken を POST ボディに含め、サーバー側で siteverify API 検証",
+                "Fail open 設計 — 環境変数未設定時や API 通信エラー時はスキップして可用性を優先",
+                "各送信後にウィジェットをリセットし、次回用の新しいトークンを自動取得",
+              ]}
+              color="orange"
+            />
+
+            <TechCard
+              name="AI Gateway — AI ガードレール & 可観測性"
+              subtitle="AI 呼び出しの一元管理"
+              role="チャット Q&A の Workers AI 呼び出し（Llama Guard モデレーション + Llama 3.3 応答生成）を AI Gateway 経由でルーティング。ログ・分析・レート制限・ガードレールを一元管理。"
+              why="Workers AI への直接呼び出しではリクエストログやトークン使用量の可視化が困難。AI Gateway を経由することで、全 AI リクエストのモニタリング、レート制限、レスポンスキャッシュ、コンテンツフィルタリング（ガードレール）を Dashboard から設定可能に。コード変更は ai.run() の第 3 引数に gateway ID を渡すだけ。"
+              details={[
+                "ai.run() の第 3 引数に { gateway: { id } } を渡すだけで Gateway 経由にルーティング",
+                "全 AI リクエスト/レスポンスのログ記録、レイテンシ・トークン使用量の可視化",
+                "Gateway レベルのレート制限 — AI 呼び出し頻度を制御",
+                "レスポンスキャッシュ — 同一プロンプトへの応答を再利用してコスト削減",
+                "ガードレール — プロンプト/レスポンスのコンテンツフィルタリングを Dashboard から設定",
+                "AI_GATEWAY_ID 未設定時は通常の Workers AI 直接呼び出しにフォールバック",
+              ]}
+              color="orange"
+            />
           </div>
         </section>
 

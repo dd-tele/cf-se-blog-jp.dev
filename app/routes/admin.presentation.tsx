@@ -253,8 +253,11 @@ export default function AdminPresentation() {
                   <StackItem name="KV" desc="セッション / キャッシュ / ドラフト" />
                   <StackItem name="Access" desc="Zero Trust 認証（SSO）+ API 連携" />
                   <StackItem name="Email Workers" desc="通知メール送信" highlight />
-                  <StackItem name="WAF" desc="OWASP Top 10 / カスタムルール" highlight />
-                  <StackItem name="Bot Management" desc="自動化攻撃検知・軽減" highlight />
+                  <StackItem name="WAF" desc="OWASP Top 10 / カスタムルール" />
+                  <StackItem name="Bot Management" desc="自動化攻撃検知・軽減" />
+                  <StackItem name="API Shield" desc="OpenAPI スキーマバリデーション" highlight />
+                  <StackItem name="Turnstile" desc="チャット Bot 保護（invisible）" highlight />
+                  <StackItem name="AI Gateway" desc="AI ガードレール / ログ / 分析" highlight />
                 </ul>
               </div>
             </div>
