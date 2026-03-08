@@ -59,19 +59,24 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
     return { success: true, message: "プロフィール写真を更新しました" };
   }
 
-  await adminUpdateUser(db, userId, {
-    displayName,
-    email,
-    nickname: (formData.get("nickname") as string) || undefined,
-    furigana: (formData.get("furigana") as string) || undefined,
-    company: (formData.get("company") as string) || undefined,
-    jobRole: (formData.get("job_role") as string) || undefined,
-    expertise: (formData.get("expertise") as string) || undefined,
-    profileComment: (formData.get("profile_comment") as string) || undefined,
-    bio: (formData.get("bio") as string) || undefined,
-    role: role as "admin" | "se" | "ae" | "user",
-    isActive,
-  });
+  try {
+    await adminUpdateUser(db, userId, {
+      displayName,
+      email,
+      nickname: (formData.get("nickname") as string) || undefined,
+      furigana: (formData.get("furigana") as string) || undefined,
+      company: (formData.get("company") as string) || undefined,
+      jobRole: (formData.get("job_role") as string) || undefined,
+      expertise: (formData.get("expertise") as string) || undefined,
+      profileComment: (formData.get("profile_comment") as string) || undefined,
+      bio: (formData.get("bio") as string) || undefined,
+      role: role as "admin" | "se" | "ae" | "user",
+      isActive,
+    });
+  } catch (e) {
+    console.error("[admin.users.$id] update failed:", e);
+    return { error: `更新に失敗しました: ${e instanceof Error ? e.message : String(e)}` };
+  }
 
   return { success: true, message: "ユーザー情報を更新しました" };
 }

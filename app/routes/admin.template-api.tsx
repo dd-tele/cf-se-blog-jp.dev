@@ -10,7 +10,7 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin", "se"]);
+  const user = await requireRole(request, ["admin"]);
   const db = context.cloudflare.env.DB;
   const templatesList = await getActiveTemplates(db);
   const siteUrl = context.cloudflare.env.SITE_URL || "https://blog.jp.dev";

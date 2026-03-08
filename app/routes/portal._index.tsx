@@ -164,7 +164,7 @@ export default function PortalIndex() {
                 管理画面
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                記事の承認キュー、ユーザー管理
+                投稿一覧・Q&A・AI インサイト・ユーザー管理
               </p>
             </Link>
           )}
