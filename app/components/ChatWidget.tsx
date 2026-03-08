@@ -34,8 +34,14 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey }: Props) {
   const [loaded, setLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetId = useRef<string | null>(null);
+
+  function autoResize(el: HTMLTextAreaElement) {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }
 
   // Load Turnstile script and render invisible widget
   useEffect(() => {
@@ -98,6 +104,9 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey }: Props) {
 
     setError(null);
     setInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
 
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
@@ -294,28 +303,33 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey }: Props) {
 
           {/* Input area */}
           <div className="border-t px-3 py-2.5">
-            <div className="flex gap-2">
-              <input
-                type="text"
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  autoResize(e.target);
+                }}
                 onKeyDown={handleKeyDown}
                 onCompositionStart={() => { isComposingRef.current = true; }}
                 onCompositionEnd={() => { setTimeout(() => { isComposingRef.current = false; }, 50); }}
-                placeholder="質問を入力..."
+                placeholder="質問を入力...（Shift+Enter で改行）"
                 disabled={isStreaming}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
+                rows={1}
+                className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm leading-snug focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
+                style={{ maxHeight: "6rem" }}
               />
               <button
                 onClick={handleSend}
                 disabled={isStreaming || !input.trim()}
-                className="rounded-lg bg-brand-500 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-600 disabled:opacity-50"
+                className="shrink-0 rounded-lg bg-brand-500 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-600 disabled:opacity-50"
               >
                 送信
               </button>
             </div>
             <p className="mt-1.5 text-[10px] leading-tight text-gray-400">
-              ※ 日本語入力時は Enter キーで誤送信される場合があります。メモ帳等で文章を作成し、コピー＆ペーストでご利用ください。
+              Enter で送信 / Shift+Enter で改行
             </p>
             <p className="mt-1 text-[10px] leading-tight text-gray-400">
               AI の回答は参考情報です。正確な情報は{" "}
