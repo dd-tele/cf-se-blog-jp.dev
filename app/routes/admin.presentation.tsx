@@ -128,6 +128,8 @@ export default function AdminPresentation() {
             <Badge>Personal API Keys</Badge>
             <Badge>Author Profiles</Badge>
             <Badge>API Shield</Badge>
+            <Badge>Turnstile</Badge>
+            <Badge>AI Gateway</Badge>
           </div>
         </section>
 
@@ -423,6 +425,14 @@ export default function AdminPresentation() {
               items={["OpenAPI 3.0 スキーマで全 16 エンドポイントを検証", "メソッド・パス・リクエストボディのバリデーション", "スキーマ不一致リクエストを自動ブロック", "Bearer / Cookie / CF Access 3 種の認証定義"]}
             />
             <SecurityCard
+              title="Turnstile"
+              items={["チャット Q&A に invisible モード統合", "ボットによる自動投稿を Workers 到達前にブロック", "siteverify API でサーバー側トークン検証", "Fail open 設計 — 障害時はスキップして可用性優先"]}
+            />
+            <SecurityCard
+              title="AI Gateway"
+              items={["チャット AI 呼び出しを Gateway 経由でルーティング", "全リクエスト/レスポンスのログ・分析", "Gateway レベルのレート制限・キャッシュ", "プロンプト/レスポンスのガードレール"]}
+            />
+            <SecurityCard
               title="API キー & エッジ性能"
               items={["Bearer トークン (cfbk_) + SHA-256 ハッシュ保存", "Session Cookie とのデュアル認証", "V8 Isolates（コールドスタートなし）", "KV キャッシュ + グローバル CDN"]}
             />
@@ -510,6 +520,34 @@ export default function AdminPresentation() {
               files={["api-shield-schema.json"]}
               color="blue"
             />
+
+            {/* Turnstile */}
+            <TechDetail
+              title="Turnstile — チャット Bot 保護（invisible モード）"
+              problem="チャット Q&A にボットが自動投稿する攻撃を防ぎたいが、CAPTCHA で UX を悪化させたくない"
+              solutions={[
+                "Turnstile invisible モードを採用 — ユーザーに操作を要求せずにチャレンジを実行",
+                "チャットパネル展開時に動的にスクリプトロード＆ウィジェット描画、メッセージ送信時にトークンを取得して POST ボディに含める",
+                "サーバー側で siteverify API を呼び出してトークン検証、失敗時は 403 で拒否",
+                "Fail open 設計 — TURNSTILE_SECRET_KEY 未設定時や API 通信エラー時はスキップして可用性を優先",
+              ]}
+              files={["app/lib/turnstile.server.ts", "app/components/ChatWidget.tsx", "app/api/routes/chat.ts"]}
+              color="green"
+            />
+
+            {/* AI Gateway */}
+            <TechDetail
+              title="AI Gateway — AI 呼び出しのガードレール & 可観測性"
+              problem="Workers AI への直接呼び出しではログ・レート制限・コンテンツフィルタリングを個別実装する必要がある"
+              solutions={[
+                "ai.run() の第 3 引数に { gateway: { id } } を渡すだけで AI Gateway 経由にルーティング",
+                "gatewayOptions() ヘルパーで AI_GATEWAY_ID 未設定時は通常呼び出しにフォールバック",
+                "Dashboard の Guardrails 設定でプロンプト/レスポンスのコンテンツフィルタリングを追加可能",
+                "全 AI リクエストのログ・レイテンシ・トークン使用量を一元的に可視化",
+              ]}
+              files={["app/lib/chat.server.ts", "app/api/routes/chat.ts"]}
+              color="purple"
+            />
           </div>
         </section>
 
@@ -580,13 +618,13 @@ export default function AdminPresentation() {
               phase="Phase 2"
               title="AI & エンゲージメント"
               status="in-progress"
-              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "AI 精度向上", "サードパーティ連携"]}
+              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "API Shield ✅", "Turnstile ✅", "AI Gateway ✅", "AI 精度向上", "サードパーティ連携"]}
             />
             <RoadmapPhase
               phase="Phase 3"
               title="Advanced"
               status="planned"
-              items={["Durable Objects", "Queues 非同期処理", "AI Gateway", "Turnstile", "Logpush"]}
+              items={["Durable Objects", "Queues 非同期処理", "Logpush"]}
             />
             <RoadmapPhase
               phase="Phase 4"

@@ -15,6 +15,7 @@ import {
   generateChatResponseStream,
 } from "~/lib/chat.server";
 import { writeAuditLog } from "~/lib/audit.server";
+import { verifyTurnstileToken } from "~/lib/turnstile.server";
 
 const chat = new Hono<HonoEnv>();
 
@@ -43,16 +44,27 @@ chat.post("/", optionalAuth, async (c) => {
   const vectorize = env.VECTORIZE;
 
   // Parse body
-  let body: { postId: string; message: string };
+  let body: { postId: string; message: string; turnstileToken?: string };
   try {
     body = await c.req.json();
   } catch {
     return c.json({ error: "Invalid JSON" }, 400);
   }
 
-  const { postId, message } = body;
+  const { postId, message, turnstileToken } = body;
   if (!postId || !message) {
     return c.json({ error: "postId and message are required" }, 400);
+  }
+
+  const ip = c.req.header("CF-Connecting-IP") || "127.0.0.1";
+
+  // 0. Turnstile verification (bot protection)
+  const secretKey = env.TURNSTILE_SECRET_KEY;
+  if (secretKey) {
+    const turnstile = await verifyTurnstileToken(secretKey, turnstileToken || "", ip);
+    if (!turnstile.ok) {
+      return c.json({ error: turnstile.error || "Turnstile 検証に失敗しました" }, 403);
+    }
   }
 
   // 1. Input validation
@@ -62,7 +74,6 @@ chat.post("/", optionalAuth, async (c) => {
   }
 
   // 2. Rate limiting
-  const ip = c.req.header("CF-Connecting-IP") || "127.0.0.1";
   const rateCheck = await checkRateLimit(kv, ip);
   if (!rateCheck.allowed) {
     return c.json(
@@ -71,8 +82,9 @@ chat.post("/", optionalAuth, async (c) => {
     );
   }
 
-  // 3. Content moderation
-  const moderation = await moderateContent(ai, message);
+  // 3. Content moderation (via AI Gateway if configured)
+  const gatewayId = env.AI_GATEWAY_ID;
+  const moderation = await moderateContent(ai, message, gatewayId);
   if (!moderation.safe) {
     const threadId = await getOrCreateThread(db, postId);
     const user = c.get("user");
@@ -133,7 +145,8 @@ chat.post("/", optionalAuth, async (c) => {
       ai,
       systemPrompt,
       aiHistory,
-      message
+      message,
+      gatewayId
     );
 
     return streamSSE(c, async (stream) => {

@@ -94,7 +94,8 @@
                 "type": "object",
                 "properties": {
                   "postId": { "type": "string", "description": "記事 ID" },
-                  "message": { "type": "string", "description": "ユーザーメッセージ（最大1000文字）", "maxLength": 1000 }
+                  "message": { "type": "string", "description": "ユーザーメッセージ（最大1000文字）", "maxLength": 1000 },
+                  "turnstileToken": { "type": "string", "description": "Cloudflare Turnstile トークン" }
                 },
                 "required": ["postId", "message"]
               }

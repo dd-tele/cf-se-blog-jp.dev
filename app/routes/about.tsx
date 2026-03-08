@@ -173,6 +173,18 @@ export default function AboutPage() {
               tags={["Schema Validation", "OpenAPI 3.0", "API保護"]}
             />
             <TechCard
+              color="green"
+              title="Turnstile"
+              description="チャット Q&A に invisible モードの Turnstile を統合。ボットによる自動投稿を検知・ブロックし、UX を損なわずに保護。"
+              tags={["CAPTCHA", "Bot対策", "Invisible"]}
+            />
+            <TechCard
+              color="purple"
+              title="AI Gateway"
+              description="Workers AI 呼び出しを AI Gateway 経由でルーティング。ログ・分析・レート制限・ガードレールを一元管理。"
+              tags={["Guardrails", "Logging", "Rate Limit"]}            
+            />
+            <TechCard
               color="slate"
               title="KV (Key-Value)"
               description="セッション管理とページキャッシュに使用。エッジ上での低レイテンシなデータアクセスを実現。"
@@ -498,6 +510,8 @@ export default function AboutPage() {
                 <li>OWASP Top 10 防御（SQLi / XSS 等）</li>
                 <li>Bot Management で自動化攻撃を検知・軽減</li>
                 <li>API Shield — OpenAPI スキーマで全エンドポイントを検証</li>
+                <li>Turnstile — チャット Bot 保護（invisible モード）</li>
+                <li>AI Gateway — AI 呼び出しのガードレール・ログ・分析</li>
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -561,7 +575,7 @@ export default function AboutPage() {
                 <SpecRow label="API レイヤー" value="Hono — streamSSE, 型付き Bindings, ミドルウェア" />
                 <SpecRow label="AI モデル" value="Meta Llama 3.3 70B Instruct fp8-fast (Workers AI)" />
                 <SpecRow label="ベクトル検索" value="Cloudflare Vectorize" />
-                <SpecRow label="API 保護" value="API Shield — OpenAPI 3.0 スキーマバリデーション (16 エンドポイント)" />
+                <SpecRow label="API 保護" value="API Shield (Schema Validation) + Turnstile (Bot保護) + AI Gateway (Guardrails)" />
                 <SpecRow label="認証" value="Cloudflare Access (Zero Trust)" />
                 <SpecRow label="セッション" value="Cloudflare KV" />
                 <SpecRow label="メール通知" value="Email Workers (send_email) + Email Routing API" />

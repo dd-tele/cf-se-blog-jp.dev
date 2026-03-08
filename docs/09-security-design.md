@@ -533,6 +533,72 @@ securitySchemes:
 - `multipart/form-data` は API Shield のスキーマバリデーション非対応のため、`/api/upload-image` のボディ検証はアプリ側（MIME タイプ・サイズ制限）で実施
 - スキーマファイル: `api-shield-schema.json`（リポジトリルート）
 
+### 5.4 Turnstile（チャット Bot 保護）
+
+> **実装状況:** チャット Q&A の POST `/api/v1/chat` に Cloudflare Turnstile（invisible モード）を統合。ボットによる自動投稿を Workers 到達前に検知・ブロック。
+
+**フロー:**
+
+```
+[ユーザー] ──── チャット送信 ────▶ [Turnstile invisible challenge]
+                                         │ token 発行
+                                         ▼
+[POST /api/v1/chat] ── turnstileToken 付き ──▶ [Workers]
+                                                 │
+                                         siteverify API で検証
+                                                 │
+                                     ┌─── OK ───┤─── NG ──┐
+                                     ▼           │         ▼
+                              通常処理続行        │   403 Forbidden
+                                                 │
+```
+
+**実装ファイル:**
+- `app/lib/turnstile.server.ts` — Turnstile siteverify API 呼び出し
+- `app/components/ChatWidget.tsx` — invisible ウィジェット描画 + トークン取得
+- `app/api/routes/chat.ts` — POST リクエストでトークン検証（ステップ 0）
+
+**設計方針:**
+- **Fail open:** Turnstile の `TURNSTILE_SECRET_KEY` が未設定の場合はスキップ（開発環境対応）
+- **Fail open on error:** siteverify API への通信エラー時もスキップ（可用性優先）
+- **トークンリセット:** 各メッセージ送信後にウィジェットをリセットし、次回送信用の新しいトークンを自動取得
+
+**環境変数:**
+| 変数名 | 用途 |
+|---|---|
+| `TURNSTILE_SITE_KEY` | フロントエンドウィジェット用（公開可） |
+| `TURNSTILE_SECRET_KEY` | サーバー側検証用（シークレット） |
+
+### 5.5 AI Gateway（AI 呼び出しのガードレール）
+
+> **実装状況:** チャット Q&A の Workers AI 呼び出し（コンテンツモデレーション + AI 応答生成）を AI Gateway 経由にルーティング。
+
+**対象:**
+| 呼び出し | モデル | 機能 |
+|---|---|---|
+| `moderateContent()` | `@cf/meta/llama-guard-3-8b` | 不適切コンテンツ検知 |
+| `generateChatResponseStream()` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | AI チャット応答生成 |
+
+**AI Gateway で有効化できる機能:**
+- **ログ・分析:** 全 AI リクエスト/レスポンスのログ記録、レイテンシ・トークン使用量の可視化
+- **レート制限:** Gateway レベルでのリクエスト数制限
+- **キャッシュ:** 同一プロンプトのレスポンスキャッシュ
+- **ガードレール:** プロンプト/レスポンスのコンテンツフィルタリング
+
+**実装ファイル:**
+- `app/lib/chat.server.ts` — `gatewayOptions()` ヘルパーで `ai.run()` の第 3 引数に `{ gateway: { id } }` を付与
+- `app/api/routes/chat.ts` — `env.AI_GATEWAY_ID` を取得して `moderateContent` / `generateChatResponseStream` に渡す
+
+**環境変数:**
+| 変数名 | 用途 |
+|---|---|
+| `AI_GATEWAY_ID` | AI Gateway の ID（未設定時はバイパス） |
+
+**設定手順（Cloudflare Dashboard）:**
+1. AI → AI Gateway → Create Gateway
+2. Gateway ID を `AI_GATEWAY_ID` 環境変数に設定
+3. Settings → Guardrails でコンテンツフィルタリングルールを設定
+
 ---
 
 ## 6. 監査 & コンプライアンス

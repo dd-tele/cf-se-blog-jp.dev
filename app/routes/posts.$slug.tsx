@@ -89,11 +89,12 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
     relatedPosts,
     siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
     siteUrl: context.cloudflare.env.SITE_URL ?? "https://cf-se-blog-jp.dev",
+    turnstileSiteKey: context.cloudflare.env.TURNSTILE_SITE_KEY ?? "",
   };
 }
 
 export default function PostDetail() {
-  const { post, user, aiSummary, relatedPosts, siteName } = useLoaderData<typeof loader>();
+  const { post, user, aiSummary, relatedPosts, siteName, turnstileSiteKey } = useLoaderData<typeof loader>();
 
   const tags: string[] = post.tagsJson ? JSON.parse(post.tagsJson) : [];
 
@@ -331,7 +332,7 @@ export default function PostDetail() {
 
       {/* AI Chat Widget */}
       {post.status === "published" && (
-        <ChatWidget postId={post.id} postTitle={post.title} />
+        <ChatWidget postId={post.id} postTitle={post.title} turnstileSiteKey={turnstileSiteKey} />
       )}
 
       {/* Footer */}

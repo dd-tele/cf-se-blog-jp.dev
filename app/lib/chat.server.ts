@@ -61,10 +61,16 @@ export async function checkRateLimit(
   return { allowed: true, remaining: MAX_MESSAGES_PER_MINUTE - count - 1 };
 }
 
+// ─── AI Gateway options helper ──────────────────────────────
+function gatewayOptions(gatewayId?: string) {
+  return gatewayId ? { gateway: { id: gatewayId } } : undefined;
+}
+
 // ─── Content moderation (Llama Guard) ───────────────────────
 export async function moderateContent(
   ai: any,
-  content: string
+  content: string,
+  gatewayId?: string
 ): Promise<{ safe: boolean; reason?: string }> {
   try {
     const result: any = await ai.run(
@@ -72,6 +78,7 @@ export async function moderateContent(
       {
         messages: [{ role: "user", content }],
       },
+      gatewayOptions(gatewayId),
     );
 
     const output = (result.response || "").trim().toLowerCase();
@@ -245,7 +252,8 @@ export async function generateChatResponseStream(
   ai: any,
   systemPrompt: string,
   history: { role: "user" | "assistant"; content: string }[],
-  userMessage: string
+  userMessage: string,
+  gatewayId?: string
 ): Promise<ReadableStream> {
   const messages = [
     { role: "system" as const, content: systemPrompt },
@@ -261,6 +269,7 @@ export async function generateChatResponseStream(
       temperature: 0.3,
       stream: true,
     },
+    gatewayOptions(gatewayId),
   );
 
   return stream as ReadableStream;

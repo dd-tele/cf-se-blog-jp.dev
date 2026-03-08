@@ -1,5 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: string | HTMLElement, options: any) => string;
+      reset: (widgetId: string) => void;
+      remove: (widgetId: string) => void;
+      getResponse: (widgetId: string) => string | undefined;
+    };
+  }
+}
+
 interface ChatMessage {
   id: string;
   role: "user" | "ai" | "se" | "admin" | "system";
@@ -10,9 +21,10 @@ interface ChatMessage {
 interface Props {
   postId: string;
   postTitle: string;
+  turnstileSiteKey?: string;
 }
 
-export function ChatWidget({ postId, postTitle }: Props) {
+export function ChatWidget({ postId, postTitle, turnstileSiteKey }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -22,6 +34,41 @@ export function ChatWidget({ postId, postTitle }: Props) {
   const [loaded, setLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+
+  // Load Turnstile script and render invisible widget
+  useEffect(() => {
+    if (!turnstileSiteKey || !isOpen) return;
+
+    // Load script if not already loaded
+    if (!document.querySelector('script[src*="turnstile"]')) {
+      const script = document.createElement("script");
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.async = true;
+      document.head.appendChild(script);
+    }
+
+    // Wait for script to load and render widget
+    const interval = setInterval(() => {
+      if (window.turnstile && turnstileRef.current && !turnstileWidgetId.current) {
+        turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
+          sitekey: turnstileSiteKey,
+          size: "invisible",
+          callback: () => {},
+        });
+        clearInterval(interval);
+      }
+    }, 200);
+
+    return () => {
+      clearInterval(interval);
+      if (turnstileWidgetId.current && window.turnstile) {
+        try { window.turnstile.remove(turnstileWidgetId.current); } catch {}
+        turnstileWidgetId.current = null;
+      }
+    };
+  }, [turnstileSiteKey, isOpen]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,10 +110,16 @@ export function ChatWidget({ postId, postTitle }: Props) {
     setStreamingContent("");
 
     try {
+      // Get Turnstile token if available
+      let turnstileToken: string | undefined;
+      if (turnstileSiteKey && turnstileWidgetId.current && window.turnstile) {
+        turnstileToken = window.turnstile.getResponse(turnstileWidgetId.current);
+      }
+
       const res = await fetch("/api/v1/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, message: text }),
+        body: JSON.stringify({ postId, message: text, turnstileToken }),
       });
 
       if (!res.ok) {
@@ -127,6 +180,10 @@ export function ChatWidget({ postId, postTitle }: Props) {
     } finally {
       setIsStreaming(false);
       setStreamingContent("");
+      // Reset Turnstile for next message
+      if (turnstileWidgetId.current && window.turnstile) {
+        try { window.turnstile.reset(turnstileWidgetId.current); } catch {}
+      }
     }
   }
 
@@ -229,6 +286,9 @@ export function ChatWidget({ postId, postTitle }: Props) {
               {error}
             </div>
           )}
+
+          {/* Turnstile invisible widget */}
+          {turnstileSiteKey && <div ref={turnstileRef} className="hidden" />}
 
           {/* Input area */}
           <div className="border-t px-3 py-2.5">

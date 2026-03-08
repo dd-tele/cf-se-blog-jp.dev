@@ -11,6 +11,8 @@ export interface Bindings {
   SITE_NAME: string;
   SITE_URL: string;
   AI_GATEWAY_ID?: string;
+  TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_SITE_KEY?: string;
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
   ADMIN_EMAILS?: string;
