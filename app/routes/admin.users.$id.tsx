@@ -46,7 +46,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   }
 
   const role = formData.get("role") as string;
-  if (!["admin", "se", "user"].includes(role)) {
+  if (!["admin", "se", "ae", "user"].includes(role)) {
     return { error: "無効なロールです" };
   }
 
@@ -69,7 +69,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
     expertise: (formData.get("expertise") as string) || undefined,
     profileComment: (formData.get("profile_comment") as string) || undefined,
     bio: (formData.get("bio") as string) || undefined,
-    role: role as "admin" | "se" | "user",
+    role: role as "admin" | "se" | "ae" | "user",
     isActive,
   });
 
@@ -396,6 +396,7 @@ export default function AdminUserEdit() {
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
                   <option value="user">User</option>
+                  <option value="ae">AE</option>
                   <option value="se">SE</option>
                   <option value="admin">Admin</option>
                 </select>

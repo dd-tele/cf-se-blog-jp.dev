@@ -8,7 +8,7 @@ export const users = sqliteTable("users", {
   display_name: text("display_name").notNull(),
   password_hash: text("password_hash"),
   avatar_url: text("avatar_url"),
-  role: text("role", { enum: ["admin", "se", "user"] })
+  role: text("role", { enum: ["admin", "se", "ae", "user"] })
     .notNull()
     .default("user"),
   bio: text("bio"),

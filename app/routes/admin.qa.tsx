@@ -68,7 +68,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const content = formData.get("content") as string;
     if (threadId && content?.trim()) {
       await saveMessage(db, threadId, {
-        role: user.role === "admin" ? "admin" : "se",
+        role: user.role === "admin" ? "admin" : "se",  // AE messages also stored as "se" role
         content: content.trim(),
         userId: user.id,
       });

@@ -7,7 +7,7 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin"]);
+  const user = await requireRole(request, ["admin", "ae"]);
   return { user };
 }
 
@@ -219,7 +219,7 @@ export default function PresentationStack() {
               details={[
                 "Google Workspace / Okta SSO 連携",
                 "JWT ベースの認証 — CF-Access-JWT-Assertion ヘッダーで検証",
-                "RBAC — admin / se / user の 3 ロールで機能アクセスを制御",
+                "RBAC — admin / se / ae / user の 4 ロールで機能アクセスを制御",
                 "Access API 連携 — 投稿者申請の承認時にポリシーに自動追加",
                 "認証画面は Cloudflare が提供 — カスタム実装不要",
               ]}

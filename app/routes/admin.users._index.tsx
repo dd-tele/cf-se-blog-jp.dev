@@ -68,6 +68,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 const ROLE_STYLES: Record<string, { label: string; className: string }> = {
   admin: { label: "Admin", className: "bg-red-100 text-red-700" },
   se: { label: "SE", className: "bg-blue-100 text-blue-700" },
+  ae: { label: "AE", className: "bg-purple-100 text-purple-700" },
   user: { label: "User", className: "bg-green-100 text-green-700" },
 };
 

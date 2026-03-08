@@ -69,7 +69,9 @@ export default function PortalIndex() {
                   ? "bg-red-100 text-red-700"
                   : user.role === "se"
                     ? "bg-blue-100 text-blue-700"
-                    : "bg-green-100 text-green-700"
+                    : user.role === "ae"
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-green-100 text-green-700"
               }`}
             >
               {user.role}
@@ -152,7 +154,7 @@ export default function PortalIndex() {
             </p>
           </Link>
 
-          {/* Admin-only links */}
+          {/* Admin / SE links */}
           {(user.role === "admin" || user.role === "se") && (
             <Link
               to="/admin"
@@ -163,6 +165,21 @@ export default function PortalIndex() {
               </h2>
               <p className="mt-1 text-sm text-gray-500">
                 記事の承認キュー、ユーザー管理
+              </p>
+            </Link>
+          )}
+
+          {/* AE: presentation link */}
+          {user.role === "ae" && (
+            <Link
+              to="/admin/presentation"
+              className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-brand-400 hover:shadow-md"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-brand-600">
+                プレゼンテーション
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                ブログプラットフォームの紹介スライド
               </p>
             </Link>
           )}

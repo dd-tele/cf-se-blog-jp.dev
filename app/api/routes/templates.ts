@@ -56,7 +56,7 @@ templates.get("/:id", requireAuth, async (c) => {
 // ─── POST /api/v1/templates/:id/test-generate ─────────────────
 // Generates realistic dummy inputs using AI, then creates a draft article.
 // Accepts optional overrides in request body.
-templates.post("/:id/test-generate", requireRole("admin", "se"), async (c) => {
+templates.post("/:id/test-generate", requireRole("admin", "se", "ae"), async (c) => {
   const user = c.var.user!;
   const db = c.env.DB;
   const ai = c.env.AI;
@@ -249,7 +249,7 @@ JSON のみを出力し、他のテキストは含めないでください。`;
 // One-step article generation: pass a topic keyword and the
 // system auto-selects the best matching template.
 // Designed so users can run a single curl command.
-templates.post("/quick-generate", requireRole("admin", "se"), async (c) => {
+templates.post("/quick-generate", requireRole("admin", "se", "ae"), async (c) => {
   const user = c.var.user!;
   const db = c.env.DB;
   const ai = c.env.AI;

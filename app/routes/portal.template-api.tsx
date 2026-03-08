@@ -15,7 +15,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const templatesList = await getActiveTemplates(db);
   const apiKeysList = await listApiKeys(db, user.id);
   const siteUrl = context.cloudflare.env.SITE_URL || "https://blog.jp.dev";
-  const canTestGenerate = user.role === "admin" || user.role === "se";
+  const canTestGenerate = user.role === "admin" || user.role === "se" || user.role === "ae";
   return { user, templatesList, apiKeysList, siteUrl, canTestGenerate };
 }
 

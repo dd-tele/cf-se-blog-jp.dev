@@ -197,7 +197,7 @@ export interface AdminUserUpdateInput {
   profileComment?: string;
   bio?: string;
   avatarUrl?: string;
-  role?: "admin" | "se" | "user";
+  role?: "admin" | "se" | "ae" | "user";
   isActive?: boolean;
 }
 

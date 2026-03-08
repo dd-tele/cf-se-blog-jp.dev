@@ -500,7 +500,7 @@ export default function AboutPage() {
                 <li>Cloudflare Access による Zero Trust 認証</li>
                 <li>IdP 連携（Google Workspace 等）</li>
                 <li>JWT ベースのセッション管理（KV 保存）</li>
-                <li>ロールベースアクセス制御（admin / se / user）</li>
+                <li>ロールベースアクセス制御（admin / se / ae / user）</li>
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -737,7 +737,7 @@ export default function AboutPage() {
                 <SpecRow label="API Shield" value="OpenAPI 3.0 スキーマで全 16 エンドポイントをエッジ検証" />
                 <SpecRow label="Turnstile" value="チャット Bot 保護 (invisible モード・稼働中)" />
                 <SpecRow label="認証" value="Cloudflare Access (Zero Trust / Google SSO)" />
-                <SpecRow label="認可" value="RBAC (admin / se / user) + Personal API Keys (Bearer cfbk_)" />
+                <SpecRow label="認可" value="RBAC (admin / se / ae / user) + Personal API Keys (Bearer cfbk_)" />
                 <SpecRow label="セッション / キャッシュ" value="Cloudflare KV (グローバル分散)" />
                 <SpecRow label="メール通知" value="Email Workers (send_email) + Email Routing API" />
                 <SpecRow label="投稿者申請" value="/apply → Email 検証 → 管理者承認 → Access ポリシー自動追加" />

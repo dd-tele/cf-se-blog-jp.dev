@@ -162,7 +162,7 @@ export function resolveRole(
   email: string,
   adminEmails?: string,
   seEmailDomains?: string
-): "admin" | "se" | "user" {
+): "admin" | "se" | "ae" | "user" {
   const lowerEmail = email.toLowerCase();
 
   // Check admin list
@@ -187,7 +187,7 @@ export function resolveRole(
  */
 export function buildSessionUserFromAccess(
   payload: AccessJWTPayload,
-  role: "admin" | "se" | "user"
+  role: "admin" | "se" | "ae" | "user"
 ): SessionUser {
   const email = payload.email;
   const name = email.split("@")[0].replace(/[._-]/g, " ");

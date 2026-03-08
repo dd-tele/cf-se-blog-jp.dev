@@ -4,7 +4,7 @@ export interface SessionUser {
   id: string;
   email: string;
   displayName: string;
-  role: "admin" | "se" | "user";
+  role: "admin" | "se" | "ae" | "user";
   avatarUrl?: string;
 }
 
@@ -59,7 +59,7 @@ export async function requireUser(
 
 export async function requireRole(
   request: Request,
-  roles: Array<"admin" | "se" | "user">
+  roles: Array<"admin" | "se" | "ae" | "user">
 ): Promise<SessionUser> {
   const user = await requireUser(request);
   if (!roles.includes(user.role)) {

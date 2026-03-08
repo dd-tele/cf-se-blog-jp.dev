@@ -29,7 +29,7 @@ ai.post("/improve", requireAuth, async (c) => {
 });
 
 // POST /api/v1/ai/trend-report
-ai.post("/trend-report", requireRole("admin", "se"), async (c) => {
+ai.post("/trend-report", requireRole("admin", "se", "ae"), async (c) => {
   const db = c.env.DB;
   const d = getDb(db);
 
