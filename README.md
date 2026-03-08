@@ -14,7 +14,7 @@ Cloudflare の技術を活用して、より良いインターネット環境の
 | フレームワーク | Remix v2 (Vite) on Cloudflare Pages |
 | データベース | Cloudflare D1 (SQLite at edge) + Drizzle ORM |
 | ストレージ | Cloudflare R2 (画像・メディア) |
-| AI | Workers AI — Meta Llama 3.1 70B Instruct |
+| AI | Workers AI — Meta Llama 3.3 70B Instruct (fp8-fast) |
 | ベクトル検索 | Cloudflare Vectorize (関連記事推薦) |
 | 認証 | Cloudflare Access (Zero Trust / IdP 連携) |
 | セッション・キャッシュ | Cloudflare KV |
@@ -34,6 +34,10 @@ Cloudflare の技術を活用して、より良いインターネット環境の
 - **RSS / SEO** — OGP・Twitter Card・RSS フィード自動生成
 - **投稿者申請システム** — 公開申請フォーム → メール検証 → 管理者承認 → 通知メール自動送信
 - **ユーザープロフィール** — ニックネーム・所属・専門分野等の管理
+- **著者公開プロフィール** — `/authors/$id` で著者情報と投稿記事一覧を表示、全ページからリンク
+- **アバターアップロード & クロップ** — Canvas ベースの円形クロップ、ドラッグ & ズームで顔位置調整
+- **パーソナル API キー** — Bearer トークン認証で外部 AI ツールから Template API を呼び出し
+- **Access 再認証レジリエンス** — JWT 検証失敗時の自動リトライ、鍵ローテーション対応
 
 ## ドキュメント構成
 

@@ -125,6 +125,8 @@ export default function AdminPresentation() {
             <Badge>RAG Chat Q&A</Badge>
             <Badge>Semantic Search</Badge>
             <Badge>Email Workers</Badge>
+            <Badge>Personal API Keys</Badge>
+            <Badge>Author Profiles</Badge>
           </div>
         </section>
 
@@ -316,6 +318,30 @@ export default function AdminPresentation() {
               color="red"
               tags={["Admin", "User Mgmt", "Auto-expire"]}
             />
+            {/* Feature 7: Author Profiles */}
+            <FeatureRow
+              number="07"
+              title="著者プロフィール & リンク"
+              desc="各投稿者の公開プロフィールページ（/authors/$id）。記事詳細・ホーム・検索結果すべてから著者名をクリックで遷移可能。HTML の入れ子リンク制約を Stretched Link パターンで回避し、カード全体のクリック領域と著者リンクを共存。"
+              color="purple"
+              tags={["Public Profile", "Stretched Link", "COALESCE"]}
+            />
+            {/* Feature 8: Avatar Upload */}
+            <FeatureRow
+              number="08"
+              title="アバターアップロード & クロップ"
+              desc="HTML Canvas ベースのカスタムクロップコンポーネント。ドラッグで位置調整、スライダー+ホイールでズーム、円形マスクで顔位置を合わせて 400×400px PNG を出力。R2 にアップロード後、DB の avatar_url を即時更新。ユーザー自身のプロフィール・管理者のユーザー編集の両方から利用可能。"
+              color="green"
+              tags={["Canvas API", "Circular Crop", "R2 Upload"]}
+            />
+            {/* Feature 9: Personal API Keys */}
+            <FeatureRow
+              number="09"
+              title="パーソナル API キー & テンプレート API"
+              desc="外部 AI ツール（Gemini, ChatGPT, Claude 等）からテンプレート API を呼び出すための Bearer トークン認証。キーは cfbk_ プレフィックス + 40 hex、SHA-256 ハッシュで保存。ユーザーあたり最大5キー。セッション Cookie とのデュアル認証ミドルウェアで API とブラウザの両方をサポート。"
+              color="amber"
+              tags={["Bearer Auth", "SHA-256", "Dual Auth Middleware"]}
+            />
           </div>
         </section>
 
@@ -342,6 +368,9 @@ export default function AdminPresentation() {
               <Endpoint method="POST" path="/api/v1/ai/suggest-tags" desc="タグ提案" />
               <Endpoint method="POST" path="/api/v1/ai/improve" desc="文章改善" />
               <Endpoint method="POST" path="/api/v1/ai/trend-report" desc="トレンドレポート" />
+              <Endpoint method="GET" path="/api/v1/templates" desc="テンプレート一覧（Bearer/Cookie）" />
+              <Endpoint method="GET" path="/api/v1/templates/:id" desc="テンプレート詳細" />
+              <Endpoint method="*" path="/api/v1/api-keys" desc="API キー管理 CRUD" />
               <Endpoint method="POST" path="/api/upload-image" desc="画像アップロード（R2）" />
               <Endpoint method="GET" path="/r2/*" desc="R2 オブジェクト配信" />
               <Endpoint method="GET" path="/api/health" desc="ヘルスチェック" />
@@ -378,26 +407,96 @@ export default function AdminPresentation() {
           <div className="grid gap-4 sm:grid-cols-2">
             <SecurityCard
               title="Cloudflare Access"
-              items={["Google / Okta SSO 連携", "JWT ベース認証", "RBAC (admin / se / user)"]}
+              items={["Google / Okta SSO 連携", "JWT ベース認証 + 自動リトライ", "RBAC (admin / se / user)", "OTP 再認証時のレジリエンス強化"]}
             />
             <SecurityCard
               title="WAF + Bot Management"
-              items={["OWASP Top 10 防御（SQLi / XSS 等）", "API エンドポイント保護", "Bot 検知・自動化攻撃軽減", "カスタムドメインでゼロコード適用"]}
+              items={["OWASP Top 10 防御（SQLi / XSS 等）", "API エンドポイント保護", "Bot 検知・自動化攻撃軽減", "コードスニペット WAF 誤検知回避"]}
             />
             <SecurityCard
               title="コンテンツモデレーション"
               items={["Llama Guard 3 8B", "スパムフィルター", "フラグ & 手動レビュー"]}
             />
             <SecurityCard
-              title="エッジパフォーマンス"
-              items={["V8 Isolates（コールドスタートなし）", "KV キャッシュ", "グローバル CDN"]}
+              title="API キー & エッジ性能"
+              items={["Bearer トークン (cfbk_) + SHA-256 ハッシュ保存", "Session Cookie とのデュアル認証", "V8 Isolates（コールドスタートなし）", "KV キャッシュ + グローバル CDN"]}
             />
           </div>
         </section>
 
-        {/* ───────────────── Slide 10: Challenges ───────────────── */}
+        {/* ───────────────── Slide 10: Technical Deep-Dive ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={9} title="現在の課題と取り組み" />
+          <SlideHeader number={9} title="技術実装の工夫 — エラー回避 & 細かな改善" />
+          <div className="space-y-4">
+            {/* JWT Resilience */}
+            <TechDetail
+              title="Cloudflare Access JWT 再認証レジリエンス"
+              problem="OTP 再認証後、Access が新しい JWT を設定する前にアプリが古い JWT を読み検証失敗 → エラー画面が表示される"
+              solutions={[
+                "verifyAccessJWT を VerifyResult 型に拡張 — expired / kid_mismatch / bad_signature 等の失敗理由を識別",
+                "期限切れ・鍵不一致の場合、サーバーサイドで自動リトライ（最大2回リダイレクト）",
+                "公開鍵キャッシュに forceRefresh オプション — kid が一致しない場合キャッシュを破棄して再取得（鍵ローテーション対応）",
+                "エラーページに 3 秒カウントダウン自動リトライ + 手動再試行ボタンを実装",
+              ]}
+              files={["app/lib/access.server.ts", "app/routes/auth.login.tsx"]}
+              color="blue"
+            />
+            {/* WAF Code Snippet */}
+            <TechDetail
+              title="WAF 誤検知回避 — コードスニペット含む記事投稿"
+              problem="AI 生成記事に SQL コマンド・シェルスクリプト・HTML タグが含まれると、Cloudflare WAF (OWASP) が POST リクエストをブロック"
+              solutions={[
+                "Cloudflare Dashboard → Security → WAF → Custom Rules で Skip ルールを作成",
+                "POST /portal/*, /admin/*, /api/v1/* への認証済みリクエストで WAF Managed Rules / Bot Fight Mode / Rate Limit をスキップ",
+                "Cloudflare Access で保護されたパスのため、WAF スキップしても安全性は維持",
+              ]}
+              files={["Cloudflare Dashboard (WAF Custom Rules)"]}
+              color="red"
+            />
+            {/* Canvas Avatar Crop */}
+            <TechDetail
+              title="Canvas ベースアバタークロップ — 外部ライブラリ不使用"
+              problem="プロフィール写真の顔位置を調整できるクロップ機能が必要だが、外部ライブラリの追加バンドルを避けたい"
+              solutions={[
+                "HTML Canvas + PointerEvents で完全カスタム実装（AvatarCropModal.tsx — 約180行）",
+                "ドラッグで位置調整、スライダー＋マウスホイールでズーム（0.5x〜3x）",
+                "半透明オーバーレイ + arc() で円形マスクを描画、白い枠線で切り抜き範囲を可視化",
+                "canvas.toBlob() で 400×400px の円形 PNG を出力 → fetch('/api/upload-image') で R2 に直接アップロード",
+              ]}
+              files={["app/components/AvatarCropModal.tsx", "app/routes/portal.profile.tsx"]}
+              color="green"
+            />
+            {/* Stretched Link Pattern */}
+            <TechDetail
+              title="Stretched Link パターン — 入れ子リンク制約の回避"
+              problem="記事カードの全体がリンク（<a>）の場合、内部に著者名リンクをネストできない（HTML仕様違反）"
+              solutions={[
+                "カード全体を <div> に変更、タイトル <Link> に after:absolute after:inset-0 で全体をカバー",
+                "著者名 <Link> に relative z-10 を付与してカード上に浮かせ独立クリック領域を確保",
+                "ホーム・記事一覧・検索結果すべてに統一適用。pointer-events の衝突なし",
+              ]}
+              files={["app/routes/_index.tsx", "app/routes/posts._index.tsx", "app/routes/search.tsx"]}
+              color="purple"
+            />
+            {/* Dual Auth Middleware */}
+            <TechDetail
+              title="デュアル認証ミドルウェア — API キー & セッション Cookie"
+              problem="外部 AI ツールからは Bearer トークンで、ブラウザからはセッション Cookie で同一 API にアクセスしたい"
+              solutions={[
+                "resolveUser() ミドルウェアが Authorization: Bearer cfbk_* ヘッダーを優先チェック",
+                "Bearer なしの場合 Cookie セッションにフォールバック — 既存ブラウザ動作に影響なし",
+                "API キーは SHA-256 ハッシュで DB 保存、プレフィックス (cfbk_) で識別、last_used_at を自動更新",
+                "CORS 設定に Authorization ヘッダーと DELETE メソッドを追加",
+              ]}
+              files={["app/api/middleware.ts", "app/lib/api-keys.server.ts"]}
+              color="amber"
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Slide 11: Challenges ───────────────── */}
+        <section className="slide mb-16">
+          <SlideHeader number={10} title="現在の課題と取り組み" />
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
               <h3 className="mb-2 text-sm font-bold text-amber-800">課題</h3>
@@ -450,7 +549,7 @@ export default function AdminPresentation() {
 
         {/* ───────────────── Slide 11: Roadmap ───────────────── */}
         <section className="slide mb-16">
-          <SlideHeader number={10} title="ロードマップ" />
+          <SlideHeader number={11} title="ロードマップ" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <RoadmapPhase
               phase="Phase 1"
@@ -462,7 +561,7 @@ export default function AdminPresentation() {
               phase="Phase 2"
               title="AI & エンゲージメント"
               status="in-progress"
-              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "AI 精度向上", "サードパーティ連携"]}
+              items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "AI 精度向上", "サードパーティ連携"]}
             />
             <RoadmapPhase
               phase="Phase 3"
@@ -859,6 +958,58 @@ function CTACard({
       </span>
       <h3 className="mt-3 text-sm font-bold text-white">{title}</h3>
       <p className="mt-1 text-xs text-gray-400">{desc}</p>
+    </div>
+  );
+}
+
+function TechDetail({
+  title,
+  problem,
+  solutions,
+  files,
+  color,
+}: {
+  title: string;
+  problem: string;
+  solutions: string[];
+  files: string[];
+  color: string;
+}) {
+  const borderMap: Record<string, string> = {
+    blue: "border-blue-200 bg-blue-50/60",
+    red: "border-red-200 bg-red-50/60",
+    green: "border-green-200 bg-green-50/60",
+    purple: "border-purple-200 bg-purple-50/60",
+    amber: "border-amber-200 bg-amber-50/60",
+  };
+  const dotMap: Record<string, string> = {
+    blue: "bg-blue-400",
+    red: "bg-red-400",
+    green: "bg-green-400",
+    purple: "bg-purple-400",
+    amber: "bg-amber-400",
+  };
+  return (
+    <div className={`rounded-xl border p-5 ${borderMap[color] ?? borderMap.blue}`}>
+      <h3 className="mb-2 text-sm font-bold text-gray-900">{title}</h3>
+      <p className="mb-3 text-xs leading-relaxed text-red-700">
+        <span className="font-semibold">課題:</span> {problem}
+      </p>
+      <ul className="mb-3 space-y-1.5">
+        {solutions.map((s, i) => (
+          <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
+            <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${dotMap[color] ?? dotMap.blue}`} />
+            {s}
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap gap-1.5">
+        {files.map((f) => (
+          <span key={f} className="rounded bg-gray-200/70 px-2 py-0.5 text-[10px] font-mono text-gray-600">
+            {f}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

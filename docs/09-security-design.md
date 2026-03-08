@@ -178,56 +178,55 @@ Rule 5: 画像アップロード制限
 
 ### 3.2 Access JWT 検証（Workers 側）
 
+> **実装状況:** `app/lib/access.server.ts` に実装済み。外部ライブラリ不使用、Web Crypto API のみで RSA-PKCS1-v1_5 署名検証。
+
+**構造化された検証結果型:**
+
 ```typescript
-// app/lib/auth.server.ts
-import { createRemixStub } from '@remix-run/testing';
+// app/lib/access.server.ts
+export type VerifyResult =
+  | { ok: true; payload: AccessJWTPayload }
+  | { ok: false; reason: "expired" | "invalid" | "kid_mismatch"
+      | "bad_signature" | "bad_aud" | "bad_iss" | "malformed" };
+```
 
-interface AccessJWTPayload {
-  aud: string[];   // Application Audience Tag
-  email: string;
-  exp: number;
-  iat: number;
-  iss: string;
-  sub: string;     // User ID
-  identity_nonce: string;
-  custom: {
-    groups?: string[];
-  };
+**公開鍵キャッシュ & 自動リフレッシュ:**
+
+```typescript
+// 公開鍵をモジュールスコープで 1 時間キャッシュ
+// kid が一致しない場合、forceRefresh=true で再取得（鍵ローテーション対応）
+async function getPublicKeys(teamDomain: string, forceRefresh = false): Promise<JWK[]> {
+  if (!forceRefresh && cachedKeys && Date.now() - cachedKeys.fetchedAt < KEY_CACHE_TTL) {
+    return cachedKeys.keys;
+  }
+  const certsUrl = `https://${teamDomain}.cloudflareaccess.com/cdn-cgi/access/certs`;
+  const res = await fetch(certsUrl);
+  const data = await res.json();
+  cachedKeys = { keys: data.keys, fetchedAt: Date.now() };
+  return data.keys;
 }
+```
 
-export async function verifyAccessJWT(
-  request: Request,
-  env: Env
-): Promise<{ authenticated: boolean; user?: AccessJWTPayload; role?: 'admin' | 'se' | 'user' }> {
-  const jwt = request.headers.get('Cf-Access-Jwt-Assertion');
-  
-  if (!jwt) {
-    return { authenticated: false };
-  }
+**OTP 再認証レジリエンス（`app/routes/auth.login.tsx` loader）:**
 
-  try {
-    // Cloudflare Access の公開鍵で JWT を検証
-    const certsUrl = `https://${env.CF_ACCESS_TEAM_DOMAIN}/cdn-cgi/access/certs`;
-    const certsResponse = await fetch(certsUrl);
-    const { public_certs } = await certsResponse.json();
+```typescript
+// JWT 検証失敗時の自動リトライ（最大2回）
+// expired / kid_mismatch / bad_signature の場合、リダイレクトで Access が JWT を更新する機会を作る
+if (retryCount < 2 && ["expired", "kid_mismatch", "bad_signature"].includes(result.reason)) {
+  return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}&retry=${retryCount + 1}`);
+}
+// リトライ上限後はエラーページに 3 秒カウントダウン自動リトライを表示
+```
 
-    // JWT 検証（jose ライブラリ使用）
-    const payload = await verifyJWT(jwt, public_certs, {
-      audience: env.CF_ACCESS_AUD
-    });
+**ロール判定:**
 
-    // ロール判定
-    let role: 'admin' | 'se' | 'user' = 'user';
-    if (payload.custom?.groups?.includes('SE-Admin')) {
-      role = 'admin';
-    } else if (payload.custom?.groups?.includes('SE-Team')) {
-      role = 'se';
-    }
-
-    return { authenticated: true, user: payload, role };
-  } catch (error) {
-    return { authenticated: false };
-  }
+```typescript
+// app/lib/access.server.ts — 環境変数ベースのロール判定
+export function resolveRole(email: string, adminEmails?: string, seDomains?: string): Role {
+  if (adminEmails?.split(",").map(e => e.trim()).includes(email)) return "admin";
+  const domain = email.split("@")[1];
+  if (seDomains?.split(",").map(d => d.trim()).includes(domain)) return "se";
+  return "user";
 }
 ```
 

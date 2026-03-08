@@ -1,20 +1,23 @@
 # 10 - 実装ロードマップ
 
-> **現在の状況（2026-03）:** Phase 1 (MVP) + Phase 2 の AI ドラフト生成が完了。下書き→公開ワークフロー、6テンプレート、AI ドラフト生成 (Llama 3.3 70B)、Vectorize 関連記事推薦、AI チャット Q&A (Hono streamSSE)、About ページ が稼働中。API レイヤーを **Hono** フレームワークに移行済み。投稿者申請システム、Email Workers + Email Routing による承認通知メール、ユーザープロフィール管理が稼働中。
+> **現在の状況（2026-03）:** Phase 1 (MVP) + Phase 2 の大部分が完了。下書き→公開ワークフロー、6テンプレート、AI ドラフト生成 (Llama 3.3 70B)、Vectorize 関連記事推薦、AI チャット Q&A (Hono streamSSE)、About ページ が稼働中。API レイヤーを **Hono** フレームワークに移行済み。投稿者申請システム、Email Workers + Email Routing による承認通知メール、ユーザープロフィール管理が稼働中。著者公開プロフィール、アバターアップロード & クロップ、パーソナル API キー (Bearer トークン認証)、Cloudflare Access JWT 再認証レジリエンス強化が完了。
 
 ## 1. フェーズ概要
 
 ```
 Phase 1 (MVP) ✅        Phase 2 (AI) 🔶        Phase 3 (Advanced)      Phase 4 (Scale)
-完了                    一部完了               未着手                  一部完了
+完了                    大部分完了             未着手                  一部完了
 ─────────────────── → ─────────────────── → ─────────────────── → ───────────────
 ✅ 基盤構築             ✅ テンプレート AI      ・Durable Objects       ・パフォーマンス
 ✅ Public Blog          ✅ AI ドラフト生成      ・コンテンツモデレーション ・アナリティクス
 ✅ User Portal          ✅ Vectorize 検索      ・Queues 非同期処理     ・多言語対応
 ✅ Admin Dashboard      ✅ AI チャット Q&A     ・AI Gateway            ・コミュニティ機能
 ✅ 認証/認可 (Access)   ✅ Hono API 移行       ・Logpush              ・外部連携
-✅ 基本セキュリティ      ・トレンドレポート      ・Turnstile
-✅ 投稿者申請システム                                         ✅ メール通知
+✅ 基本セキュリティ      ✅ 著者プロフィール     ・Turnstile
+✅ 投稿者申請システム    ✅ アバタークロップ                    ✅ メール通知
+                        ✅ Personal API Keys
+                        ✅ Access 再認証改善
+                        ・トレンドレポート
 ```
 
 ---
