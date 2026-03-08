@@ -425,12 +425,12 @@ export default function AdminPresentation() {
               items={["OpenAPI 3.0 スキーマで全 16 エンドポイントを検証", "メソッド・パス・リクエストボディのバリデーション", "スキーマ不一致リクエストを自動ブロック", "Bearer / Cookie / CF Access 3 種の認証定義"]}
             />
             <SecurityCard
-              title="Turnstile"
-              items={["チャット Q&A に invisible モード統合", "ボットによる自動投稿を Workers 到達前にブロック", "siteverify API でサーバー側トークン検証", "Fail open 設計 — 障害時はスキップして可用性優先"]}
+              title="Turnstile ✅ 稼働中"
+              items={["チャット Q&A に invisible モード統合・稼働中", "ボットによる自動投稿を Workers 到達前にブロック", "siteverify API でサーバー側トークン検証", "Fail open 設計 — 障害時はスキップして可用性優先"]}
             />
             <SecurityCard
-              title="AI Gateway"
-              items={["チャット AI 呼び出しを Gateway 経由でルーティング", "全リクエスト/レスポンスのログ・分析", "Gateway レベルのレート制限・キャッシュ", "プロンプト/レスポンスのガードレール"]}
+              title="AI Gateway ✅ 稼働中"
+              items={["チャット AI 呼び出しを Gateway 経由でルーティング済み", "全リクエスト/レスポンスのログ・分析", "Gateway レベルのレート制限・キャッシュ", "プロンプト/レスポンスのガードレール"]}
             />
             <SecurityCard
               title="API キー & エッジ性能"

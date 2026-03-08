@@ -175,13 +175,13 @@ export default function AboutPage() {
             <TechCard
               color="green"
               title="Turnstile"
-              description="チャット Q&A に invisible モードの Turnstile を統合。ボットによる自動投稿を検知・ブロックし、UX を損なわずに保護。"
+              description="チャット Q&A に invisible モードの Turnstile を統合済み・稼働中。ボットによる自動投稿を Workers 到達前に検知・ブロックし、UX を損なわずに保護。"
               tags={["CAPTCHA", "Bot対策", "Invisible"]}
             />
             <TechCard
               color="purple"
               title="AI Gateway"
-              description="Workers AI 呼び出しを AI Gateway 経由でルーティング。ログ・分析・レート制限・ガードレールを一元管理。"
+              description="Workers AI 呼び出しを AI Gateway 経由でルーティング済み・稼働中。ログ・分析・レート制限・ガードレールを一元管理。"
               tags={["Guardrails", "Logging", "Rate Limit"]}            
             />
             <TechCard

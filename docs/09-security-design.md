@@ -535,7 +535,7 @@ securitySchemes:
 
 ### 5.4 Turnstile（チャット Bot 保護）
 
-> **実装状況:** チャット Q&A の POST `/api/v1/chat` に Cloudflare Turnstile（invisible モード）を統合。ボットによる自動投稿を Workers 到達前に検知・ブロック。
+> **実装状況:** チャット Q&A の POST `/api/v1/chat` に Cloudflare Turnstile（invisible モード）を統合。ボットによる自動投稿を Workers 到達前に検知・ブロック。環境変数 `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` 設定済み・稼働中。
 
 **フロー:**
 
@@ -564,14 +564,14 @@ securitySchemes:
 - **トークンリセット:** 各メッセージ送信後にウィジェットをリセットし、次回送信用の新しいトークンを自動取得
 
 **環境変数:**
-| 変数名 | 用途 |
-|---|---|
-| `TURNSTILE_SITE_KEY` | フロントエンドウィジェット用（公開可） |
-| `TURNSTILE_SECRET_KEY` | サーバー側検証用（シークレット） |
+| 変数名 | 用途 | ステータス |
+|---|---|---|
+| `TURNSTILE_SITE_KEY` | フロントエンドウィジェット用（公開可） | ✅ 設定済 |
+| `TURNSTILE_SECRET_KEY` | サーバー側検証用（シークレット） | ✅ 設定済 |
 
 ### 5.5 AI Gateway（AI 呼び出しのガードレール）
 
-> **実装状況:** チャット Q&A の Workers AI 呼び出し（コンテンツモデレーション + AI 応答生成）を AI Gateway 経由にルーティング。
+> **実装状況:** チャット Q&A の Workers AI 呼び出し（コンテンツモデレーション + AI 応答生成）を AI Gateway 経由にルーティング。環境変数 `AI_GATEWAY_ID` 設定済み・稼働中。
 
 **対象:**
 | 呼び出し | モデル | 機能 |
@@ -590,9 +590,9 @@ securitySchemes:
 - `app/api/routes/chat.ts` — `env.AI_GATEWAY_ID` を取得して `moderateContent` / `generateChatResponseStream` に渡す
 
 **環境変数:**
-| 変数名 | 用途 |
-|---|---|
-| `AI_GATEWAY_ID` | AI Gateway の ID（未設定時はバイパス） |
+| 変数名 | 用途 | ステータス |
+|---|---|---|
+| `AI_GATEWAY_ID` | AI Gateway の ID（未設定時はバイパス） | ✅ 設定済 |
 
 **設定手順（Cloudflare Dashboard）:**
 1. AI → AI Gateway → Create Gateway
