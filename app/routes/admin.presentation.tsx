@@ -486,19 +486,20 @@ export default function AdminPresentation() {
     <div key="flow" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={8} title="記事作成フロー" />
       <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
-        「メモ書きレベルの入力」から「公開記事」まで、<strong className="text-gray-900">5 ステップ</strong>で完結。
-        AI がドラフトを生成するため、執筆にかかる時間を大幅に短縮します。
+        「メモ書きレベルの入力」から「公開記事」まで、<strong className="text-gray-900">6 ステップ</strong>で完結。
+        AI がドラフト生成と修正をアシストするため、執筆にかかる時間を大幅に短縮します。
       </p>
       <div className="mb-8 w-full overflow-hidden rounded-2xl border bg-white shadow-sm">
-        <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+        <div className="grid grid-cols-1 divide-y sm:grid-cols-6 sm:divide-x sm:divide-y-0">
           <FlowStep step={1} title="テンプレート選択" desc="6種類から選択" />
           <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" />
           <FlowStep step={3} title="AI ドラフト" desc="Llama 3.3 70B が記事化" />
-          <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタ" />
-          <FlowStep step={5} title="公開" desc="ワンクリック" />
+          <FlowStep step={4} title="編集・プレビュー" desc="Markdown エディタ" />
+          <FlowStep step={5} title="AI アシスト修正" desc="追加エッセンスで改善" />
+          <FlowStep step={6} title="公開" desc="ワンクリック" />
         </div>
       </div>
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
           <h4 className="mb-2 text-base font-bold text-amber-800">Step 1–2: テンプレート & 入力</h4>
           <p className="text-sm leading-relaxed text-gray-600">
@@ -514,11 +515,18 @@ export default function AdminPresentation() {
             タグ提案（suggest-tags）・文章改善（improve）もワンクリックで利用可能。
           </p>
         </div>
-        <div className="rounded-xl border border-green-200 bg-green-50 p-6">
-          <h4 className="mb-2 text-base font-bold text-green-800">Step 4–5: 編集 & 公開</h4>
+        <div className="rounded-xl border border-purple-200 bg-purple-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-purple-800">Step 4–5: 編集 & AI アシスト修正</h4>
           <p className="text-sm leading-relaxed text-gray-600">
-            リッチ Markdown エディタで自由に編集。R2 への画像アップロード対応。
-            プレビューで確認後、ワンクリックで公開。公開後は Vectorize に自動インデックスされ、検索・Q&A の対象に。
+            Markdown エディタで編集＋プレビュー確認。気づいた補足や修正指示を「追加エッセンス」として入力すると、
+            AI が本文に自然に組み込む。修正案プレビュー → 適用/破棄の 2 ステップで安全に反映。繰り返し利用可能。
+          </p>
+        </div>
+        <div className="rounded-xl border border-green-200 bg-green-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-green-800">Step 6: 公開</h4>
+          <p className="text-sm leading-relaxed text-gray-600">
+            ワンクリックで公開。公開後は Vectorize に自動インデックスされ、セマンティック検索・関連記事推薦・Q&A の対象に。
+            R2 への画像アップロードもエディタ内で対応。
           </p>
         </div>
       </div>

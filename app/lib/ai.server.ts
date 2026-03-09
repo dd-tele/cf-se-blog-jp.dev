@@ -148,6 +148,51 @@ export async function improveText(
   }
 }
 
+// ─── Refine with additional essence ─────────────────────────
+const REFINE_PROMPT = `あなたは Cloudflare 技術ブログの編集 AI アシスタントです。
+ユーザーが執筆中の記事本文と、追加で取り込みたい「エッセンス」（補足情報・修正指示・気づき）が与えられます。
+
+あなたの仕事:
+1. 追加エッセンスの内容を記事本文に自然に組み込む
+2. 元の文章のトーン・構造・Markdown 書式を維持する
+3. 技術的正確性を保つ
+4. 不要な冗長表現を避ける
+
+改善した記事本文のみを返してください。説明やメタコメントは不要です。`;
+
+export async function refineWithEssence(
+  ai: any,
+  content: string,
+  essence: string,
+  title?: string
+): Promise<string> {
+  try {
+    const userMessage = [
+      title ? `## 記事タイトル\n${title}\n` : "",
+      `## 現在の記事本文\n${content.slice(0, 12000)}\n`,
+      `## 追加エッセンス（取り込みたい内容）\n${essence}`,
+    ].join("\n");
+
+    const result: any = await ai.run(
+      TEXT_MODEL as any,
+      {
+        messages: [
+          { role: "system", content: REFINE_PROMPT },
+          { role: "user", content: userMessage },
+        ],
+        max_tokens: 4096,
+        temperature: 0.3,
+      },
+      gwOpts() as any
+    );
+    const response = result.response || result.result?.response || "";
+    return response || content;
+  } catch (e) {
+    console.error("AI refine with essence failed:", e);
+    return content;
+  }
+}
+
 // ─── Embedding generation ───────────────────────────────────
 export async function generateEmbedding(
   ai: any,
