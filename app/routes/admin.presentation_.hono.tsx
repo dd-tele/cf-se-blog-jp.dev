@@ -6,8 +6,8 @@ export const meta: MetaFunction = () => [
   { title: "Hono 詳細 — プレゼンテーション" },
 ];
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin", "se", "ae"]);
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const user = await requireRole(request, ["admin", "se", "ae"], context.cloudflare.env);
   return { user };
 }
 

@@ -27,16 +27,17 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin"]);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireRole(request, ["admin"], env);
+  const db = env.DB;
   const requests = await getAllAccessRequests(db);
   return { user, requests };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const user = await requireRole(request, ["admin"]);
-  const db = context.cloudflare.env.DB;
   const env = context.cloudflare.env;
+  const user = await requireRole(request, ["admin"], env);
+  const db = env.DB;
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
   const requestId = formData.get("requestId") as string;

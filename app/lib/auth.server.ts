@@ -1,4 +1,8 @@
 import { createCookieSessionStorage, redirect } from "@remix-run/cloudflare";
+import {
+  getAccessJWT,
+  verifyAccessJWT,
+} from "~/lib/access.server";
 
 export interface SessionUser {
   id: string;
@@ -46,6 +50,7 @@ export async function getSessionUser(
 
 export async function requireUser(
   request: Request,
+  env?: { CF_ACCESS_TEAM_DOMAIN?: string; CF_ACCESS_AUD?: string },
   redirectTo = "/auth/login"
 ): Promise<SessionUser> {
   const user = await getSessionUser(request);
@@ -54,14 +59,41 @@ export async function requireUser(
     const searchParams = new URLSearchParams([["returnTo", url.pathname]]);
     throw redirect(`${redirectTo}?${searchParams}`);
   }
+
+  // If Access is configured, verify the Access JWT is still valid.
+  // This prevents the app session (7d) from outliving the Access session.
+  if (env && isAccessConfigured(env)) {
+    const jwt = getAccessJWT(request);
+    if (!jwt) {
+      // Access JWT cookie is gone — session expired
+      const session = await getSession(request);
+      const url = new URL(request.url);
+      const searchParams = new URLSearchParams([["returnTo", url.pathname]]);
+      throw redirect(`${redirectTo}?${searchParams}`, {
+        headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+      });
+    }
+    const result = await verifyAccessJWT(jwt, env.CF_ACCESS_TEAM_DOMAIN!, env.CF_ACCESS_AUD!);
+    if (!result.ok) {
+      // Access JWT invalid/expired — destroy stale app session
+      const session = await getSession(request);
+      const url = new URL(request.url);
+      const searchParams = new URLSearchParams([["returnTo", url.pathname]]);
+      throw redirect(`${redirectTo}?${searchParams}`, {
+        headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+      });
+    }
+  }
+
   return user;
 }
 
 export async function requireRole(
   request: Request,
-  roles: Array<"admin" | "se" | "ae" | "user">
+  roles: Array<"admin" | "se" | "ae" | "user">,
+  env?: { CF_ACCESS_TEAM_DOMAIN?: string; CF_ACCESS_AUD?: string }
 ): Promise<SessionUser> {
-  const user = await requireUser(request);
+  const user = await requireUser(request, env);
   if (!roles.includes(user.role)) {
     throw new Response("Forbidden", { status: 403 });
   }

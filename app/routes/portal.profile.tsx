@@ -20,15 +20,17 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
   const profile = await getUserProfile(db, user.id);
   return { user, profile };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
   const formData = await request.formData();
 
   // Avatar URL update (from client-side upload)

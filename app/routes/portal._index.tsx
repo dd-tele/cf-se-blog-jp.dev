@@ -11,8 +11,9 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
   const d = getDb(db);
 
   const [badges, statsRow] = await Promise.all([

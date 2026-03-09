@@ -11,8 +11,9 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin", "se", "ae"]);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireRole(request, ["admin", "se", "ae"], env);
+  const db = env.DB;
   const d = getDb(db);
 
   // Gather live stats for the presentation

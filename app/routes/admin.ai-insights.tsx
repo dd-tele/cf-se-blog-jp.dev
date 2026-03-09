@@ -15,10 +15,11 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin", "se"]);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireRole(request, ["admin", "se"], env);
+  const db = env.DB;
   const d = getDb(db);
-  const cache = context.cloudflare.env.PAGE_CACHE;
+  const cache = env.PAGE_CACHE;
 
   // AI summary stats
   const summaryStats = await d
@@ -86,7 +87,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  await requireRole(request, ["admin", "se"]);
+  const env = context.cloudflare.env;
+  await requireRole(request, ["admin", "se"], env);
 
   const formData = await request.formData();
   const intent = formData.get("intent") as string;

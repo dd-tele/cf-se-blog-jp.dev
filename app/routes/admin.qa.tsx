@@ -22,8 +22,9 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireRole(request, ["admin", "se"]);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireRole(request, ["admin", "se"], env);
+  const db = env.DB;
   const url = new URL(request.url);
   const status = url.searchParams.get("status") ?? "all";
   const threadId = url.searchParams.get("thread");
@@ -48,8 +49,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const user = await requireRole(request, ["admin", "se"]);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireRole(request, ["admin", "se"], env);
+  const db = env.DB;
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
 

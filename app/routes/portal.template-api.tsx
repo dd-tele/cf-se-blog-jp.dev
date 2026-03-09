@@ -10,11 +10,12 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
   const templatesList = await getActiveTemplates(db);
   const apiKeysList = await listApiKeys(db, user.id);
-  const siteUrl = context.cloudflare.env.SITE_URL || "https://blog.jp.dev";
+  const siteUrl = env.SITE_URL || "https://blog.jp.dev";
   const canTestGenerate = user.role === "admin" || user.role === "se" || user.role === "ae";
   return { user, templatesList, apiKeysList, siteUrl, canTestGenerate };
 }

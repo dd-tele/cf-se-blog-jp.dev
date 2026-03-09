@@ -21,8 +21,9 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context, params }: LoaderFunctionArgs) {
-  const admin = await requireRole(request, ["admin"]);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const admin = await requireRole(request, ["admin"], env);
+  const db = env.DB;
   const userId = params.id!;
   const targetUser = await getUserById(db, userId);
   if (!targetUser) throw new Response("ユーザーが見つかりません", { status: 404 });
@@ -30,8 +31,9 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, context, params }: ActionFunctionArgs) {
-  await requireRole(request, ["admin"]);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  await requireRole(request, ["admin"], env);
+  const db = env.DB;
   const userId = params.id!;
   const formData = await request.formData();
 

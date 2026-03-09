@@ -28,8 +28,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => [
 ];
 
 export async function loader({ params, request, context }: LoaderFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
   const postId = params.id;
   if (!postId) throw new Response("Not Found", { status: 404 });
 
@@ -44,8 +45,9 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
 }
 
 export async function action({ params, request, context }: ActionFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
   const postId = params.id;
   if (!postId) throw new Response("Not Found", { status: 404 });
 

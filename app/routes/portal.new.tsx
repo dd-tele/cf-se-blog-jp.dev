@@ -16,15 +16,17 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
   const categories = await getAllCategories(db);
   return { user, categories };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const user = await requireUser(request);
-  const db = context.cloudflare.env.DB;
+  const env = context.cloudflare.env;
+  const user = await requireUser(request, env);
+  const db = env.DB;
 
   // Ensure user exists in D1
   await ensureUser(db, user);
