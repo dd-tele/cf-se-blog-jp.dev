@@ -8,10 +8,11 @@ import {
   useLoaderData,
   useActionData,
   useNavigation,
+  useFetcher,
   Link,
 } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { requireUser } from "~/lib/auth.server";
 import {
   getPostById,
@@ -128,7 +129,19 @@ export default function EditPost() {
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [essence, setEssence] = useState("");
   const [aiResult, setAiResult] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
+  const aiFetcher = useFetcher<{ aiRefined?: string; error?: string }>();
+  const aiLoading = aiFetcher.state !== "idle";
+
+  // Watch fetcher data for AI refine results
+  useEffect(() => {
+    if (aiFetcher.data) {
+      if (aiFetcher.data.aiRefined) {
+        setAiResult(aiFetcher.data.aiRefined);
+      } else if (aiFetcher.data.error) {
+        alert(aiFetcher.data.error);
+      }
+    }
+  }, [aiFetcher.data]);
 
   // Apply AI-refined content to the textarea
   const applyAiResult = useCallback(() => {
@@ -142,32 +155,19 @@ export default function EditPost() {
     setAiPanelOpen(false);
   }, [aiResult]);
 
-  // Submit AI refine request via fetch (not full-page navigation)
-  const handleAiRefine = useCallback(async () => {
+  // Submit AI refine request via useFetcher
+  const handleAiRefine = useCallback(() => {
     const ta = contentRef.current;
     if (!ta || !essence.trim()) return;
-    setAiLoading(true);
     setAiResult(null);
-    try {
-      const body = new FormData();
-      body.set("intent", "ai-refine");
-      body.set("content", ta.value);
-      body.set("essence", essence);
-      const titleEl = document.getElementById("title") as HTMLInputElement | null;
-      if (titleEl) body.set("title", titleEl.value);
-      const res = await fetch(window.location.href, { method: "POST", body });
-      const data = (await res.json()) as { aiRefined?: string; error?: string };
-      if (data.aiRefined) {
-        setAiResult(data.aiRefined);
-      } else if (data.error) {
-        alert(data.error);
-      }
-    } catch {
-      alert("AI アシスト修正のリクエストに失敗しました");
-    } finally {
-      setAiLoading(false);
-    }
-  }, [essence]);
+    const body = new FormData();
+    body.set("intent", "ai-refine");
+    body.set("content", ta.value);
+    body.set("essence", essence);
+    const titleEl = document.getElementById("title") as HTMLInputElement | null;
+    if (titleEl) body.set("title", titleEl.value);
+    aiFetcher.submit(body, { method: "POST" });
+  }, [essence, aiFetcher]);
 
   function handleImageInsert(markdown: string) {
     const ta = contentRef.current;
