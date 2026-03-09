@@ -351,6 +351,7 @@ export default function AdminPresentation() {
         <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
         を API レイヤーに採用。Remix が SSR / UI / ルーティングを担当し、Hono が API ロジック・ストリーミング・ミドルウェアを担当する
         <strong className="text-gray-900"> ハイブリッドアーキテクチャ</strong>。
+        <strong className="text-gray-900">10 ファイル・7 ルートモジュール・約 15 エンドポイント</strong>を Hono が処理。
       </p>
       <div className="mb-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <HonoCard number={1} title="型安全バインディング" desc="HonoEnv 型で c.env.DB / c.env.AI / c.env.R2 等すべての CF バインディングに型付きアクセス。実行時エラーを防止。" />
@@ -366,19 +367,20 @@ export default function AdminPresentation() {
         </p>
       </div>
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-400">API エンドポイント（11 routes）</h4>
+        <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-400">Hono API エンドポイント（7 モジュール / 約 15 routes）</h4>
         <div className="grid gap-3 text-base sm:grid-cols-2">
-          <Endpoint method="POST" path="/api/v1/chat" desc="AI チャット Q&A（SSE）" />
+          <Endpoint method="GET/POST" path="/api/v1/chat" desc="AI チャット Q&A（streamSSE）" />
           <Endpoint method="POST" path="/api/v1/ai/suggest-tags" desc="タグ提案" />
           <Endpoint method="POST" path="/api/v1/ai/improve" desc="文章改善" />
           <Endpoint method="POST" path="/api/v1/ai/trend-report" desc="トレンドレポート" />
           <Endpoint method="GET" path="/api/v1/templates" desc="テンプレート一覧（Bearer/Cookie）" />
           <Endpoint method="GET" path="/api/v1/templates/:id" desc="テンプレート詳細" />
+          <Endpoint method="POST" path="/api/v1/templates/:id/generate" desc="AI ドラフト生成" />
           <Endpoint method="*" path="/api/v1/api-keys" desc="API キー管理 CRUD" />
+          <Endpoint method="GET" path="/api/v1/ai-guide" desc="外部 AI ツール向けガイド" />
           <Endpoint method="POST" path="/api/upload-image" desc="画像アップロード（R2）" />
           <Endpoint method="GET" path="/r2/*" desc="R2 オブジェクト配信" />
           <Endpoint method="GET" path="/api/health" desc="ヘルスチェック" />
-          <Endpoint method="GET" path="/feed.xml" desc="RSS フィード" />
         </div>
       </div>
       <div className="mt-6 text-right">
@@ -394,8 +396,12 @@ export default function AdminPresentation() {
     <div key="chatbot" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={7} title="AI チャットボット — 実装 & チューニング" />
       <p className="mb-6 text-base leading-relaxed text-gray-600">
-        記事ページのフローティングウィジェットで読者の質問にリアルタイム回答。記事コンテキスト優先 + Cloudflare 全般の知識で補足する
-        ハイブリッド RAG 構成。多層セキュリティと AI Gateway による可観測性を両立。
+        記事ページのフローティングウィジェットで読者の質問にリアルタイム回答。
+        <strong className="text-gray-900">3 段階システムプロンプト</strong>（記事優先 → CF 知識補足 → 公式ドキュメント誘導）+
+        <strong className="text-gray-900">RAG</strong>（記事本文 8K + Vectorize topK:3）+
+        <strong className="text-gray-900">多層セキュリティ</strong>（6 段階防御）+
+        <strong className="text-gray-900">AI Gateway</strong> による可観測性を両立。
+        Hono <code className="text-xs">streamSSE()</code> で SSE ストリーミング配信。
       </p>
       <div className="mb-6 overflow-hidden rounded-2xl border bg-white shadow-sm">
         <div className="border-b bg-gray-50 px-6 py-3">
@@ -423,12 +429,16 @@ export default function AdminPresentation() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            <tr><td className="px-5 py-2 font-medium">回答スコープ</td><td className="px-5 py-2">記事のみ → 記事優先 + CF 全般知識</td><td className="px-5 py-2">幅広い質問に回答可能</td></tr>
-            <tr><td className="px-5 py-2 font-medium">max_tokens</td><td className="px-5 py-2">1,024 → 2,048</td><td className="px-5 py-2">詳細な回答・コード例</td></tr>
+            <tr><td className="px-5 py-2 font-medium">システムプロンプト</td><td className="px-5 py-2">記事のみ応答 → 3 段階優先度設計</td><td className="px-5 py-2">記事優先 + CF 全般知識 + 公式ドキュメント誘導</td></tr>
+            <tr><td className="px-5 py-2 font-medium">RAG コンテキスト</td><td className="px-5 py-2">記事本文のみ → 本文 8K + Vectorize topK:3</td><td className="px-5 py-2">関連記事のコンテキストも参照し精度向上</td></tr>
+            <tr><td className="px-5 py-2 font-medium">max_tokens</td><td className="px-5 py-2">1,024 → 2,048</td><td className="px-5 py-2">詳細な回答・コード例を含む応答が可能に</td></tr>
+            <tr><td className="px-5 py-2 font-medium">temperature</td><td className="px-5 py-2">デフォルト → 0.3</td><td className="px-5 py-2">事実ベースの安定した回答を優先</td></tr>
+            <tr><td className="px-5 py-2 font-medium">会話履歴</td><td className="px-5 py-2">なし → 直近 10 件保持</td><td className="px-5 py-2">文脈を維持した自然な対話</td></tr>
             <tr><td className="px-5 py-2 font-medium">AI 回答保存</td><td className="px-5 py-2">fire-and-forget → await</td><td className="px-5 py-2">リフレッシュ後も回答が残る</td></tr>
             <tr><td className="px-5 py-2 font-medium">スレッド TTL</td><td className="px-5 py-2">28 日 → 24 時間</td><td className="px-5 py-2">ストレージ節約・プライバシー</td></tr>
-            <tr><td className="px-5 py-2 font-medium">入力欄</td><td className="px-5 py-2">単行 input → 自動リサイズ textarea</td><td className="px-5 py-2">長文の可視性・改行対応</td></tr>
-            <tr><td className="px-5 py-2 font-medium">エラーハンドリング</td><td className="px-5 py-2">無応答 → SSE error イベント</td><td className="px-5 py-2">ユーザーに理由を表示</td></tr>
+            <tr><td className="px-5 py-2 font-medium">入力欄</td><td className="px-5 py-2">単行 input → 自動リサイズ textarea</td><td className="px-5 py-2">Shift+Enter 改行・IME 対応・max 6rem</td></tr>
+            <tr><td className="px-5 py-2 font-medium">エラーハンドリング</td><td className="px-5 py-2">無応答 → SSE error イベント</td><td className="px-5 py-2">ガードレール・タイムアウトを明示</td></tr>
+            <tr><td className="px-5 py-2 font-medium">SE/Admin 回答</td><td className="px-5 py-2">AI のみ → 人間回答対応</td><td className="px-5 py-2">緑ラベルで視覚的に差別化</td></tr>
           </tbody>
         </table>
       </div>
