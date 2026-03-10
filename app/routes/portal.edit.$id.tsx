@@ -13,7 +13,20 @@ import {
 } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
-import { marked } from "marked";
+import { marked, type Tokens } from "marked";
+
+// Configure client-side marked with mermaid support (mirrors markdown.server.ts)
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+const clientRenderer = new marked.Renderer();
+const originalCode = clientRenderer.code.bind(clientRenderer);
+clientRenderer.code = function (token: Tokens.Code): string {
+  if (token.lang === "mermaid") {
+    return `<pre class="mermaid">${escapeHtml(token.text)}</pre>`;
+  }
+  return originalCode(token);
+};
 import { requireUser } from "~/lib/auth.server";
 import {
   getPostById,
@@ -132,11 +145,40 @@ export default function EditPost() {
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [aiPreviewMode, setAiPreviewMode] = useState<"rendered" | "raw">("rendered");
 
+  const aiPreviewRef = useRef<HTMLDivElement>(null);
+
   // Render AI result as HTML for preview
   const aiResultHtml = useMemo(() => {
     if (!aiResult) return "";
-    return marked.parse(aiResult, { async: false, gfm: true, breaks: true }) as string;
+    return marked.parse(aiResult, { async: false, gfm: true, breaks: true, renderer: clientRenderer }) as string;
   }, [aiResult]);
+
+  // Initialize mermaid.js when AI preview HTML is rendered
+  useEffect(() => {
+    if (!aiResultHtml || aiPreviewMode !== "rendered") return;
+    const container = aiPreviewRef.current;
+    if (!container) return;
+    const nodes = container.querySelectorAll("pre.mermaid");
+    if (nodes.length === 0) return;
+
+    let cancelled = false;
+    function initMermaid() {
+      if (cancelled) return;
+      const m = (window as any).mermaid;
+      if (!m) return;
+      m.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "loose", fontFamily: "ui-sans-serif, system-ui, sans-serif" });
+      m.run({ nodes });
+    }
+    if ((window as any).mermaid) {
+      initMermaid();
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+      script.onload = initMermaid;
+      document.head.appendChild(script);
+    }
+    return () => { cancelled = true; };
+  }, [aiResultHtml, aiPreviewMode]);
   const aiFetcher = useFetcher<{ aiRefined?: string; error?: string }>();
   const aiLoading = aiFetcher.state !== "idle";
 
@@ -416,6 +458,7 @@ export default function EditPost() {
                       </div>
                       {aiPreviewMode === "rendered" ? (
                         <div
+                          ref={aiPreviewRef}
                           className="prose prose-sm max-w-none max-h-[32rem] overflow-y-auto rounded-lg border border-purple-200 bg-white p-6"
                           dangerouslySetInnerHTML={{ __html: aiResultHtml }}
                         />
