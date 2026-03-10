@@ -162,12 +162,24 @@ export default function EditPost() {
     if (nodes.length === 0) return;
 
     let cancelled = false;
-    function initMermaid() {
+    async function initMermaid() {
       if (cancelled) return;
       const m = (window as any).mermaid;
       if (!m) return;
       m.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "loose", fontFamily: "ui-sans-serif, system-ui, sans-serif" });
-      m.run({ nodes });
+      // Validate each diagram before rendering; show source on error
+      for (const node of Array.from(nodes) as HTMLElement[]) {
+        try {
+          await m.parse(node.textContent || "");
+        } catch {
+          const code = document.createElement("div");
+          code.className = "rounded bg-red-50 border border-red-200 p-3 text-xs";
+          code.innerHTML = `<p class="text-red-600 font-semibold mb-1">⚠ Mermaid 構文エラー — Markdown ソースタブで確認・修正してください</p><pre class="whitespace-pre-wrap text-gray-600">${node.textContent}</pre>`;
+          node.replaceWith(code);
+        }
+      }
+      const validNodes = container!.querySelectorAll("pre.mermaid");
+      if (validNodes.length > 0) m.run({ nodes: validNodes });
     }
     if ((window as any).mermaid) {
       initMermaid();
