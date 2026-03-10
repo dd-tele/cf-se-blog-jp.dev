@@ -519,7 +519,9 @@ export default function AdminPresentation() {
           <h4 className="mb-2 text-base font-bold text-purple-800">Step 4–5: 編集 & AI アシスト修正</h4>
           <p className="text-sm leading-relaxed text-gray-600">
             Markdown エディタで編集＋プレビュー確認。気づいた補足や修正指示を「追加エッセンス」として入力すると、
-            AI が本文に自然に組み込む。修正案プレビュー → 適用/破棄の 2 ステップで安全に反映。繰り返し利用可能。
+            AI が本文に自然に組み込む。修正案は <strong>HTML プレビュー</strong>（Mermaid 図レンダリング・Markdown 描画対応）と
+            <strong>Markdown ソース</strong>のタブ切替で確認 → 適用/破棄の 2 ステップで安全に反映。
+            チェックリスト型プロンプトで全指示を漏れなく反映。繰り返し利用可能。
           </p>
         </div>
         <div className="rounded-xl border border-green-200 bg-green-50 p-6">
@@ -562,6 +564,7 @@ export default function AdminPresentation() {
         <TechDetail title="API Shield — OpenAPI スキーマバリデーション" problem="API エンドポイントに対する不正なリクエスト（未定義パス・不正メソッド・不正ボディ）をエッジレベルでブロックしたい" solutions={["OpenAPI 3.0 スキーマ (api-shield-schema.json) を作成し、全 16 エンドポイントのメソッド・パス・パラメータ・ボディを定義", "Cloudflare API Shield にスキーマを登録、Schema Validation を有効化", "multipart/form-data は API Shield 非対応のため、/api/upload-image のボディ検証はアプリ側（MIME タイプ・10MB 制限）で実施", "Bearer (cfbk_) / Session Cookie / CF Access JWT の 3 種の securitySchemes を定義"]} files={["api-shield-schema.json"]} color="blue" />
         <TechDetail title="Turnstile — チャット Bot 保護（invisible モード）" problem="チャット Q&A にボットが自動投稿する攻撃を防ぎたいが、CAPTCHA で UX を悪化させたくない" solutions={["Turnstile invisible モードを採用 — ユーザーに操作を要求せずにチャレンジを実行", "チャットパネル展開時に動的にスクリプトロード＆ウィジェット描画、メッセージ送信時にトークンを取得して POST ボディに含める", "サーバー側で siteverify API を呼び出してトークン検証、失敗時は 403 で拒否", "Fail open 設計 — TURNSTILE_SECRET_KEY 未設定時や API 通信エラー時はスキップして可用性を優先"]} files={["app/lib/turnstile.server.ts", "app/components/ChatWidget.tsx", "app/api/routes/chat.ts"]} color="green" />
         <TechDetail title="AI Gateway — AI 呼び出しのガードレール & 可観測性" problem="Workers AI への直接呼び出しではログ・レート制限・コンテンツフィルタリングを個別実装する必要がある" solutions={["ai.run() の第 3 引数に { gateway: { id } } を渡すだけで AI Gateway 経由にルーティング", "gatewayOptions() ヘルパーで AI_GATEWAY_ID 未設定時は通常呼び出しにフォールバック", "Dashboard の Guardrails 設定でプロンプト/レスポンスのコンテンツフィルタリングを追加可能", "全 AI リクエストのログ・レイテンシ・トークン使用量を一元的に可視化"]} files={["app/lib/chat.server.ts", "app/api/routes/chat.ts"]} color="purple" />
+        <TechDetail title="AI アシスト修正 — 追加エッセンスによるドラフト改善" problem="AI が生成した下書きをプレビューして気づいた補足・修正を、手動で書き直さずに AI で自然に組み込みたい" solutions={["useFetcher で非同期 AI 呼び出し — ページ遷移なしで修正案を取得（raw fetch では Remix が HTML を返すため useFetcher に変更）", "チェックリスト型プロンプト — エッセンスの各項目を全て漏れなく反映する指示。Mermaid 図の構文ルール（日本語ノードの引用符等）も明記", "HTML プレビュー + Markdown ソースのタブ切替 — marked でクライアント側レンダリング、Mermaid 図も mermaid.js で動的描画", "Mermaid 構文エラー時のグレースフルフォールバック — mermaid.parse() で事前検証し、エラー時はソース表示 + 修正案内", "max_tokens: 8192 — 長い記事でも出力が途中切れしないようトークン上限を拡大"]} files={["app/lib/ai.server.ts", "app/routes/portal.edit.$id.tsx"]} color="purple" />
       </div>
     </div>,
   );
