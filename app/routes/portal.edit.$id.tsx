@@ -12,7 +12,8 @@ import {
   Link,
 } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { marked } from "marked";
 import { requireUser } from "~/lib/auth.server";
 import {
   getPostById,
@@ -129,6 +130,13 @@ export default function EditPost() {
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [essence, setEssence] = useState("");
   const [aiResult, setAiResult] = useState<string | null>(null);
+  const [aiPreviewMode, setAiPreviewMode] = useState<"rendered" | "raw">("rendered");
+
+  // Render AI result as HTML for preview
+  const aiResultHtml = useMemo(() => {
+    if (!aiResult) return "";
+    return marked.parse(aiResult, { async: false, gfm: true, breaks: true }) as string;
+  }, [aiResult]);
   const aiFetcher = useFetcher<{ aiRefined?: string; error?: string }>();
   const aiLoading = aiFetcher.state !== "idle";
 
@@ -379,13 +387,43 @@ export default function EditPost() {
                 {aiResult && (
                   <div className="space-y-3">
                     <div>
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-purple-800">AI 修正案プレビュー</span>
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1 rounded-lg bg-purple-100 p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setAiPreviewMode("rendered")}
+                            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                              aiPreviewMode === "rendered"
+                                ? "bg-white text-purple-800 shadow-sm"
+                                : "text-purple-500 hover:text-purple-700"
+                            }`}
+                          >
+                            HTML プレビュー
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAiPreviewMode("raw")}
+                            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                              aiPreviewMode === "raw"
+                                ? "bg-white text-purple-800 shadow-sm"
+                                : "text-purple-500 hover:text-purple-700"
+                            }`}
+                          >
+                            Markdown ソース
+                          </button>
+                        </div>
                         <span className="text-xs text-gray-400">{aiResult.length.toLocaleString()} 文字</span>
                       </div>
-                      <div className="max-h-80 overflow-y-auto rounded-lg border border-purple-200 bg-white p-4 font-mono text-sm leading-relaxed text-gray-800 whitespace-pre-wrap">
-                        {aiResult}
-                      </div>
+                      {aiPreviewMode === "rendered" ? (
+                        <div
+                          className="prose prose-sm max-w-none max-h-[32rem] overflow-y-auto rounded-lg border border-purple-200 bg-white p-6"
+                          dangerouslySetInnerHTML={{ __html: aiResultHtml }}
+                        />
+                      ) : (
+                        <div className="max-h-[32rem] overflow-y-auto rounded-lg border border-purple-200 bg-white p-4 font-mono text-sm leading-relaxed text-gray-800 whitespace-pre-wrap">
+                          {aiResult}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <button
