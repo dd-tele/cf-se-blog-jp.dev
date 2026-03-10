@@ -89,6 +89,45 @@ export function ErrorBoundary() {
     );
   }
 
+  // 401 = Access session expired — redirect to login via full page navigation
+  if (isRouteErrorResponse(error) && error.status === 401) {
+    const loginUrl =
+      typeof error.data === "string" && error.data.startsWith("/")
+        ? error.data
+        : "/auth/login";
+    return (
+      <html lang="ja">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>セッション期限切れ — Cloudflare Solution Blog</title>
+        </head>
+        <body className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+              <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900">セッション期限切れ</h1>
+            <p className="mt-2 text-sm text-gray-500">
+              Cloudflare Access のセッションが切れました。<br />ログイン画面へ移動します…
+            </p>
+            <a
+              href={loginUrl}
+              className="mt-6 inline-block rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+            >
+              今すぐログイン
+            </a>
+          </div>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `setTimeout(function(){ window.location.href = ${JSON.stringify(loginUrl)}; }, 1500);`,
+            }}
+          />
+        </body>
+      </html>
+    );
+  }
+
   const status = isRouteErrorResponse(error) ? error.status : 500;
   const message = isRouteErrorResponse(error)
     ? error.statusText

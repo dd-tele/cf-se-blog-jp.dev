@@ -63,23 +63,36 @@ export async function requireUser(
   // If Access is configured, verify the Access JWT is still valid.
   // This prevents the app session (7d) from outliving the Access session.
   if (env && isAccessConfigured(env)) {
-    const jwt = getAccessJWT(request);
-    if (!jwt) {
-      // Access JWT cookie is gone — session expired
+    try {
+      const jwt = getAccessJWT(request);
+      const jwtValid = jwt
+        ? (await verifyAccessJWT(jwt, env.CF_ACCESS_TEAM_DOMAIN!, env.CF_ACCESS_AUD!)).ok
+        : false;
+
+      if (!jwtValid) {
+        // Throw 401 instead of redirect so the root ErrorBoundary can
+        // perform a full-page navigation (window.location.href).
+        // A normal redirect would break Remix client-side navigation
+        // when Cloudflare Access intercepts the target URL.
+        const session = await getSession(request);
+        const url = new URL(request.url);
+        const loginUrl = `${redirectTo}?returnTo=${encodeURIComponent(url.pathname)}`;
+        throw new Response(loginUrl, {
+          status: 401,
+          statusText: "Access Session Expired",
+          headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+        });
+      }
+    } catch (err) {
+      if (err instanceof Response) throw err; // re-throw our 401
+      console.error("[requireUser] Access JWT check failed:", err);
+      // On unexpected errors (e.g. certs fetch failure), still throw 401
       const session = await getSession(request);
       const url = new URL(request.url);
-      const searchParams = new URLSearchParams([["returnTo", url.pathname]]);
-      throw redirect(`${redirectTo}?${searchParams}`, {
-        headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
-      });
-    }
-    const result = await verifyAccessJWT(jwt, env.CF_ACCESS_TEAM_DOMAIN!, env.CF_ACCESS_AUD!);
-    if (!result.ok) {
-      // Access JWT invalid/expired — destroy stale app session
-      const session = await getSession(request);
-      const url = new URL(request.url);
-      const searchParams = new URLSearchParams([["returnTo", url.pathname]]);
-      throw redirect(`${redirectTo}?${searchParams}`, {
+      const loginUrl = `${redirectTo}?returnTo=${encodeURIComponent(url.pathname)}`;
+      throw new Response(loginUrl, {
+        status: 401,
+        statusText: "Access Session Expired",
         headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
       });
     }
