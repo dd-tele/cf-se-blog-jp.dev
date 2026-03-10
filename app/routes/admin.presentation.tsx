@@ -63,13 +63,22 @@ const TOTAL_SLIDES = 14;
 export default function AdminPresentation() {
   const { user, stats } = useLoaderData<typeof loader>();
   const [current, setCurrent] = useState(0);
+  const [slideDir, setSlideDir] = useState<1 | -1>(1);
 
   const go = useCallback(
     (dir: 1 | -1) => {
+      setSlideDir(dir);
       setCurrent((c) => Math.max(0, Math.min(TOTAL_SLIDES - 1, c + dir)));
     },
     [],
   );
+
+  const jumpTo = useCallback((i: number) => {
+    setCurrent((prev) => {
+      setSlideDir(i >= prev ? 1 : -1);
+      return Math.max(0, Math.min(TOTAL_SLIDES - 1, i));
+    });
+  }, []);
 
   // Wheel / trackpad gesture — debounced so one swipe = one slide
   const wheelLock = useRef(false);
@@ -87,11 +96,11 @@ export default function AdminPresentation() {
       }
       if (e.key === "Home") {
         e.preventDefault();
-        setCurrent(0);
+        jumpTo(0);
       }
       if (e.key === "End") {
         e.preventDefault();
-        setCurrent(TOTAL_SLIDES - 1);
+        jumpTo(TOTAL_SLIDES - 1);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -674,7 +683,7 @@ export default function AdminPresentation() {
 
       {/* ─ Slide viewport ─ */}
       <main ref={mainRef} className="relative flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto">{slides[current]}</div>
+        <div key={current} className={`h-full overflow-y-auto ${slideDir === 1 ? 'animate-slide-right' : 'animate-slide-left'}`}>{slides[current]}</div>
       </main>
 
       {/* ─ Navigation bar ─ */}
@@ -690,7 +699,7 @@ export default function AdminPresentation() {
           {slides.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrent(i)}
+              onClick={() => jumpTo(i)}
               className={`h-2.5 rounded-full transition-all ${
                 i === current
                   ? "w-8 bg-brand-500"

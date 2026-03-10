@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getSessionUser } from "~/lib/auth.server";
+import { ScrollReveal, useAutoReveal } from "~/components/ScrollReveal";
 
 export const meta: MetaFunction = () => [
   { title: "このブログについて — Cloudflare Solution Blog" },
@@ -25,6 +26,8 @@ export default function AboutPage() {
   const [diagramOpen, setDiagramOpen] = useState(false);
   const openDiagram = useCallback(() => setDiagramOpen(true), []);
   const closeDiagram = useCallback(() => setDiagramOpen(false), []);
+  const mainRef = useRef<HTMLElement>(null);
+  useAutoReveal(mainRef, { duration: 1000 });
 
   useEffect(() => {
     if (!diagramOpen) return;
@@ -58,22 +61,32 @@ export default function AboutPage() {
       </header>
 
       {/* Hero */}
-      <section className="border-b bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900 py-20 text-white">
+      <section className="relative min-h-[calc(100vh-4rem)] flex items-center border-b bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900 text-white">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+          <ScrollReveal delay={0} duration={1000}>
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-brand-400">
             Architecture & Technology
           </p>
+          </ScrollReveal>
+          <ScrollReveal delay={200} duration={1000}>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
             このブログについて
           </h1>
+          </ScrollReveal>
+          <ScrollReveal delay={400} duration={1000}>
           <p className="mt-4 text-lg text-gray-300">
             Cloudflare のサーバーレスプラットフォーム上に構築された、<br className="hidden sm:block" />
             AI アシスト付きテクニカルブログの技術構成を紹介します。
           </p>
+          </ScrollReveal>
+        </div>
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/50">
+          <span className="text-xs tracking-widest uppercase">Scroll</span>
+          <svg className="h-6 w-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
         </div>
       </section>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <main ref={mainRef} className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
 
         {/* Architecture Overview */}
         <section className="mb-20">
