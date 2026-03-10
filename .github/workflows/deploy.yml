@@ -55,7 +55,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy to Pages
-        run: npx wrangler pages deploy ./build/client --project-name=cf-se-blog 2>&1
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          npx wrangler pages deploy ./build/client --project-name=cf-se-blog \
+            --commit-hash="$(git rev-parse HEAD)" \
+            --commit-message="deploy ${COMMIT_HASH}" 2>&1
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
