@@ -221,12 +221,13 @@ export default function AboutPage() {
         <section className="mb-20">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">記事作成フロー</h2>
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-6 sm:divide-x sm:divide-y-0">
               <FlowStep step={1} title="テンプレート選択" desc="6種類のテンプレートから選択" />
               <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" />
               <FlowStep step={3} title="AI ドラフト生成" desc="Llama 3.3 70B が記事化" />
               <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタで調整" />
-              <FlowStep step={5} title="公開" desc="ワンクリックで公開" />
+              <FlowStep step={5} title="AI アシスト修正" desc="追加エッセンスで改善" />
+              <FlowStep step={6} title="公開" desc="ワンクリックで公開" />
             </div>
           </div>
         </section>
@@ -275,6 +276,67 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* AI Assist Refinement */}
+        <section className="mb-20">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900">AI 修正アシスト</h2>
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            AI が生成した下書きを読んで気づいた補足情報や修正指示を、手動で書き直さずに AI で自然に本文に組み込む機能です。
+            修正案は HTML プレビューと Markdown ソースのタブ切替で確認し、納得できたら適用します。
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-6">
+              <h3 className="mb-2 font-bold text-purple-700">追加エッセンス入力</h3>
+              <p className="text-sm text-gray-600">
+                編集画面の「AI アシスト修正」パネルで、補足したい内容・修正指示・新しいアイデアを自由記述。
+                例:「CASB 導入の記述を追加」「接続図の Mermaid 図を入れて」など。
+              </p>
+            </div>
+            <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-6">
+              <h3 className="mb-2 font-bold text-purple-700">チェックリスト型プロンプト</h3>
+              <p className="text-sm text-gray-600">
+                エッセンスの各項目を<strong>全て漏れなく</strong>本文に反映するよう AI に指示。
+                Mermaid 図の指示があれば正しい構文で自動生成。日本語ノードの引用符ルールも明記。
+              </p>
+            </div>
+            <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-6">
+              <h3 className="mb-2 font-bold text-purple-700">HTML プレビュー + Mermaid</h3>
+              <p className="text-sm text-gray-600">
+                修正案を <strong>HTML プレビュー</strong>（Mermaid 図レンダリング・Markdown 描画）と
+                <strong> Markdown ソース</strong>のタブ切替で確認。構文エラー時はソース表示＋修正案内のフォールバック付き。
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+              <FlowStep step={1} title="エッセンス入力" desc="補足・修正指示を記入" />
+              <FlowStep step={2} title="AI 修正生成" desc="チェックリスト型で全反映" />
+              <FlowStep step={3} title="プレビュー確認" desc="HTML / Markdown タブ切替" />
+              <FlowStep step={4} title="適用 or 破棄" desc="ワンクリックで本文反映" />
+            </div>
+          </div>
+          <div className="mt-6 rounded-xl border border-purple-200 bg-purple-50 p-5">
+            <h4 className="mb-3 text-sm font-bold text-purple-800">実装上の工夫</h4>
+            <div className="grid gap-3 text-sm text-purple-900 sm:grid-cols-2">
+              <div className="flex gap-2">
+                <span className="mt-0.5 text-purple-500">&#9679;</span>
+                <span><strong>useFetcher</strong> — Remix の非同期データ取得で、ページ遷移なしに修正案を取得</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="mt-0.5 text-purple-500">&#9679;</span>
+                <span><strong>max_tokens: 8192</strong> — 長い記事でも出力が途中切れしないようトークン上限を拡大</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="mt-0.5 text-purple-500">&#9679;</span>
+                <span><strong>mermaid.js 動的ロード</strong> — AI プレビューに Mermaid 図が含まれる場合のみ CDN からロードして描画</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="mt-0.5 text-purple-500">&#9679;</span>
+                <span><strong>mermaid.parse() 事前検証</strong> — 構文エラー時はクラッシュせずソース表示 + 修正案内を表示</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Template Types */}
         <section className="mb-20">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">テンプレート一覧</h2>
@@ -285,6 +347,56 @@ export default function AboutPage() {
             <TemplateCard title="セキュリティ対策" desc="WAF / Bot Management / DDoS 防御の導入・運用事例" category="Security" />
             <TemplateCard title="ネットワーク構成" desc="Magic Transit / WAN / Spectrum 等のネットワーク設計事例" category="Network" />
             <TemplateCard title="Tips &amp; Tricks" desc="短めの実用的な Cloudflare 活用テクニック" category="General" />
+          </div>
+        </section>
+
+        {/* JSON Import — External AI Integration */}
+        <section className="mb-20">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900">JSON インポート — 他生成 AI との連携</h2>
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            Gemini、ChatGPT、Claude などの外部 AI ツールで作成したフィールド入力データを、テンプレートフォームに JSON インポートして記事を生成できます。
+            API キー不要でブラウザ内だけで完結するワークフローです。
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+              <FlowStep step={1} title="フィールド定義をコピー" desc="テンプレートフォームからワンクリック" />
+              <FlowStep step={2} title="AI ツールに貼り付け" desc="エッセンスと一緒に送信" />
+              <FlowStep step={3} title="JSON をインポート" desc="AI の出力を貼り付け" />
+              <FlowStep step={4} title="AI で下書き生成" desc="フィールド自動入力 → 記事化" />
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-6">
+              <h3 className="mb-2 font-bold text-indigo-700">フィールド定義コピー</h3>
+              <p className="text-sm text-gray-600">
+                テンプレートフォームの「AI ツール連携 / JSON インポート」パネルで、テンプレートのフィールド構造（ID・ラベル・型・必須/任意）を
+                JSON 形式でクリップボードにコピー。そのまま AI に貼り付けるだけ。
+              </p>
+            </div>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-6">
+              <h3 className="mb-2 font-bold text-indigo-700">外部 AI で入力データ生成</h3>
+              <p className="text-sm text-gray-600">
+                Gemini / ChatGPT / Claude にフィールド定義と書きたい内容のエッセンスを送信。
+                AI がフィールド構造に合わせた JSON データを出力。プロンプト例もパネルに表示。
+              </p>
+            </div>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-6">
+              <h3 className="mb-2 font-bold text-indigo-700">JSON インポート & 記事生成</h3>
+              <p className="text-sm text-gray-600">
+                AI が出力した JSON をインポートするとフォームが自動入力。
+                内容を確認・微調整後、Workers AI（Llama 3.3 70B）が Markdown 記事に変換。
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50 p-5">
+            <h4 className="mb-3 text-sm font-bold text-indigo-800">上級者向け: Template API</h4>
+            <p className="text-sm text-gray-700">
+              <code className="rounded bg-indigo-100 px-1 text-xs text-indigo-700">Authorization: Bearer cfbk_*</code> ヘッダー付きで
+              <code className="mx-1 rounded bg-indigo-100 px-1 text-xs text-indigo-700">GET /api/v1/ai-guide</code>（全テンプレート一括取得）、
+              <code className="mx-1 rounded bg-indigo-100 px-1 text-xs text-indigo-700">POST /api/v1/templates/:id/test-generate</code>（AI テスト記事生成）、
+              <code className="mx-1 rounded bg-indigo-100 px-1 text-xs text-indigo-700">POST /api/v1/templates/quick-generate</code>（トピック指定で自動生成）
+              などの API エンドポイントも利用可能。Windsurf / Cascade などの AI コーディングツールからの直接呼び出しにも対応しています。
+            </p>
           </div>
         </section>
 
