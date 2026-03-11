@@ -13,13 +13,12 @@ import { redirect } from "@remix-run/cloudflare";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
 
-  // If no session but arrived here (e.g. from error page), clear cookies and redirect
+  // If no session but arrived here (e.g. from error page), clear app session and redirect
   if (!user) {
     const session = await getSession(request);
-    const headers = new Headers();
-    headers.append("Set-Cookie", await sessionStorage.destroySession(session));
-    headers.append("Set-Cookie", "CF_Authorization=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
-    return redirect("/auth/logged-out", { headers });
+    return redirect("/auth/logged-out", {
+      headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+    });
   }
 
   return { user };
@@ -28,13 +27,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const session = await getSession(request);
 
-  // Clear both the app session and CF_Authorization cookie directly.
-  // We do NOT call /cdn-cgi/access/logout because that endpoint
-  // corrupts OIDC state, causing "Invalid login session" on re-login.
-  const headers = new Headers();
-  headers.append("Set-Cookie", await sessionStorage.destroySession(session));
-  headers.append("Set-Cookie", "CF_Authorization=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
-  return redirect("/auth/logged-out", { headers });
+  // Destroy the app session. The CF_Authorization cookie (set by Cloudflare
+  // Access edge) cannot be cleared via Set-Cookie from the origin server.
+  // The logged-out page will redirect to /cdn-cgi/access/logout to clear it.
+  return redirect("/auth/logged-out", {
+    headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+  });
 }
 
 export default function LogoutPage() {
