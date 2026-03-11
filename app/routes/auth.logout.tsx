@@ -7,42 +7,34 @@ import {
   getSessionUser,
   sessionStorage,
   getSession,
-  isAccessConfigured,
 } from "~/lib/auth.server";
 import { redirect } from "@remix-run/cloudflare";
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
-  const env = context.cloudflare.env;
 
   // If no session but arrived here (e.g. from error page), clear cookies and redirect
   if (!user) {
     const session = await getSession(request);
-    const redirectTo = isAccessConfigured(env) ? "/auth/logged-out" : "/";
-    return redirect(redirectTo, {
-      headers: {
-        "Set-Cookie": await sessionStorage.destroySession(session),
-      },
-    });
+    const headers = new Headers();
+    headers.append("Set-Cookie", await sessionStorage.destroySession(session));
+    headers.append("Set-Cookie", "CF_Authorization=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
+    return redirect("/auth/logged-out", { headers });
   }
 
-  const accessLogoutUrl = isAccessConfigured(env)
-    ? `https://${env.CF_ACCESS_TEAM_DOMAIN}.cloudflareaccess.com/cdn-cgi/access/logout`
-    : null;
-  return { user, accessLogoutUrl };
+  return { user };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const session = await getSession(request);
 
-  // Only destroy the app session — Access/SSO session stays intact.
-  // This prevents "Invalid login session" errors caused by clearing
-  // OIDC state cookies mid-flow when the user re-logs in immediately.
-  return redirect("/auth/logged-out", {
-    headers: {
-      "Set-Cookie": await sessionStorage.destroySession(session),
-    },
-  });
+  // Clear both the app session and CF_Authorization cookie directly.
+  // We do NOT call /cdn-cgi/access/logout because that endpoint
+  // corrupts OIDC state, causing "Invalid login session" on re-login.
+  const headers = new Headers();
+  headers.append("Set-Cookie", await sessionStorage.destroySession(session));
+  headers.append("Set-Cookie", "CF_Authorization=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
+  return redirect("/auth/logged-out", { headers });
 }
 
 export default function LogoutPage() {

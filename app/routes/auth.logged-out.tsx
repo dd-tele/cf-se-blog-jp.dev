@@ -1,42 +1,13 @@
 import { useEffect } from "react";
-import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { useLoaderData } from "@remix-run/react";
-import { isAccessConfigured } from "~/lib/auth.server";
-
-export async function loader({ request, context }: LoaderFunctionArgs) {
-  const env = context.cloudflare.env;
-  const url = new URL(request.url);
-  // Only provide the SSO logout URL — normal logout clears app session only
-  const ssoLogoutUrl = isAccessConfigured(env)
-    ? `${url.origin}/cdn-cgi/access/logout`
-    : null;
-  return { ssoLogoutUrl };
-}
 
 export default function LoggedOutPage() {
-  const { ssoLogoutUrl } = useLoaderData<typeof loader>();
-
   useEffect(() => {
-    if (ssoLogoutUrl) {
-      // Clear Access cookies via hidden iframe (same-origin).
-      // After cookies are cleared, redirect to "/" (public page).
-      // Since "/" is not Access-protected, no OIDC flow is triggered,
-      // avoiding the "Invalid login session" race condition.
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = ssoLogoutUrl;
-      iframe.onload = () => {
-        setTimeout(() => { window.location.href = "/"; }, 800);
-      };
-      document.body.appendChild(iframe);
-      // Fallback if iframe takes too long
-      const fallback = setTimeout(() => { window.location.href = "/"; }, 3000);
-      return () => clearTimeout(fallback);
-    }
-    // Non-Access env: just go home
-    const timer = setTimeout(() => { window.location.href = "/"; }, 1500);
+    // Cookies (app session + CF_Authorization) are already cleared
+    // server-side via Set-Cookie headers in the logout action.
+    // Just redirect to the public top page.
+    const timer = setTimeout(() => { window.location.href = "/"; }, 2000);
     return () => clearTimeout(timer);
-  }, [ssoLogoutUrl]);
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
