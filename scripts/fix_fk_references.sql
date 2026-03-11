@@ -4,7 +4,7 @@
 -- After DROP TABLE users_old, those FK references became dangling.
 --
 -- Strategy: for each affected table, create _fixed copy with correct FKs,
--- copy data, drop original, rename _fixed to original, recreate indexes.
+-- copy data (using COALESCE for NOT NULL cols), drop original, rename.
 
 PRAGMA foreign_keys = OFF;
 
@@ -35,7 +35,18 @@ CREATE TABLE posts_fixed (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT INTO posts_fixed SELECT * FROM posts;
+INSERT INTO posts_fixed (id, title, slug, content, excerpt, cover_image_url,
+  author_id, category_id, status, auto_approved, tags_json, meta_title,
+  meta_description, reading_time_minutes, view_count, published_at,
+  author_name_snapshot, reviewed_by, reviewed_at, created_at, updated_at)
+SELECT id, title, slug, content, excerpt, cover_image_url,
+  author_id, category_id,
+  COALESCE(status, 'draft'), COALESCE(auto_approved, 0),
+  tags_json, meta_title, meta_description, reading_time_minutes,
+  COALESCE(view_count, 0), published_at, author_name_snapshot,
+  reviewed_by, reviewed_at,
+  COALESCE(created_at, datetime('now')), COALESCE(updated_at, datetime('now'))
+FROM posts;
 DROP TABLE posts;
 ALTER TABLE posts_fixed RENAME TO posts;
 CREATE INDEX IF NOT EXISTS idx_posts_author_id ON posts(author_id);
@@ -61,7 +72,13 @@ CREATE TABLE ai_draft_requests_fixed (
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT INTO ai_draft_requests_fixed SELECT * FROM ai_draft_requests;
+INSERT INTO ai_draft_requests_fixed (id, user_id, template_id, post_id,
+  input_data_json, generated_content, model_used, tokens_used, latency_ms,
+  status, created_at)
+SELECT id, user_id, template_id, post_id,
+  input_data_json, generated_content, model_used, tokens_used, latency_ms,
+  COALESCE(status, 'pending'), COALESCE(created_at, datetime('now'))
+FROM ai_draft_requests;
 DROP TABLE ai_draft_requests;
 ALTER TABLE ai_draft_requests_fixed RENAME TO ai_draft_requests;
 
@@ -79,7 +96,11 @@ CREATE TABLE qa_messages_fixed (
   flagged INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT INTO qa_messages_fixed SELECT * FROM qa_messages;
+INSERT INTO qa_messages_fixed (id, thread_id, role, content, user_id,
+  metadata_json, flagged, created_at)
+SELECT id, thread_id, role, content, user_id,
+  metadata_json, COALESCE(flagged, 0), COALESCE(created_at, datetime('now'))
+FROM qa_messages;
 DROP TABLE qa_messages;
 ALTER TABLE qa_messages_fixed RENAME TO qa_messages;
 CREATE INDEX IF NOT EXISTS idx_qa_messages_thread_id ON qa_messages(thread_id);
@@ -98,7 +119,11 @@ CREATE TABLE audit_logs_fixed (
   ip_address TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT INTO audit_logs_fixed SELECT * FROM audit_logs;
+INSERT INTO audit_logs_fixed (id, user_id, action, resource_type, resource_id,
+  details_json, ip_address, created_at)
+SELECT id, user_id, action, resource_type, resource_id,
+  details_json, ip_address, COALESCE(created_at, datetime('now'))
+FROM audit_logs;
 DROP TABLE audit_logs;
 ALTER TABLE audit_logs_fixed RENAME TO audit_logs;
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
@@ -118,7 +143,11 @@ CREATE TABLE user_badges_fixed (
   earned_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(user_id, badge_type)
 );
-INSERT INTO user_badges_fixed SELECT * FROM user_badges;
+INSERT INTO user_badges_fixed (id, user_id, badge_type, badge_name,
+  badge_description, badge_icon, earned_at)
+SELECT id, user_id, badge_type, badge_name,
+  badge_description, badge_icon, COALESCE(earned_at, datetime('now'))
+FROM user_badges;
 DROP TABLE user_badges;
 ALTER TABLE user_badges_fixed RENAME TO user_badges;
 
@@ -133,7 +162,12 @@ CREATE TABLE notification_settings_fixed (
   email_on_qa_reply INTEGER NOT NULL DEFAULT 1,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT INTO notification_settings_fixed SELECT * FROM notification_settings;
+INSERT INTO notification_settings_fixed (user_id, email_on_approval,
+  email_on_rejection, email_on_qa_reply, updated_at)
+SELECT user_id, COALESCE(email_on_approval, 1),
+  COALESCE(email_on_rejection, 1), COALESCE(email_on_qa_reply, 1),
+  COALESCE(updated_at, datetime('now'))
+FROM notification_settings;
 DROP TABLE notification_settings;
 ALTER TABLE notification_settings_fixed RENAME TO notification_settings;
 
@@ -158,7 +192,14 @@ CREATE TABLE access_requests_fixed (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT INTO access_requests_fixed SELECT * FROM access_requests;
+INSERT INTO access_requests_fixed (id, email, display_name, nickname, furigana,
+  company, job_role, expertise, profile_comment, status, reviewed_by,
+  reviewed_at, admin_note, created_at, updated_at)
+SELECT id, email, display_name, nickname, furigana,
+  company, job_role, expertise, profile_comment,
+  COALESCE(status, 'pending'), reviewed_by, reviewed_at, admin_note,
+  COALESCE(created_at, datetime('now')), COALESCE(updated_at, datetime('now'))
+FROM access_requests;
 DROP TABLE access_requests;
 ALTER TABLE access_requests_fixed RENAME TO access_requests;
 CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status);
@@ -179,7 +220,12 @@ CREATE TABLE api_keys_fixed (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT INTO api_keys_fixed SELECT * FROM api_keys;
+INSERT INTO api_keys_fixed (id, user_id, name, key_prefix, key_hash,
+  last_used_at, is_active, created_at, updated_at)
+SELECT id, user_id, name, key_prefix, key_hash,
+  last_used_at, COALESCE(is_active, 1),
+  COALESCE(created_at, datetime('now')), COALESCE(updated_at, datetime('now'))
+FROM api_keys;
 DROP TABLE api_keys;
 ALTER TABLE api_keys_fixed RENAME TO api_keys;
 CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
