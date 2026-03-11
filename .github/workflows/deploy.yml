@@ -31,18 +31,17 @@ jobs:
           echo "=== build/client contents ==="
           ls -la build/client/ | head -20
 
-      - name: Fix users.role CHECK constraint (one-time)
+      - name: Fix broken FK references (one-time)
         run: |
-          # Test if 'ae' role is already allowed
-          TEST=$(npx wrangler d1 execute cf-se-blog-db --remote --command \
-            "INSERT INTO users (id, email, display_name, role) VALUES ('__ae_check__', '__ae_check__@test', '__test__', 'ae')" 2>&1) || true
-          npx wrangler d1 execute cf-se-blog-db --remote --command \
-            "DELETE FROM users WHERE id = '__ae_check__'" 2>&1 || true
-          if echo "$TEST" | grep -qi "CHECK constraint"; then
-            echo "🔧 AE role not yet allowed — applying fix..."
-            npx wrangler d1 execute cf-se-blog-db --remote --file=scripts/fix_ae_role_check.sql
+          # Check if any table still has FK references to users_old (from ae role fix)
+          CHECK=$(npx wrangler d1 execute cf-se-blog-db --remote --command \
+            "SELECT COUNT(*) as cnt FROM sqlite_master WHERE sql LIKE '%users_old%'" 2>&1) || true
+          if echo "$CHECK" | grep -qE '"cnt": [1-9]'; then
+            echo "🔧 Broken FK references found — fixing..."
+            npx wrangler d1 execute cf-se-blog-db --remote --file=scripts/fix_fk_references.sql
+            echo "✅ FK references fixed."
           else
-            echo "✅ AE role already allowed, skipping."
+            echo "✅ FK references OK, skipping."
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
