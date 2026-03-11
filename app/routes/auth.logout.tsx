@@ -32,18 +32,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return { user, accessLogoutUrl };
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const session = await getSession(request);
-  const env = context.cloudflare.env;
 
-  const accessLogoutUrl = isAccessConfigured(env)
-    ? `https://${env.CF_ACCESS_TEAM_DOMAIN}.cloudflareaccess.com/cdn-cgi/access/logout`
-    : null;
-
-  // Redirect to logged-out page which handles Access session cleanup + home redirect
-  const redirectTo = accessLogoutUrl ? "/auth/logged-out" : "/";
-
-  return redirect(redirectTo, {
+  // Only destroy the app session — Access/SSO session stays intact.
+  // This prevents "Invalid login session" errors caused by clearing
+  // OIDC state cookies mid-flow when the user re-logs in immediately.
+  return redirect("/auth/logged-out", {
     headers: {
       "Set-Cookie": await sessionStorage.destroySession(session),
     },

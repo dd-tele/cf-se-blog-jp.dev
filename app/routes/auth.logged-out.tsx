@@ -5,27 +5,22 @@ import { isAccessConfigured } from "~/lib/auth.server";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const env = context.cloudflare.env;
-  // Use app-domain logout URL so CF_Authorization cookie is sent & cleared
   const url = new URL(request.url);
-  const accessLogoutUrl = isAccessConfigured(env)
+  // Only provide the SSO logout URL — normal logout clears app session only
+  const ssoLogoutUrl = isAccessConfigured(env)
     ? `${url.origin}/cdn-cgi/access/logout`
     : null;
-  return { accessLogoutUrl };
+  return { ssoLogoutUrl };
 }
 
 export default function LoggedOutPage() {
-  const { accessLogoutUrl } = useLoaderData<typeof loader>();
+  const { ssoLogoutUrl } = useLoaderData<typeof loader>();
 
   useEffect(() => {
-    // Clear Access session via same-origin fetch, then redirect home
-    if (accessLogoutUrl) {
-      fetch(accessLogoutUrl, { credentials: "include" }).finally(() => {
-        setTimeout(() => { window.location.href = "/"; }, 1500);
-      });
-    } else {
-      setTimeout(() => { window.location.href = "/"; }, 1500);
-    }
-  }, [accessLogoutUrl]);
+    // Auto-redirect to home after a short delay
+    const timer = setTimeout(() => { window.location.href = "/"; }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
@@ -40,6 +35,17 @@ export default function LoggedOutPage() {
         <div className="mt-4 flex justify-center">
           <div className="h-6 w-6 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
         </div>
+        {ssoLogoutUrl && (
+          <div className="mt-6 border-t pt-4">
+            <p className="text-xs text-gray-400">別のアカウントでログインする場合:</p>
+            <a
+              href={ssoLogoutUrl}
+              className="mt-1 inline-block text-xs font-medium text-red-500 hover:text-red-600 underline"
+            >
+              SSO セッションもログアウト
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
