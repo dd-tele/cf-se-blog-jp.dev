@@ -247,9 +247,9 @@ export default function PostDetail() {
           <div>
             <Link to={`/authors/${post.authorId}`} className="font-medium text-gray-900 hover:text-brand-600 transition-colors">{post.authorName}</Link>
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-              {post.authorCompany && <span>{post.authorCompany}</span>}
+              {post.authorCompany && <span><span className="text-gray-400">所属:</span> {post.authorCompany}</span>}
               {post.authorCompany && post.authorExpertise && <span className="text-gray-300">|</span>}
-              {post.authorExpertise && <span>{post.authorExpertise}</span>}
+              {post.authorExpertise && <span><span className="text-gray-400">得意分野:</span> {post.authorExpertise}</span>}
             </div>
           </div>
         </div>
