@@ -47,13 +47,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   await updateUserProfile(db, user.id, {
     displayName,
-    nickname: (formData.get("nickname") as string) || undefined,
-    furigana: (formData.get("furigana") as string) || undefined,
-    company: (formData.get("company") as string) || undefined,
-    jobRole: (formData.get("job_role") as string) || undefined,
-    expertise: (formData.get("expertise") as string) || undefined,
-    profileComment: (formData.get("profile_comment") as string) || undefined,
-    bio: (formData.get("bio") as string) || undefined,
+    nickname: (formData.get("nickname") as string) ?? undefined,
+    furigana: (formData.get("furigana") as string) ?? undefined,
+    company: (formData.get("company") as string) ?? undefined,
+    jobRole: (formData.get("job_role") as string) ?? undefined,
+    expertise: (formData.get("expertise") as string) ?? undefined,
+    profileComment: (formData.get("profile_comment") as string) ?? undefined,
   });
 
   return { success: true, message: "プロフィールを更新しました" };

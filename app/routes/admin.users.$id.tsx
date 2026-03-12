@@ -65,13 +65,12 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
     await adminUpdateUser(db, userId, {
       displayName,
       email,
-      nickname: (formData.get("nickname") as string) || undefined,
-      furigana: (formData.get("furigana") as string) || undefined,
-      company: (formData.get("company") as string) || undefined,
-      jobRole: (formData.get("job_role") as string) || undefined,
-      expertise: (formData.get("expertise") as string) || undefined,
-      profileComment: (formData.get("profile_comment") as string) || undefined,
-      bio: (formData.get("bio") as string) || undefined,
+      nickname: (formData.get("nickname") as string) ?? undefined,
+      furigana: (formData.get("furigana") as string) ?? undefined,
+      company: (formData.get("company") as string) ?? undefined,
+      jobRole: (formData.get("job_role") as string) ?? undefined,
+      expertise: (formData.get("expertise") as string) ?? undefined,
+      profileComment: (formData.get("profile_comment") as string) ?? undefined,
       role: role as "admin" | "se" | "ae" | "user",
       isActive,
     });
@@ -370,20 +369,6 @@ export default function AdminUserEdit() {
               name="profile_comment"
               rows={3}
               defaultValue={targetUser.profile_comment ?? ""}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
-
-          {/* Bio */}
-          <div>
-            <label htmlFor="bio" className="mb-1 block text-sm font-medium text-gray-700">
-              Bio（詳細プロフィール）
-            </label>
-            <textarea
-              id="bio"
-              name="bio"
-              rows={2}
-              defaultValue={targetUser.bio ?? ""}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>

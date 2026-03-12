@@ -64,17 +64,14 @@ export default function AuthorProfile() {
                   <span className="text-sm text-gray-500">{author.company}</span>
                 )}
               </div>
-              {author.bio && (
-                <p className="mt-3 text-sm leading-relaxed text-gray-600">{author.bio}</p>
-              )}
               {author.expertise && (
                 <div className="mt-3">
-                  <span className="text-xs font-medium text-gray-400">専門分野:</span>
+                  <span className="text-xs font-medium text-gray-400">得意分野:</span>
                   <span className="ml-1 text-sm text-gray-600">{author.expertise}</span>
                 </div>
               )}
               {author.profileComment && (
-                <p className="mt-2 text-sm text-gray-500 italic">{author.profileComment}</p>
+                <p className="mt-3 text-sm leading-relaxed text-gray-600">{author.profileComment}</p>
               )}
             </div>
           </div>
