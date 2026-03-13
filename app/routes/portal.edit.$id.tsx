@@ -509,31 +509,29 @@ export default function EditPost() {
 
           {/* Actions */}
           <div className="flex items-center justify-between border-t pt-6">
-            <div className="flex items-center gap-4">
+            <Form method="post">
+              <input type="hidden" name="intent" value="delete" />
+              <button
+                type="submit"
+                onClick={(e) => {
+                  if (!confirm("この記事を削除しますか？")) e.preventDefault();
+                }}
+                className="text-sm text-red-500 hover:text-red-700"
+              >
+                削除
+              </button>
+            </Form>
+
+            <div className="flex gap-3">
               <Link
                 to="/portal/posts"
                 onClick={(e) => {
                   if (!confirm("編集内容を破棄してマイ記事に戻りますか？")) e.preventDefault();
                 }}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 キャンセル
               </Link>
-              <Form method="post">
-                <input type="hidden" name="intent" value="delete" />
-                <button
-                  type="submit"
-                  onClick={(e) => {
-                    if (!confirm("この記事を削除しますか？")) e.preventDefault();
-                  }}
-                  className="text-sm text-red-500 hover:text-red-700"
-                >
-                  削除
-                </button>
-              </Form>
-            </div>
-
-            <div className="flex gap-3">
               <a
                 href={`/posts/${post.slug}`}
                 target="_blank"
