@@ -9,6 +9,7 @@ import { useRef } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { createPost, getAllCategories, ensureUser } from "~/lib/posts.server";
 import { ImageUploader } from "~/components/ImageUploader";
+import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
 
 export const meta: MetaFunction = () => [
@@ -187,7 +188,10 @@ export default function NewPost() {
               >
                 本文 *
               </label>
-              <ImageUploader onInsert={handleImageInsert} />
+              <div className="flex items-center gap-2">
+                <ContentToolbar onInsert={handleImageInsert} />
+                <ImageUploader onInsert={handleImageInsert} />
+              </div>
             </div>
             <textarea
               ref={contentRef}

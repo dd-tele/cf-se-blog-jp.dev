@@ -37,6 +37,7 @@ import {
 } from "~/lib/posts.server";
 import { refineWithEssence } from "~/lib/ai.server";
 import { ImageUploader } from "~/components/ImageUploader";
+import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
@@ -362,7 +363,10 @@ export default function EditPost() {
               >
                 本文 *
               </label>
-              <ImageUploader onInsert={handleImageInsert} />
+              <div className="flex items-center gap-2">
+                <ContentToolbar onInsert={handleImageInsert} />
+                <ImageUploader onInsert={handleImageInsert} />
+              </div>
             </div>
             <textarea
               ref={contentRef}

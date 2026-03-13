@@ -162,6 +162,8 @@ compatibility_date = "2024-01-01"
           <li>- 空行でパラグラフを分けます</li>
           <li>- 見出しは <code className="rounded bg-blue-100 px-1">##</code> (H2) から始めると読みやすい</li>
           <li>- コードブロックには言語名を必ず指定しましょう</li>
+          <li>- 本文欄の上にある <strong>「表を挿入」</strong> ボタンでテーブルのテンプレートを挿入できます</li>
+          <li>- <strong>「コードを挿入」</strong> ボタンで言語を選んでコードブロックを挿入できます</li>
         </ul>
       </div>
     </div>
