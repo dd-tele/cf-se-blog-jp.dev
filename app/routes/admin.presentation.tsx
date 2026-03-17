@@ -58,7 +58,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   };
 }
 
-const TOTAL_SLIDES = 14;
+const TOTAL_SLIDES = 15;
 
 export default function AdminPresentation() {
   const { user, stats } = useLoaderData<typeof loader>();
@@ -173,10 +173,61 @@ export default function AdminPresentation() {
     </div>,
   );
 
-  /* ── Slide 1: Why ── */
+  /* ── Slide 1: Motivation ── */
+  slides.push(
+    <div key="motivation" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
+      <SlideHeader number={1} title="なぜこのブログを作ったのか" />
+      <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
+        このプラットフォームは、ひとつのシンプルな問いから始まりました。<br />
+        <strong className="text-gray-900">「Cloudflare をもっと知ってもらうために、SE として何か新しいことはできないか」</strong>
+      </p>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <MotivationCard
+          icon="🔍"
+          title="Cloudflare をもっと知ってもらうには"
+          desc="製品ドキュメントだけでは伝わらない、現場のリアルな導入体験や技術適用のストーリーを届ける場所が必要だと感じました。"
+        />
+        <MotivationCard
+          icon="📈"
+          title="営業のパイプラインを SE として支援できないか"
+          desc="お客様が『これは自社でも使える』と確信できる実践事例を蓄積し、営業が案件の初期段階から活用できる武器を作りたい。"
+        />
+        <MotivationCard
+          icon="🌐"
+          title="全てのレイヤーで使えるツールを"
+          desc="営業、技術、マーケティング、パートナーチーム、SE、マネージャー＆ディレクター、エグゼクティブ — 立場を問わず、それぞれの視点で活用できる仕組みを目指しました。"
+        />
+        <MotivationCard
+          icon="🏛️"
+          title="知見共有の文化を作れないか"
+          desc="個人の知識に留まりがちな導入ノウハウを、組織の壁を越えてオープンにし、学び合う文化そのものを作りたいと考えました。"
+        />
+        <MotivationCard
+          icon="💡"
+          title="導入ユーザーが自信を持って共有できる場所"
+          desc="Cloudflare を導入した技術者が、自社の取り組みを誇りを持って発信でき、他の技術者の参考になる — そんな場所をもっと簡単に作れないか。"
+        />
+        <MotivationCard
+          icon="🤝"
+          title="パートナーも『稼げる』と思える場所"
+          desc="パートナー企業が Cloudflare のビジネス価値を実感し、自らの顧客にも自信を持って提案できる — そんなエコシステムの起点になりたい。"
+        />
+      </div>
+      <div className="mt-10 rounded-2xl border-2 border-brand-300 bg-gradient-to-r from-brand-50 to-orange-50 px-8 py-6 text-center shadow-sm">
+        <p className="text-lg font-bold text-brand-800 sm:text-xl">
+          Cloudflare の「全て」を詰め込み、<span className="text-brand-600">誰もが使える・学べる・貢献できる</span>プラットフォームへ。
+        </p>
+        <p className="mt-2 text-base text-gray-600">
+          これが、このブログを 100% Cloudflare スタックで作り上げた動機です。
+        </p>
+      </div>
+    </div>,
+  );
+
+  /* ── Slide 2: Why ── */
   slides.push(
     <div key="why" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={1} title="このブログが目指す課題解決" />
+      <SlideHeader number={2} title="このブログが目指す課題解決" />
       <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
         Cloudflare を導入済み・検討中のすべてのユーザーが、<strong className="text-gray-900">現場のリアルな技術適用や導入体験</strong>を共有し、
         相互に学び合える<strong className="text-gray-900">ナレッジハブ</strong>を目指しています。
@@ -210,7 +261,7 @@ export default function AdminPresentation() {
   /* ── Slide 2: Design Philosophy ── */
   slides.push(
     <div key="philosophy" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={2} title="設計思想" />
+      <SlideHeader number={3} title="設計思想" />
       <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
         プラットフォームの設計は <strong className="text-gray-900">4 つの柱</strong> に基づいています。
         すべての技術選定・UX 設計はこれらの原則に照らして判断しています。
@@ -253,7 +304,7 @@ export default function AdminPresentation() {
   /* ── Slide 3: Live Stats ── */
   slides.push(
     <div key="stats" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={3} title="現在の実績（ライブデータ）" />
+      <SlideHeader number={4} title="現在の実績（ライブデータ）" />
       <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
         以下の数値は D1 データベースからリアルタイムに取得しています。プレゼンテーション表示時点の最新値です。
       </p>
@@ -285,7 +336,7 @@ export default function AdminPresentation() {
   /* ── Slide 4: Tech Stack ── */
   slides.push(
     <div key="stack" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={4} title="技術スタック — 100% Cloudflare" />
+      <SlideHeader number={5} title="技術スタック — 100% Cloudflare" />
       <p className="mb-6 max-w-4xl text-lg leading-relaxed text-gray-600">
         外部クラウドやサードパーティ SaaS を一切使わず、<strong className="text-gray-900">Cloudflare のサービスだけ</strong>でフルスタック Web アプリケーションを構築。
         フロントエンド・API・DB・ストレージ・AI・認証・セキュリティすべてがエッジで動作します。
@@ -337,7 +388,7 @@ export default function AdminPresentation() {
   /* ── Slide 5: Key Features ── */
   slides.push(
     <div key="features" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={5} title="主要機能" />
+      <SlideHeader number={6} title="主要機能" />
       <div className="space-y-5">
         <FeatureRow number="01" title="AI ドラフト生成" desc="6種類のテンプレートから選択 → メモ書きレベルの入力 → Llama 3.3 70B が Markdown 記事を自動生成。プロンプトエンジニアリングで Cloudflare 事例スタイルに最適化。" color="amber" tags={["Workers AI", "テンプレート", "Llama 3.3"]} />
         <FeatureRow number="02" title="AI チャット Q&A" desc="記事ページのフローティングウィジェット。記事コンテキスト優先 + Cloudflare 全般の知識で補足回答。Vectorize RAG + SSE ストリーミング。Turnstile Bot 保護 → 入力バリデーション → KV レート制限 → Llama Guard モデレーション → AI Gateway ガードレールの多層防御。24h TTL で自動クリーンアップ。" color="blue" tags={["Hono streamSSE", "RAG", "Llama Guard", "AI Gateway", "Turnstile"]} />
@@ -355,7 +406,7 @@ export default function AdminPresentation() {
   /* ── Slide 6: Hono Architecture ── */
   slides.push(
     <div key="hono" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={6} title="Hono — API レイヤーの心臓部" />
+      <SlideHeader number={7} title="Hono — API レイヤーの心臓部" />
       <p className="mb-6 text-base leading-relaxed text-gray-600">
         Cloudflare Workers に最適化された超軽量フレームワーク
         <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
@@ -404,7 +455,7 @@ export default function AdminPresentation() {
   /* ── Slide 7: AI Chatbot Deep Dive ── */
   slides.push(
     <div key="chatbot" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={7} title="AI チャットボット — 実装 & チューニング" />
+      <SlideHeader number={8} title="AI チャットボット — 実装 & チューニング" />
       <p className="mb-6 text-base leading-relaxed text-gray-600">
         記事ページのフローティングウィジェットで読者の質問にリアルタイム回答。
         <strong className="text-gray-900">3 段階システムプロンプト</strong>（記事優先 → CF 知識補足 → 公式ドキュメント誘導）+
@@ -493,7 +544,7 @@ export default function AdminPresentation() {
   /* ── Slide 8: Article Creation Flow ── */
   slides.push(
     <div key="flow" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={8} title="記事作成フロー" />
+      <SlideHeader number={9} title="記事作成フロー" />
       <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
         「メモ書きレベルの入力」から「公開記事」まで、<strong className="text-gray-900">6 ステップ</strong>で完結。
         AI がドラフト生成と修正をアシストするため、執筆にかかる時間を大幅に短縮します。
@@ -547,7 +598,7 @@ export default function AdminPresentation() {
   /* ── Slide 9: Security ── */
   slides.push(
     <div key="security" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={9} title="セキュリティ & インフラ" />
+      <SlideHeader number={10} title="セキュリティ & インフラ" />
       <div className="grid gap-5 sm:grid-cols-2">
         <SecurityCard title="Cloudflare Access" items={["Google / Okta SSO 連携", "JWT ベース認証 + 自動リトライ", "RBAC (admin / se / user)", "OTP 再認証時のレジリエンス強化"]} />
         <SecurityCard title="WAF + Bot Management" items={["OWASP Top 10 防御（SQLi / XSS 等）", "API エンドポイント保護", "Bot 検知・自動化攻撃軽減", "コードスニペット WAF 誤検知回避"]} />
@@ -563,7 +614,7 @@ export default function AdminPresentation() {
   /* ── Slide 10: Technical Deep-Dive ── */
   slides.push(
     <div key="tech" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={10} title="技術実装の工夫 — エラー回避 & 細かな改善" />
+      <SlideHeader number={11} title="技術実装の工夫 — エラー回避 & 細かな改善" />
       <div className="space-y-4">
         <TechDetail title="Cloudflare Access JWT 再認証レジリエンス" problem="OTP 再認証後、Access が新しい JWT を設定する前にアプリが古い JWT を読み検証失敗 → エラー画面が表示される" solutions={["verifyAccessJWT を VerifyResult 型に拡張 — expired / kid_mismatch / bad_signature 等の失敗理由を識別", "期限切れ・鍵不一致の場合、サーバーサイドで自動リトライ（最大2回リダイレクト）", "公開鍵キャッシュに forceRefresh オプション — kid が一致しない場合キャッシュを破棄して再取得（鍵ローテーション対応）", "エラーページに 3 秒カウントダウン自動リトライ + 手動再試行ボタンを実装"]} files={["app/lib/access.server.ts", "app/routes/auth.login.tsx"]} color="blue" />
         <TechDetail title="WAF 誤検知回避 — コードスニペット含む記事投稿" problem="AI 生成記事に SQL コマンド・シェルスクリプト・HTML タグが含まれると、Cloudflare WAF (OWASP) が POST リクエストをブロック" solutions={["Cloudflare Dashboard → Security → WAF → Custom Rules で Skip ルールを作成", "POST /portal/*, /admin/*, /api/v1/* への認証済みリクエストで WAF Managed Rules / Bot Fight Mode / Rate Limit をスキップ", "Cloudflare Access で保護されたパスのため、WAF スキップしても安全性は維持"]} files={["Cloudflare Dashboard (WAF Custom Rules)"]} color="red" />
@@ -583,7 +634,7 @@ export default function AdminPresentation() {
   /* ── Slide 11: Challenges ── */
   slides.push(
     <div key="challenges" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={11} title="現在の課題と取り組み" />
+      <SlideHeader number={12} title="現在の課題と取り組み" />
       <div className="grid gap-8 sm:grid-cols-2">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8">
           <h3 className="mb-3 text-lg font-bold text-amber-800">課題</h3>
@@ -620,7 +671,7 @@ export default function AdminPresentation() {
   /* ── Slide 12: Roadmap ── */
   slides.push(
     <div key="roadmap" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={12} title="ロードマップ" />
+      <SlideHeader number={13} title="ロードマップ" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <RoadmapPhase phase="Phase 1" title="MVP" status="completed" items={["Public Blog", "User Portal", "Admin Dashboard", "認証/認可 (Access)", "基本セキュリティ"]} />
         <RoadmapPhase phase="Phase 2" title="AI & エンゲージメント" status="in-progress" items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "API Shield ✅", "Turnstile ✅", "AI Gateway ✅", "AI 精度向上", "サードパーティ連携"]} />
@@ -728,6 +779,24 @@ function Badge({ children }: { children: React.ReactNode }) {
     <span className="rounded-full bg-white/15 px-5 py-2 text-sm font-semibold text-white backdrop-blur-sm">
       {children}
     </span>
+  );
+}
+
+function MotivationCard({
+  icon,
+  title,
+  desc,
+}: {
+  icon: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <span className="mb-3 block text-3xl">{icon}</span>
+      <h3 className="mb-2 text-lg font-bold text-gray-900">{title}</h3>
+      <p className="text-base leading-relaxed text-gray-600">{desc}</p>
+    </div>
   );
 }
 
