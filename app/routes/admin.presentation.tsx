@@ -183,32 +183,32 @@ export default function AdminPresentation() {
       </p>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <MotivationCard
-          icon="🔍"
+          number={1}
           title="Cloudflare をもっと知ってもらうには"
           desc="製品ドキュメントだけでは伝わらない、現場のリアルな導入体験や技術適用のストーリーを届ける場所が必要だと感じました。"
         />
         <MotivationCard
-          icon="📈"
+          number={2}
           title="営業のパイプラインを SE として支援できないか"
           desc="お客様が『これは自社でも使える』と確信できる実践事例を蓄積し、営業が案件の初期段階から活用できる武器を作りたい。"
         />
         <MotivationCard
-          icon="🌐"
+          number={3}
           title="全てのレイヤーで使えるツールを"
           desc="営業、技術、マーケティング、パートナーチーム、SE、マネージャー＆ディレクター、エグゼクティブ — 立場を問わず、それぞれの視点で活用できる仕組みを目指しました。"
         />
         <MotivationCard
-          icon="🏛️"
+          number={4}
           title="知見共有の文化を作れないか"
           desc="個人の知識に留まりがちな導入ノウハウを、組織の壁を越えてオープンにし、学び合う文化そのものを作りたいと考えました。"
         />
         <MotivationCard
-          icon="💡"
+          number={5}
           title="導入ユーザーが自信を持って共有できる場所"
           desc="Cloudflare を導入した技術者が、自社の取り組みを誇りを持って発信でき、他の技術者の参考になる — そんな場所をもっと簡単に作れないか。"
         />
         <MotivationCard
-          icon="🤝"
+          number={6}
           title="パートナーも『稼げる』と思える場所"
           desc="パートナー企業が Cloudflare のビジネス価値を実感し、自らの顧客にも自信を持って提案できる — そんなエコシステムの起点になりたい。"
         />
@@ -783,17 +783,19 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 function MotivationCard({
-  icon,
+  number,
   title,
   desc,
 }: {
-  icon: string;
+  number: number;
   title: string;
   desc: string;
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <span className="mb-3 block text-3xl">{icon}</span>
+      <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-base font-bold text-brand-600">
+        {number}
+      </span>
       <h3 className="mb-2 text-lg font-bold text-gray-900">{title}</h3>
       <p className="text-base leading-relaxed text-gray-600">{desc}</p>
     </div>
