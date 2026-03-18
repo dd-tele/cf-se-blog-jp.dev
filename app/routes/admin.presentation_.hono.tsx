@@ -169,35 +169,140 @@ export default function PresentationHono() {
           <SectionHeader number={4} title="アーキテクチャ詳細" />
           <div className="space-y-6">
             <ArchCard
-              title="ファイル構成"
+              title="ファイル構成（10 ファイル）"
               items={[
-                { label: "app/api/index.ts", desc: "メイン Hono アプリ — CORS、ロガー、ルートマウント" },
-                { label: "app/api/types.ts", desc: "HonoEnv 型定義 — 全 CF バインディングの型" },
-                { label: "app/api/middleware.ts", desc: "認証ミドルウェア — optionalAuth / requireAuth / requireRole" },
-                { label: "app/api/routes/chat.ts", desc: "AI チャット Q&A — streamSSE + Llama 3.3 70B" },
-                { label: "app/api/routes/ai.ts", desc: "AI 機能 — タグ提案 / 文章改善 / トレンドレポート" },
-                { label: "app/api/routes/upload.ts", desc: "画像アップロード — R2 への保存" },
-                { label: "app/api/routes/r2.ts", desc: "R2 配信 — オブジェクトの Content-Type 付き配信" },
+                { label: "app/api/index.ts", desc: "メイン Hono アプリ — CORS、logger、7 モジュールのルートマウント + health check" },
+                { label: "app/api/types.ts", desc: "HonoEnv 型定義 — DB, AI, R2, KV, Vectorize 等全 CF バインディングの型" },
+                { label: "app/api/middleware.ts", desc: "認証ミドルウェア 3 種 — optionalAuth / requireAuth / requireRole" },
+                { label: "app/api/routes/chat.ts", desc: "AI チャット Q&A (239行) — Turnstile→レート制限→モデレーション→RAG→streamSSE" },
+                { label: "app/api/routes/ai.ts", desc: "AI ユーティリティ (92行) — タグ提案 / 文章改善 / トレンドレポート" },
+                { label: "app/api/routes/templates.ts", desc: "テンプレート API (455行・最大) — 一覧 / 詳細 / test-generate / quick-generate" },
+                { label: "app/api/routes/api-keys.ts", desc: "API キー管理 (57行) — 一覧 / 作成 / 無効化 (cfbk_ プレフィックス)" },
+                { label: "app/api/routes/upload.ts", desc: "画像アップロード (43行) — multipart → R2 保存 (JPEG/PNG/GIF/WebP/SVG, 10MB上限)" },
+                { label: "app/api/routes/r2.ts", desc: "R2 配信 (23行) — Content-Type 付きオブジェクト配信, max-age=1年, immutable" },
+                { label: "app/api/routes/ai-guide.ts", desc: "AI ツール向けガイド (118行) — 外部 AI (Gemini/ChatGPT/Claude) 用の完全ガイド" },
               ]}
             />
             <ArchCard
-              title="Remix 統合パターン"
+              title="グローバルミドルウェア（app/api/index.ts）"
               items={[
-                { label: "Remix ルートファイル", desc: "app/routes/api.v1.chat.tsx 等の薄い shim" },
-                { label: "統合方法", desc: "loader / action で app.fetch(request, context.cloudflare.env) を呼び出し" },
-                { label: "パスエイリアス", desc: "Vite の vite-tsconfig-paths で ~/ インポートを解決" },
-                { label: "理由", desc: "functions/api/ に直接配置する方式は wrangler が Vite パスエイリアスを解決できないため不採用" },
+                { label: "logger()", desc: "全リクエストをコンソールにログ出力（メソッド、パス、ステータス、レイテンシ）" },
+                { label: "cors()", desc: "/api/* に適用。origin: '*', methods: GET/POST/DELETE/OPTIONS, headers: Content-Type/Authorization" },
               ]}
             />
             <ArchCard
-              title="AI チャットの処理フロー"
+              title="デュアル認証ミドルウェア（app/api/middleware.ts）"
               items={[
-                { label: "1. リクエスト受信", desc: "POST /api/v1/chat — message + articleContext" },
-                { label: "2. コンテンツモデレーション", desc: "Llama Guard 3 8B で入力をスキャン → 不適切なら拒否" },
-                { label: "3. システムプロンプト構築", desc: "記事コンテンツをコンテキストとして注入 + グラウンディングルール" },
-                { label: "4. AI 推論", desc: "Llama 3.3 70B FP8 に streaming: true でリクエスト" },
-                { label: "5. SSE ストリーミング", desc: "streamSSE でトークンをリアルタイム配信" },
-                { label: "6. 完了", desc: "[DONE] イベントでストリーム終了" },
+                { label: "resolveUser()", desc: "① Authorization: Bearer cfbk_* ヘッダーを優先チェック（SHA-256 で DB 検証）→ ② なければ Session Cookie にフォールバック" },
+                { label: "optionalAuth", desc: "ユーザー解決するが認証不要。user = null でも通過（チャット Q&A で使用）" },
+                { label: "requireAuth", desc: "認証必須。未認証なら 401 JSON を返却（API キー管理、画像アップロード等）" },
+                { label: "requireRole(...roles)", desc: "認証 + ロール検証。admin/se/ae 等を指定。権限不足なら 403 JSON（トレンドレポート、記事生成等）" },
+              ]}
+            />
+            <ArchCard
+              title="ルートマウント（app/api/index.ts）"
+              items={[
+                { label: 'app.route("/api/v1/chat", chat)', desc: "→ routes/chat.ts (GET / POST)" },
+                { label: 'app.route("/api/v1/ai", ai)', desc: "→ routes/ai.ts (suggest-tags / improve / trend-report)" },
+                { label: 'app.route("/api/upload-image", upload)', desc: "→ routes/upload.ts (POST)" },
+                { label: 'app.route("/api/v1/templates", templatesApi)', desc: "→ routes/templates.ts (一覧 / 詳細 / test-generate / quick-generate)" },
+                { label: 'app.route("/api/v1/api-keys", apiKeysRoute)', desc: "→ routes/api-keys.ts (一覧 / 作成 / 削除)" },
+                { label: 'app.route("/api/v1/ai-guide", aiGuide)', desc: "→ routes/ai-guide.ts (外部AI向けガイド)" },
+                { label: 'app.route("/r2", r2)', desc: "→ routes/r2.ts (R2 オブジェクト配信)" },
+              ]}
+            />
+          </div>
+        </section>
+
+        {/* ───────────────── Remix-Hono Integration ───────────────── */}
+        <section className="mb-16">
+          <SectionHeader number={5} title="Remix → Hono 統合パターン — Shim の仕組み" />
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            Remix が全リクエストの「玄関」として機能し、API リクエストは<strong>薄い shim ファイル（11行）</strong>経由で Hono に転送されます。
+            両方とも同じ Workers プロセス内で動作するため、<strong>ネットワーク転送なし・レイテンシゼロ</strong>です。
+          </p>
+          <div className="space-y-6">
+            {/* Flow diagram */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-5 text-base font-bold text-gray-900">リクエストフロー</h3>
+              <div className="flex flex-col items-center gap-3">
+                <FlowBox color="blue" label="ブラウザ / curl / 外部AIツール" sub="POST /api/v1/chat" />
+                <FlowArrow />
+                <FlowBox color="gray" label="Remix ルートファイル (Shim)" sub="api.v1.chat.tsx — たった11行" />
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-center text-xs text-amber-800 font-medium">
+                  app.fetch(request, context.cloudflare.env)
+                </div>
+                <FlowArrow />
+                <FlowBox color="red" label="Hono アプリ (app/api/index.ts)" sub="logger → CORS → ルートマッチング" />
+                <FlowArrow />
+                <FlowBox color="red" label="認証ミドルウェア" sub="optionalAuth / requireAuth / requireRole" />
+                <FlowArrow />
+                <FlowBox color="red" label="ルートハンドラ (routes/chat.ts)" sub="Turnstile→Rate Limit→RAG→streamSSE" />
+                <FlowArrow />
+                <FlowBox color="green" label="レスポンス返却" sub="JSON / SSE ストリーム / バイナリ" />
+              </div>
+            </div>
+
+            {/* Shim code example */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-3 text-base font-bold text-gray-900">Shim ファイルの中身（全 API 共通パターン）</h3>
+              <p className="mb-4 text-sm text-gray-600">
+                全 12 個の Remix ルートファイルの中身はほぼ同一 — <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">app.fetch(request, env)</code> を呼ぶだけです。
+              </p>
+              <pre className="overflow-x-auto rounded-lg bg-gray-900 p-4 text-xs leading-relaxed text-gray-100">
+                <code>{`// app/routes/api.v1.chat.tsx — 典型的な Shim ファイル
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
+import app from "~/api";  // ← Hono アプリをインポート
+
+// GET リクエスト → Hono に丸投げ
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  return app.fetch(request, context.cloudflare.env);
+}
+
+// POST リクエスト → Hono に丸投げ
+export async function action({ request, context }: ActionFunctionArgs) {
+  return app.fetch(request, context.cloudflare.env);
+}`}</code>
+              </pre>
+            </div>
+
+            {/* File name mapping table */}
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <h3 className="px-6 py-4 text-base font-bold text-gray-900 border-b bg-gray-50">Remix ファイル名 → URL → Hono ルートの対応表</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-left text-xs font-bold uppercase tracking-widest text-gray-400">
+                    <tr>
+                      <th className="px-5 py-2.5">Remix ルートファイル</th>
+                      <th className="px-5 py-2.5">URL パス</th>
+                      <th className="px-5 py-2.5">Hono 処理先</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-xs">
+                    <ShimRow file="api.v1.chat.tsx" url="/api/v1/chat" hono="routes/chat.ts GET & POST" />
+                    <ShimRow file="api.v1.ai.suggest-tags.tsx" url="/api/v1/ai/suggest-tags" hono="routes/ai.ts POST /suggest-tags" />
+                    <ShimRow file="api.v1.ai.improve.tsx" url="/api/v1/ai/improve" hono="routes/ai.ts POST /improve" />
+                    <ShimRow file="api.v1.ai.trend-report.tsx" url="/api/v1/ai/trend-report" hono="routes/ai.ts POST /trend-report" />
+                    <ShimRow file="api.v1.templates._index.tsx" url="/api/v1/templates" hono="routes/templates.ts GET /" />
+                    <ShimRow file="api.v1.templates.$id.tsx" url="/api/v1/templates/:id" hono="routes/templates.ts GET /:id" />
+                    <ShimRow file="api.v1.templates.$id.test-generate.tsx" url="/api/v1/templates/:id/test-generate" hono="routes/templates.ts POST /:id/test-generate" />
+                    <ShimRow file="api.v1.templates.quick-generate.tsx" url="/api/v1/templates/quick-generate" hono="routes/templates.ts POST /quick-generate" />
+                    <ShimRow file="api.v1.api-keys._index.tsx" url="/api/v1/api-keys" hono="routes/api-keys.ts GET & POST /" />
+                    <ShimRow file="api.v1.api-keys.$id.tsx" url="/api/v1/api-keys/:id" hono="routes/api-keys.ts DELETE /:id" />
+                    <ShimRow file="api.v1.ai-guide._index.tsx" url="/api/v1/ai-guide" hono="routes/ai-guide.ts GET /" />
+                    <ShimRow file="api.upload-image.tsx" url="/api/upload-image" hono="routes/upload.ts POST /" />
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <ArchCard
+              title="なぜ Shim パターンなのか"
+              items={[
+                { label: "Remix が玄関", desc: "Cloudflare Pages の場合、全リクエストは Remix のルーターが最初に受ける。直接 Hono に渡す方法がない" },
+                { label: "パスエイリアス問題", desc: "functions/api/ に直接 Hono を配置する方式は、wrangler が Vite の ~/ パスエイリアスを解決できないため不採用" },
+                { label: "同一プロセス", desc: "Remix と Hono は同じ V8 Isolate 内で動作。app.fetch() は関数呼び出しに過ぎず、HTTP オーバーヘッドはゼロ" },
+                { label: "バインディング共有", desc: "context.cloudflare.env を Hono に渡すことで、D1, AI, R2, KV, Vectorize を共有" },
               ]}
             />
           </div>
@@ -205,7 +310,7 @@ export default function PresentationHono() {
 
         {/* ───────────────── Without Hono ───────────────── */}
         <section className="mb-16">
-          <SectionHeader number={5} title="Hono がなかったら — 発生する課題" />
+          <SectionHeader number={6} title="Hono がなかったら — 発生する課題" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             Hono を使わない場合、以下のような課題が発生し、開発効率とコード品質に大きな影響を与えます。
           </p>
@@ -251,7 +356,7 @@ export default function PresentationHono() {
 
         {/* ───────────────── Code Examples ───────────────── */}
         <section className="mb-16">
-          <SectionHeader number={6} title="コード比較 — Hono あり vs なし" />
+          <SectionHeader number={7} title="コード比較 — Hono あり vs なし" />
           <div className="grid gap-6 sm:grid-cols-2">
             <CodeCompare
               title="Hono あり（現在の実装）"
@@ -326,28 +431,104 @@ export async function action({ request, context }) {
 
         {/* ───────────────── API Endpoints ───────────────── */}
         <section className="mb-16">
-          <SectionHeader number={7} title="API エンドポイント一覧" />
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs font-bold uppercase tracking-widest text-gray-400">
-                <tr>
-                  <th className="px-6 py-3">メソッド</th>
-                  <th className="px-6 py-3">パス</th>
-                  <th className="px-6 py-3">機能</th>
-                  <th className="px-6 py-3">認証</th>
-                  <th className="px-6 py-3">CF サービス</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                <EndpointRow method="POST" path="/api/v1/chat" desc="AI チャット Q&A (SSE)" auth="任意" services="AI, Vectorize" />
-                <EndpointRow method="POST" path="/api/v1/ai/suggest-tags" desc="タグ提案" auth="必須" services="AI" />
-                <EndpointRow method="POST" path="/api/v1/ai/improve" desc="文章改善" auth="必須" services="AI" />
-                <EndpointRow method="POST" path="/api/v1/ai/trend-report" desc="トレンドレポート" auth="Admin" services="AI, D1" />
-                <EndpointRow method="POST" path="/api/upload-image" desc="画像アップロード" auth="必須" services="R2" />
-                <EndpointRow method="GET" path="/r2/*" desc="R2 オブジェクト配信" auth="不要" services="R2" />
-                <EndpointRow method="GET" path="/api/health" desc="ヘルスチェック" auth="不要" services="—" />
-              </tbody>
-            </table>
+          <SectionHeader number={8} title="全 API エンドポイント一覧（7 モジュール / 16 routes）" />
+          <div className="space-y-6">
+            {/* Chat */}
+            <EndpointModule
+              name="Chat"
+              file="routes/chat.ts"
+              lines={239}
+              rows={[
+                { method: "GET", path: "/api/v1/chat", desc: "スレッドのメッセージ一覧取得（期限切れスレッド自動削除）", auth: "任意", services: "D1" },
+                { method: "POST", path: "/api/v1/chat", desc: "メッセージ送信 + AI 応答の SSE ストリーミング", auth: "任意", services: "AI, D1, KV, Vectorize" },
+              ]}
+              note="POST は 9段階パイプライン: Turnstile検証 → 入力バリデーション → KVレート制限(10msg/min/IP) → Llama Guard モデレーション → 記事取得 → メッセージ保存 → 会話履歴(直近20件) → RAG(Vectorize topK:3) → streamSSE(Llama 3.3 70B)"
+            />
+            {/* AI */}
+            <EndpointModule
+              name="AI"
+              file="routes/ai.ts"
+              lines={92}
+              rows={[
+                { method: "POST", path: "/api/v1/ai/suggest-tags", desc: "記事内容から AI タグ候補を提案", auth: "必須", services: "AI" },
+                { method: "POST", path: "/api/v1/ai/improve", desc: "テキストの文章改善", auth: "必須", services: "AI" },
+                { method: "POST", path: "/api/v1/ai/trend-report", desc: "直近30日の記事からトレンドレポート生成（KV 24hキャッシュ）", auth: "admin/se/ae", services: "AI, D1, KV" },
+              ]}
+            />
+            {/* Templates */}
+            <EndpointModule
+              name="Templates"
+              file="routes/templates.ts"
+              lines={455}
+              rows={[
+                { method: "GET", path: "/api/v1/templates", desc: "全アクティブテンプレート一覧", auth: "必須", services: "D1" },
+                { method: "GET", path: "/api/v1/templates/:id", desc: "テンプレート詳細 + フィールド定義", auth: "必須", services: "D1" },
+                { method: "POST", path: "/api/v1/templates/:id/test-generate", desc: "ダミー入力AI生成 → 記事生成 → 下書き保存", auth: "admin/se/ae", services: "AI, D1" },
+                { method: "POST", path: "/api/v1/templates/quick-generate", desc: "トピックだけで一括生成（テンプレート自動選択）", auth: "admin/se/ae", services: "AI, D1" },
+              ]}
+              note="test-generate: tone パラメータで realistic/casual/detailed/minimal を切り替え。quick-generate: トピックキーワード → テンプレート自動マッチ → 入力自動生成 → 記事作成を一括実行"
+            />
+            {/* API Keys */}
+            <EndpointModule
+              name="API Keys"
+              file="routes/api-keys.ts"
+              lines={57}
+              rows={[
+                { method: "GET", path: "/api/v1/api-keys", desc: "自分の API キー一覧", auth: "必須", services: "D1" },
+                { method: "POST", path: "/api/v1/api-keys", desc: "新規キー作成（1ユーザー1キー制限、cfbk_ プレフィックス）", auth: "必須", services: "D1" },
+                { method: "DELETE", path: "/api/v1/api-keys/:id", desc: "キー無効化", auth: "必須", services: "D1" },
+              ]}
+            />
+            {/* Upload */}
+            <EndpointModule
+              name="Upload"
+              file="routes/upload.ts"
+              lines={43}
+              rows={[
+                { method: "POST", path: "/api/upload-image", desc: "画像を R2 にアップロード（JPEG/PNG/GIF/WebP/SVG, 10MB上限）", auth: "必須", services: "R2" },
+              ]}
+            />
+            {/* R2 */}
+            <EndpointModule
+              name="R2"
+              file="routes/r2.ts"
+              lines={23}
+              rows={[
+                { method: "GET", path: "/r2/*", desc: "R2 オブジェクト配信（Cache-Control: max-age=1年, immutable）", auth: "不要", services: "R2" },
+              ]}
+            />
+            {/* AI Guide */}
+            <EndpointModule
+              name="AI Guide"
+              file="routes/ai-guide.ts"
+              lines={118}
+              rows={[
+                { method: "GET", path: "/api/v1/ai-guide", desc: "外部AI向け完全ガイド（全テンプレ+フィールド+curl例を1レスポンス）", auth: "必須", services: "D1" },
+              ]}
+              note="ロールが admin/se の場合は quick-generate / test-generate API の使い方も含む"
+            />
+            {/* Health */}
+            <EndpointModule
+              name="Health"
+              file="index.ts"
+              lines={1}
+              rows={[
+                { method: "GET", path: "/api/health", desc: "ヘルスチェック", auth: "不要", services: "—" },
+              ]}
+            />
+          </div>
+
+          {/* CF Bindings summary */}
+          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-base font-bold text-gray-900">使用 Cloudflare バインディング一覧</h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <BindingCard name="DB (D1)" usage="chat, ai, templates, api-keys, ai-guide" />
+              <BindingCard name="AI (Workers AI)" usage="chat, ai, templates" />
+              <BindingCard name="R2_BUCKET" usage="upload, r2" />
+              <BindingCard name="PAGE_CACHE (KV)" usage="chat (レート制限), ai (レポートキャッシュ)" />
+              <BindingCard name="VECTORIZE" usage="chat (RAG コンテキスト)" />
+              <BindingCard name="TURNSTILE_SECRET_KEY" usage="chat (Bot 保護)" />
+            </div>
           </div>
         </section>
 
@@ -502,32 +683,115 @@ function ArchCard({
   );
 }
 
-function EndpointRow({
-  method,
-  path,
-  desc,
-  auth,
-  services,
+function FlowBox({
+  color,
+  label,
+  sub,
 }: {
-  method: string;
-  path: string;
-  desc: string;
-  auth: string;
-  services: string;
+  color: "blue" | "gray" | "red" | "green";
+  label: string;
+  sub: string;
 }) {
+  const styles = {
+    blue: "border-blue-200 bg-blue-50 text-blue-900",
+    gray: "border-gray-200 bg-gray-50 text-gray-900",
+    red: "border-red-200 bg-red-50 text-red-900",
+    green: "border-green-200 bg-green-50 text-green-900",
+  };
+  return (
+    <div className={`w-full max-w-md rounded-xl border px-5 py-3 text-center ${styles[color]}`}>
+      <p className="text-sm font-bold">{label}</p>
+      <p className="text-xs text-gray-500">{sub}</p>
+    </div>
+  );
+}
+
+function FlowArrow() {
+  return (
+    <div className="text-gray-300">
+      <svg className="mx-auto h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      </svg>
+    </div>
+  );
+}
+
+function ShimRow({ file, url, hono }: { file: string; url: string; hono: string }) {
   return (
     <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-6 py-3">
-        <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-bold text-green-400">
-          {method}
-        </span>
-      </td>
-      <td className="px-6 py-3 font-mono text-xs text-gray-700">{path}</td>
-      <td className="px-6 py-3 text-gray-600">{desc}</td>
-      <td className="px-6 py-3 text-gray-500">{auth}</td>
-      <td className="px-6 py-3">
-        <span className="text-xs text-gray-500">{services}</span>
-      </td>
+      <td className="px-5 py-2 font-mono text-gray-700">{file}</td>
+      <td className="px-5 py-2 font-mono font-semibold text-gray-900">{url}</td>
+      <td className="px-5 py-2 text-gray-600">{hono}</td>
     </tr>
+  );
+}
+
+function EndpointModule({
+  name,
+  file,
+  lines,
+  rows,
+  note,
+}: {
+  name: string;
+  file: string;
+  lines: number;
+  rows: { method: string; path: string; desc: string; auth: string; services: string }[];
+  note?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between border-b bg-gray-50 px-5 py-3">
+        <h3 className="text-sm font-bold text-gray-900">{name}</h3>
+        <div className="flex items-center gap-2">
+          <code className="rounded bg-gray-200 px-2 py-0.5 text-[10px] font-mono text-gray-600">{file}</code>
+          <span className="text-[10px] text-gray-400">{lines} lines</span>
+        </div>
+      </div>
+      <table className="w-full text-sm">
+        <thead className="text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          <tr>
+            <th className="px-5 py-2">メソッド</th>
+            <th className="px-5 py-2">パス</th>
+            <th className="px-5 py-2">機能</th>
+            <th className="px-5 py-2">認証</th>
+            <th className="px-5 py-2">CF サービス</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row) => (
+            <tr key={`${row.method}-${row.path}`} className="hover:bg-gray-50 transition-colors">
+              <td className="px-5 py-2.5">
+                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                  row.method === "GET" ? "bg-blue-100 text-blue-700"
+                  : row.method === "POST" ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+                }`}>
+                  {row.method}
+                </span>
+              </td>
+              <td className="px-5 py-2.5 font-mono text-xs text-gray-700">{row.path}</td>
+              <td className="px-5 py-2.5 text-xs text-gray-600">{row.desc}</td>
+              <td className="px-5 py-2.5 text-xs text-gray-500">{row.auth}</td>
+              <td className="px-5 py-2.5 text-xs text-gray-500">{row.services}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {note && (
+        <div className="border-t bg-amber-50 px-5 py-2.5">
+          <p className="text-[11px] leading-relaxed text-amber-800">{note}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BindingCard({ name, usage }: { name: string; usage: string }) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+      <p className="text-xs font-bold text-gray-900">{name}</p>
+      <p className="mt-1 text-[11px] text-gray-500">{usage}</p>
+    </div>
   );
 }
