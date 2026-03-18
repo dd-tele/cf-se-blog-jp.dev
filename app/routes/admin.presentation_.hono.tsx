@@ -320,36 +320,233 @@ export async function action({ request, context }: ActionFunctionArgs) {
               problem="SSE ストリーミングの手動実装"
               impact="AI チャットの SSE 配信に、ReadableStream の手動構築、TextEncoder の操作、SSE フォーマットの手動エスケープが必要。エラー発生時のストリーム終了処理やバックプレッシャーの制御も自力で実装しなければならず、バグの温床になる。"
               honoSolution="streamSSE ヘルパーが全てを抽象化。宣言的にイベントを送信するだけで、フォーマット・エラー処理・終了処理を自動管理。"
+              tips={{
+                title: "コード比較で見る差 — streamSSE vs 手動実装",
+                content: (
+                  <div className="space-y-4">
+                    <p className="font-semibold text-gray-900">Hono あり（3行で完結）</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`return streamSSE(c, async (stream) => {
+  for await (const chunk of aiResult) {
+    await stream.writeSSE({ data: JSON.stringify({ text: chunk }) });
+  }
+});`}</code></pre>
+                    <p className="font-semibold text-gray-900">Hono なし（20行以上 + バグリスク）</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`const stream = new ReadableStream({
+  async start(controller) {
+    const encoder = new TextEncoder();
+    try {
+      for await (const chunk of aiResult) {
+        // SSE フォーマットを毎回手動構築
+        const data = \`data: \${JSON.stringify({ text: chunk })}\\n\\n\`;
+        controller.enqueue(encoder.encode(data));
+      }
+      controller.enqueue(encoder.encode("data: [DONE]\\n\\n"));
+    } catch (e) {
+      controller.error(e); // エラー時の cleanup は？
+    } finally {
+      controller.close();  // 二重 close で例外の可能性
+    }
+  }
+});
+return new Response(stream, {
+  headers: {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+  }
+});`}</code></pre>
+                    <p>手動実装では <strong>SSE フォーマットの改行ルール（\\n\\n）</strong>、<strong>encoder の生成</strong>、<strong>ストリーム終了・エラー処理</strong>を全て自分で管理する必要があります。streamSSE はこの全てを内部で正しく処理します。</p>
+                  </div>
+                ),
+              }}
             />
             <ProblemCard
               number={2}
               problem="バインディングの型安全性の喪失"
               impact="Remix の loader/action 内で context.cloudflare.env.DB のように毎回アクセスする必要があり、タイポしても実行時まで気づけない。複数のエンドポイントで同じバインディングにアクセスするコードが散在し、型定義の一元管理ができない。"
               honoSolution="HonoEnv 型を一度定義すれば、c.env.DB で全ルートから型安全にアクセス。IDE の補完が効き、タイポをコンパイル時に検出。"
+              tips={{
+                title: "型安全の威力 — IDE 補完とコンパイル時エラー検出",
+                content: (
+                  <div className="space-y-4">
+                    <p className="font-semibold text-gray-900">型安全あり — タイポを書いた瞬間にエラー</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// c.env. と打った瞬間、IDE が候補を表示:
+//   DB           D1Database
+//   AI           Ai
+//   R2_BUCKET    R2Bucket
+//   PAGE_CACHE   KVNamespace
+//   VECTORIZE    VectorizeIndex  ...
+
+const db = c.env.DB;         // ✅ D1Database 型と認識
+const ai = c.env.AI;         // ✅ Ai 型と認識
+
+const x = c.env.DATABSE;     // ❌ コンパイルエラー！
+// Property 'DATABSE' does not exist on type 'Bindings'
+// → 'DB' のタイポを即座に検出`}</code></pre>
+                    <p className="font-semibold text-gray-900">型安全なし — 本番で初めて気づく</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// env は any 型 → 何でも書ける
+const db = env.DATABSE;       // ← コンパイルは通る！
+//  実行時: undefined → TypeError: Cannot read properties of undefined
+
+const ai = env.AI;
+await ai.run(model, {
+  mesages: [...]              // ← messages のスペルミス。コンパイル通る！
+});  //  実行時: AI が空のプロンプトで推論 → 謎の出力`}</code></pre>
+                    <p>このブログには <strong>Cloudflare バインディングが 14 個</strong>あり、7 モジュールからアクセスされます。型安全がなければ <strong>98 箇所</strong>でタイポの可能性が生まれ、そのうち 1 つでも間違えれば本番障害になります。</p>
+                  </div>
+                ),
+              }}
             />
             <ProblemCard
               number={3}
               problem="認証ミドルウェアの重複"
               impact="各 Remix ルートの loader/action 内で認証チェックを個別に実装する必要がある。認証ロジックの変更時に全ファイルを修正する必要があり、チェック漏れのリスクが高い。API と UI で異なる認証パターンの管理も困難。"
               honoSolution="optionalAuth / requireAuth / requireRole ミドルウェアをルートグループに一括適用。認証ロジックの変更は 1 ファイルで完結。"
+              tips={{
+                title: "認証パターンの比較 — 1箇所 vs 全ファイル",
+                content: (
+                  <div className="space-y-4">
+                    <p className="font-semibold text-gray-900">Hono あり — ルート定義に宣言するだけ</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// Bearer トークン or Session Cookie を自動判別
+ai.post("/suggest-tags", requireAuth, handler);
+ai.post("/trend-report", requireRole("admin", "se"), handler);
+chat.post("/", optionalAuth, handler);  // 認証なしでも OK
+
+// 認証ロジックの変更は middleware.ts の 1 ファイルだけ
+// → 全 16 エンドポイントに自動反映`}</code></pre>
+                    <p className="font-semibold text-gray-900">Hono なし — 全ファイルにコピペ</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// api.v1.ai.suggest-tags.tsx
+export async function action({ request, context }) {
+  const user = await getSessionUser(request);
+  if (!user) return json({ error: "認証が必要です" }, 401);
+  // ... 本体ロジック
+}
+
+// api.v1.ai.improve.tsx  ← 同じコードをコピペ
+// api.v1.ai.trend-report.tsx  ← さらにロール判定も追加
+// api.v1.templates._index.tsx  ← ...
+// (12 ファイル全てに同じ認証コードを書く)`}</code></pre>
+                    <p>Bearer トークン認証を後から追加する場合、Hono なら <strong>resolveUser() を 1 箇所修正</strong>するだけ。Hono なしなら <strong>12 ファイル全てを修正</strong>し、1 つでも漏れれば認証バイパスの脆弱性になります。</p>
+                  </div>
+                ),
+              }}
             />
             <ProblemCard
               number={4}
               problem="API ルーティングの煩雑さ"
               impact="Remix のファイルベースルーティングでは api.v1.ai.suggest-tags.tsx のような長いファイル名が必要。各ファイルに loader/action のボイラープレートが発生し、RESTful なルート設計が困難。CORS 設定も各ルートに個別適用が必要。"
               honoSolution="app.post('/ai/suggest-tags', handler) のように直感的にルートを定義。CORS・ロガーはアプリ全体に一括適用。"
+              tips={{
+                title: "ルーティングの比較 — 1ファイル vs 12ファイル",
+                content: (
+                  <div className="space-y-4">
+                    <p className="font-semibold text-gray-900">Hono あり — 1 ファイルで全体像が見える</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// app/api/index.ts — 全 API の一覧がここに集約
+app.use("*", logger());
+app.use("/api/*", cors({ origin: "*" }));
+
+app.route("/api/v1/chat",      chat);       // 2 routes
+app.route("/api/v1/ai",        ai);         // 3 routes
+app.route("/api/v1/templates",  templates);  // 4 routes
+app.route("/api/v1/api-keys",   apiKeys);    // 3 routes
+app.route("/api/v1/ai-guide",   aiGuide);    // 1 route
+app.route("/api/upload-image",  upload);      // 1 route
+app.route("/r2",                r2);          // 1 route
+app.get("/api/health", (c) => c.json({ status: "ok" }));`}</code></pre>
+                    <p className="font-semibold text-gray-900">Hono なし — 12 個のファイルがフォルダに散在</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`app/routes/
+  api.v1.chat.tsx
+  api.v1.ai.suggest-tags.tsx
+  api.v1.ai.improve.tsx
+  api.v1.ai.trend-report.tsx
+  api.v1.templates._index.tsx
+  api.v1.templates.$id.tsx
+  api.v1.templates.$id.test-generate.tsx
+  api.v1.templates.quick-generate.tsx
+  api.v1.api-keys._index.tsx
+  api.v1.api-keys.$id.tsx
+  api.v1.ai-guide._index.tsx
+  api.upload-image.tsx
+// → 全体像を把握するにはフォルダを眺めるしかない
+// → CORS を追加するには 12 ファイル全てに設定`}</code></pre>
+                  </div>
+                ),
+              }}
             />
             <ProblemCard
               number={5}
               problem="エラーハンドリングの分散"
               impact="各 API エンドポイントで try-catch を個別に実装し、エラーレスポンスのフォーマット統一が困難。ログ出力の一貫性も保てない。"
               honoSolution="Hono の onError ハンドラでグローバルなエラー処理を一元化。全 API に統一されたエラーレスポンスフォーマットを適用。"
+              tips={{
+                title: "エラー処理の比較 — 一元管理 vs 各ファイル",
+                content: (
+                  <div className="space-y-4">
+                    <p className="font-semibold text-gray-900">Hono あり — グローバルハンドラで統一</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// app/api/index.ts — 全 API に適用
+app.onError((err, c) => {
+  console.error(\`[API Error] \${c.req.method} \${c.req.path}\`, err);
+  return c.json({
+    error: err.message || "Internal Server Error"
+  }, 500);
+});
+
+// 各ルートハンドラでは例外を throw するだけ
+// → フォーマット・ログは自動で統一`}</code></pre>
+                    <p className="font-semibold text-gray-900">Hono なし — 各ファイルで try-catch</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// api.v1.ai.suggest-tags.tsx
+try {
+  const tags = await suggestTags(ai, content);
+  return json({ tags });
+} catch (e) {
+  console.error(e);  // ← ログフォーマットがファイルによってバラバラ
+  return json({ error: e.message }, 500);
+  // ← あるファイルでは { error: "..." }
+  // ← 別のファイルでは { message: "..." }
+  // ← また別のファイルでは { err: "..." }
+}`}</code></pre>
+                    <p>API クライアント側は「エラーフィールドが <code className="rounded bg-gray-200 px-1 py-0.5 text-xs">error</code> なのか <code className="rounded bg-gray-200 px-1 py-0.5 text-xs">message</code> なのか」をエンドポイントごとに気にする必要がなくなります。</p>
+                  </div>
+                ),
+              }}
             />
             <ProblemCard
               number={6}
               problem="テスト・開発効率の低下"
               impact="Remix のルートファイルは Worker 環境に依存するため、単体テストが困難。API ロジックが UI フレームワークに密結合し、将来のフレームワーク移行時にAPI 層を切り離せない。"
               honoSolution="Hono アプリは独立してテスト可能（app.request() でテスト）。UI フレームワークから完全に分離された API 層を維持。"
+              tips={{
+                title: "テスト容易性の比較 — app.request() vs Worker環境依存",
+                content: (
+                  <div className="space-y-4">
+                    <p className="font-semibold text-gray-900">Hono あり — Worker 環境なしでテスト可能</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// テストファイル（Vitest等）
+import app from "./api";
+
+test("health check", async () => {
+  const res = await app.request("/api/health");
+  expect(res.status).toBe(200);
+  expect(await res.json()).toEqual({ status: "ok" });
+});
+
+test("unauthorized access returns 401", async () => {
+  const res = await app.request("/api/v1/ai/suggest-tags", {
+    method: "POST",
+    body: JSON.stringify({ content: "test" }),
+  });
+  expect(res.status).toBe(401);
+});`}</code></pre>
+                    <p className="font-semibold text-gray-900">Hono なし — Remix + Worker 環境が必要</p>
+                    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// Remix ルートのテストには以下が必要:
+// 1. miniflare or wrangler dev でローカル Worker 起動
+// 2. D1, KV, R2 のモックバインディング準備
+// 3. Remix の loader/action コンテキストの構築
+// 4. セッションクッキーの手動生成
+// → テスト 1 件書くだけで 30 行以上のセットアップ`}</code></pre>
+                    <p>Hono アプリは <strong>UI フレームワーク（Remix）から完全に独立</strong>しているため、将来 Remix から別フレームワーク（Next.js, SvelteKit 等）に移行しても、<strong>API 層はそのまま再利用</strong>できます。</p>
+                  </div>
+                ),
+              }}
             />
           </div>
         </section>
@@ -617,11 +814,13 @@ function ProblemCard({
   problem,
   impact,
   honoSolution,
+  tips,
 }: {
   number: number;
   problem: string;
   impact: string;
   honoSolution: string;
+  tips?: { title: string; content: React.ReactNode };
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -639,6 +838,19 @@ function ProblemCard({
         <h4 className="mb-1 text-xs font-bold text-green-700">Hono による解決</h4>
         <p className="text-sm leading-relaxed text-gray-700">{honoSolution}</p>
       </div>
+      {tips && (
+        <details className="group mt-4">
+          <summary className="flex cursor-pointer items-center gap-2 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-sm font-semibold text-blue-800 transition-colors hover:bg-blue-100 [&::-webkit-details-marker]:hidden">
+            <svg className="h-4 w-4 shrink-0 text-blue-500 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            {tips.title}
+          </summary>
+          <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/50 p-5 text-sm leading-relaxed text-gray-700">
+            {tips.content}
+          </div>
+        </details>
+      )}
     </div>
   );
 }
