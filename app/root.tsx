@@ -52,15 +52,21 @@ export default function App() {
 export function ErrorBoundary() {
   const error = useRouteError();
 
-  // "Failed to fetch" happens when Remix client-side navigation
-  // hits a Cloudflare Access redirect (cross-origin).
-  // Force a full page reload so the browser can follow the redirect.
-  // Use sessionStorage to prevent infinite reload loops.
-  if (
+  // Detect errors caused by Cloudflare Access intercepting client-side
+  // fetch requests when the Access session has expired.
+  // Covers multiple browsers and failure modes:
+  //   - Chrome:  TypeError "Failed to fetch"
+  //   - Safari:  TypeError "Load failed"
+  //   - Firefox: TypeError "NetworkError when attempting to fetch resource"
+  //   - Access returning HTML login page → Remix JSON parse fails:
+  //       SyntaxError "Unexpected token '<'"
+  const isAccessRedirectError =
     !isRouteErrorResponse(error) &&
     error instanceof Error &&
-    error.message === "Failed to fetch"
-  ) {
+    (/failed to fetch|load failed|networkerror/i.test(error.message) ||
+      (error.name === "SyntaxError" && /unexpected token/i.test(error.message)));
+
+  if (isAccessRedirectError) {
     return (
       <html lang="ja">
         <head>
@@ -144,13 +150,27 @@ export function ErrorBoundary() {
         <Links />
         <title>エラー — Cloudflare Solution Blog</title>
       </head>
-      <body className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-300">{status}</h1>
-          <p className="mt-4 text-lg text-gray-600">{message}</p>
+      <body
+        className="flex min-h-screen items-center justify-center bg-gray-50"
+        style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", backgroundColor: "#f9fafb" }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <h1
+            className="text-6xl font-bold text-gray-300"
+            style={{ fontSize: "3.75rem", fontWeight: 700, color: "#d1d5db" }}
+          >
+            {status}
+          </h1>
+          <p
+            className="mt-4 text-lg text-gray-600"
+            style={{ marginTop: "1rem", fontSize: "1.125rem", color: "#4b5563" }}
+          >
+            {message}
+          </p>
           <a
             href="/"
             className="mt-6 inline-block rounded-lg bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600"
+            style={{ marginTop: "1.5rem", display: "inline-block", padding: "0.5rem 1.5rem", borderRadius: "0.5rem", backgroundColor: "#f6821f", color: "#fff", fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}
           >
             ホームに戻る
           </a>
