@@ -35,6 +35,44 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {/* Global safety net: force full-page reload when client-side navigation
+            fails (e.g. Cloudflare Access intercepts fetch with a redirect/HTML).
+            Runs outside React so it works even if ErrorBoundary never fires. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+  var R='__cf_nav_reload';
+  function reload(){
+    var c=parseInt(sessionStorage.getItem(R)||'0',10);
+    if(c<2){sessionStorage.setItem(R,String(c+1));location.reload();}
+    else{sessionStorage.removeItem(R);location.href='/';}
+  }
+  function isFetchErr(m){return/failed to fetch|load failed|networkerror|unexpected token/i.test(m||'');}
+  window.addEventListener('unhandledrejection',function(e){
+    var r=e&&e.reason;
+    if(r instanceof Error&&isFetchErr(r.message))reload();
+    if(r instanceof Response&&(r.status===401||r.status===302||r.status===0))reload();
+  });
+  window.addEventListener('error',function(e){
+    if(e&&e.message&&isFetchErr(e.message))reload();
+  });
+  var origFetch=window.fetch;
+  window.fetch=function(){
+    return origFetch.apply(this,arguments).then(function(res){
+      if(res&&res.redirected&&/cloudflareaccess\\.com/.test(res.url||'')){reload();}
+      var ct=res&&res.headers&&res.headers.get('content-type')||'';
+      var u=arguments[0]&&arguments[0].url||arguments[0]||'';
+      if(typeof u==='string'&&/\\?_data=/.test(u)&&ct.indexOf('text/html')!==-1){reload();}
+      return res;
+    }).catch(function(err){
+      if(err instanceof Error&&isFetchErr(err.message))reload();
+      throw err;
+    });
+  };
+  document.addEventListener('DOMContentLoaded',function(){sessionStorage.removeItem(R);});
+})();`,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         {children}
