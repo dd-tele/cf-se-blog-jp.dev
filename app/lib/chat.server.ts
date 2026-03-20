@@ -96,15 +96,22 @@ export async function moderateContent(
 // ─── Thread management ──────────────────────────────────────
 export async function getOrCreateThread(
   db: D1Database,
-  postId: string
+  postId: string,
+  userId: string
 ): Promise<string> {
   const d = getDb(db);
 
-  // Find existing active thread for this post
+  // Find existing active thread for this post + user
   const existing = await d
     .select({ id: qaThreads.id })
     .from(qaThreads)
-    .where(and(eq(qaThreads.post_id, postId), eq(qaThreads.status, "active")))
+    .where(
+      and(
+        eq(qaThreads.post_id, postId),
+        eq(qaThreads.user_id, userId),
+        eq(qaThreads.status, "active")
+      )
+    )
     .get();
 
   if (existing) return existing.id;
@@ -115,6 +122,7 @@ export async function getOrCreateThread(
   await d.insert(qaThreads).values({
     id: threadId,
     post_id: postId,
+    user_id: userId,
     status: "active",
     message_count: 0,
     created_at: now,

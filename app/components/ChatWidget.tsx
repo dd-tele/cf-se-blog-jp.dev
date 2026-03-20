@@ -22,9 +22,10 @@ interface Props {
   postId: string;
   postTitle: string;
   turnstileSiteKey?: string;
+  isLoggedIn?: boolean;
 }
 
-export function ChatWidget({ postId, postTitle, turnstileSiteKey }: Props) {
+export function ChatWidget({ postId, postTitle, turnstileSiteKey, isLoggedIn }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -214,6 +215,8 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey }: Props) {
     "実装で注意すべき点は？",
     "関連する Cloudflare サービスは？",
   ];
+
+  if (!isLoggedIn) return null;
 
   return (
     <>

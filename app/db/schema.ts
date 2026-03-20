@@ -170,6 +170,7 @@ export const qaThreads = sqliteTable("qa_threads", {
   post_id: text("post_id")
     .notNull()
     .references(() => posts.id),
+  user_id: text("user_id").references(() => users.id),
   status: text("status", { enum: ["active", "resolved", "flagged"] })
     .notNull()
     .default("active"),

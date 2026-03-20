@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import type { HonoEnv } from "../types";
-import { optionalAuth } from "../middleware";
+import { requireAuth } from "../middleware";
 import { getPostById } from "~/lib/posts.server";
 import {
   validateMessage,
@@ -21,16 +21,17 @@ import { verifyTurnstileToken } from "~/lib/turnstile.server";
 const chat = new Hono<HonoEnv>();
 
 // GET /api/v1/chat — Fetch existing thread messages
-chat.get("/", optionalAuth, async (c) => {
+chat.get("/", requireAuth, async (c) => {
   const postId = c.req.query("postId");
   if (!postId) return c.json({ error: "postId required" }, 400);
 
   const db = c.env.DB;
+  const user = c.get("user")!;
   try {
     // Opportunistic cleanup of expired threads (24h TTL)
     deleteExpiredActiveThreads(db).catch(() => {});
 
-    const threadId = await getOrCreateThread(db, postId);
+    const threadId = await getOrCreateThread(db, postId, user.id);
     const messages = await getThreadMessages(db, threadId);
     const publicMessages = messages.filter((m) => !m.flagged);
     return c.json({ threadId, messages: publicMessages });
@@ -40,7 +41,7 @@ chat.get("/", optionalAuth, async (c) => {
 });
 
 // POST /api/v1/chat — Send message & stream AI response
-chat.post("/", optionalAuth, async (c) => {
+chat.post("/", requireAuth, async (c) => {
   const env = c.env;
   const db = env.DB;
   const ai = env.AI;
@@ -90,17 +91,17 @@ chat.post("/", optionalAuth, async (c) => {
   const gatewayId = env.AI_GATEWAY_ID;
   const moderation = await moderateContent(ai, message, gatewayId);
   if (!moderation.safe) {
-    const threadId = await getOrCreateThread(db, postId);
-    const user = c.get("user");
+    const user = c.get("user")!;
+    const threadId = await getOrCreateThread(db, postId, user.id);
     await saveMessage(db, threadId, {
       role: "user",
       content: message,
-      userId: user?.id,
+      userId: user.id,
       flagged: true,
       metadata: { flagReason: moderation.reason },
     });
     writeAuditLog(db, {
-      userId: user?.id,
+      userId: user.id,
       action: "chat.flagged",
       resourceType: "message",
       resourceId: postId,
@@ -120,12 +121,12 @@ chat.post("/", optionalAuth, async (c) => {
   }
 
   // 5. Save user message
-  const threadId = await getOrCreateThread(db, postId);
-  const user = c.get("user");
+  const user = c.get("user")!;
+  const threadId = await getOrCreateThread(db, postId, user.id);
   await saveMessage(db, threadId, {
     role: "user",
     content: message,
-    userId: user?.id,
+    userId: user.id,
   });
 
   // 6. Conversation history

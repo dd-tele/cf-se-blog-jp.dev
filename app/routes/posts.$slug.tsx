@@ -334,7 +334,7 @@ export default function PostDetail() {
 
       {/* AI Chat Widget */}
       {post.status === "published" && (
-        <ChatWidget postId={post.id} postTitle={post.title} turnstileSiteKey={turnstileSiteKey} />
+        <ChatWidget postId={post.id} postTitle={post.title} turnstileSiteKey={turnstileSiteKey} isLoggedIn={!!user} />
       )}
 
       {/* Footer */}
