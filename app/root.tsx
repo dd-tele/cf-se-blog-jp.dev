@@ -58,11 +58,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
   });
   var origFetch=window.fetch;
   window.fetch=function(){
+    var reqUrl=String((arguments[0]&&arguments[0].url)||arguments[0]||'');
+    var isDataReq=/[?&]_data=/.test(reqUrl)||/\\.data(\\?|$)/.test(reqUrl);
     return origFetch.apply(this,arguments).then(function(res){
-      if(res&&res.redirected&&/cloudflareaccess\\.com/.test(res.url||'')){reload();}
-      var ct=res&&res.headers&&res.headers.get('content-type')||'';
-      var u=arguments[0]&&arguments[0].url||arguments[0]||'';
-      if(typeof u==='string'&&/\\?_data=/.test(u)&&ct.indexOf('text/html')!==-1){reload();}
+      if(!res)return res;
+      if(res.type==='opaqueredirect'||res.status===0)reload();
+      var rUrl=res.url||'';
+      if(res.redirected&&(/cloudflareaccess\\.com/.test(rUrl)||/\\/cdn-cgi\\/access/.test(rUrl)))reload();
+      if(isDataReq){
+        var ct=res.headers&&res.headers.get('content-type')||'';
+        if(ct.indexOf('text/html')!==-1)reload();
+      }
       return res;
     }).catch(function(err){
       if(err instanceof Error&&isFetchErr(err.message))reload();
