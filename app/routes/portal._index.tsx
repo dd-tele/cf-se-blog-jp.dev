@@ -115,7 +115,7 @@ export default function PortalIndex() {
               白紙から書く
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              テンプレートを使わず自由に事例を執筆
+              テンプレートを使わず自由に事例を執筆。Markdown の貼り付けインポートにも対応
             </p>
           </Link>
 

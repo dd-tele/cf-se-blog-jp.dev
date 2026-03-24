@@ -121,7 +121,7 @@ export default function PortalTemplates() {
               白紙から書く
             </h3>
             <p className="mt-1 text-sm leading-relaxed text-gray-500">
-              タイトルと本文を自由に記述します。テンプレートの制約なしに、独自の構成で書きたい場合に。
+              タイトルと本文を自由に記述します。テンプレートの制約なしに、独自の構成で書きたい場合に。Markdown の貼り付けインポートにも対応しています。
             </p>
             <span className="mt-3 inline-block text-sm font-medium text-gray-600 group-hover:text-brand-600">
               エディターを開く →
