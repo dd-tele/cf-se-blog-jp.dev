@@ -5,12 +5,14 @@ import type {
 } from "@remix-run/cloudflare";
 import { Form, useLoaderData, useActionData, useNavigation, Link } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
-import { useRef } from "react";
+import { useRef, useState, useCallback } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { createPost, getAllCategories, ensureUser } from "~/lib/posts.server";
 import { ImageUploader } from "~/components/ImageUploader";
 import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
+import { MarkdownImportModal } from "~/components/MarkdownImportModal";
+import type { ImportedData } from "~/components/MarkdownImportModal";
 
 export const meta: MetaFunction = () => [
   { title: "新しい記事を書く — Cloudflare Solution Blog" },
@@ -65,18 +67,45 @@ export default function NewPost() {
   const isSubmitting = navigation.state === "submitting";
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
+  const [title, setTitle] = useState("");
+  const [tags, setTags] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [content, setContent] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+
+  const handleImport = useCallback(
+    (data: ImportedData) => {
+      if (data.title) setTitle(data.title);
+      if (data.tags) setTags(data.tags);
+      setContent(data.content);
+
+      // Match category name to ID (case-insensitive partial match)
+      if (data.category) {
+        const lower = data.category.toLowerCase();
+        const match = categories.find(
+          (c) =>
+            c.name.toLowerCase() === lower ||
+            c.name.toLowerCase().includes(lower) ||
+            lower.includes(c.name.toLowerCase())
+        );
+        if (match) setCategoryId(match.id);
+      }
+    },
+    [categories]
+  );
+
   function handleImageInsert(markdown: string) {
     const ta = contentRef.current;
     if (!ta) return;
     const start = ta.selectionStart;
     const end = ta.selectionEnd;
-    const value = ta.value;
-    ta.value = value.slice(0, start) + markdown + value.slice(end);
-    ta.selectionStart = ta.selectionEnd = start + markdown.length;
-    ta.focus();
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
-    nativeInputValueSetter?.call(ta, ta.value);
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    const newValue = content.slice(0, start) + markdown + content.slice(end);
+    setContent(newValue);
+    // Restore cursor position after React re-render
+    requestAnimationFrame(() => {
+      ta.selectionStart = ta.selectionEnd = start + markdown.length;
+      ta.focus();
+    });
   }
 
   return (
@@ -111,9 +140,21 @@ export default function NewPost() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="mb-8 text-2xl font-bold text-gray-900">
-          新しい記事を書く
-        </h1>
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">
+            新しい記事を書く
+          </h1>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Markdown インポート
+          </button>
+        </div>
 
         {actionData && "error" in actionData && (
           <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -135,6 +176,8 @@ export default function NewPost() {
               id="title"
               name="title"
               required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="記事のタイトルを入力..."
               className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
@@ -151,6 +194,8 @@ export default function NewPost() {
             <select
               id="categoryId"
               name="categoryId"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="">選択してください</option>
@@ -174,6 +219,8 @@ export default function NewPost() {
               type="text"
               id="tags"
               name="tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
               placeholder="Workers, D1, セキュリティ"
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
@@ -199,6 +246,8 @@ export default function NewPost() {
               name="content"
               required
               rows={20}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
               placeholder="記事の内容を入力...&#10;&#10;Markdown 形式で記述できます。"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
@@ -228,6 +277,12 @@ export default function NewPost() {
           </div>
         </Form>
       </main>
+
+      <MarkdownImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={handleImport}
+      />
     </div>
   );
 }
