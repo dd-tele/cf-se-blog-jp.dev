@@ -9,6 +9,7 @@ import r2 from "./routes/r2";
 import templatesApi from "./routes/templates";
 import apiKeysRoute from "./routes/api-keys";
 import aiGuide from "./routes/ai-guide";
+import importImages from "./routes/import-images";
 
 const app = new Hono<HonoEnv>();
 
@@ -30,6 +31,7 @@ app.route("/api/upload-image", upload);
 app.route("/api/v1/templates", templatesApi);
 app.route("/api/v1/api-keys", apiKeysRoute);
 app.route("/api/v1/ai-guide", aiGuide);
+app.route("/api/v1/import-images", importImages);
 app.route("/r2", r2);
 
 // ─── Health check ────────────────────────────────────────────

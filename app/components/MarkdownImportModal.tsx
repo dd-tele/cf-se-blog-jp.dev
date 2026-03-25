@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export interface ImportedData {
   title: string;
@@ -69,9 +69,26 @@ function extractTitleFromHeading(content: string): { title: string; body: string
   return { title: "", body: content };
 }
 
+/** Count external image URLs in markdown */
+const MD_IMAGE_RE = /!\[[^\]]*\]\((https?:\/\/[^)]+)\)/g;
+function findExternalImages(content: string, siteUrl?: string): string[] {
+  const urls: string[] = [];
+  let m: RegExpExecArray | null;
+  const re = new RegExp(MD_IMAGE_RE.source, MD_IMAGE_RE.flags);
+  while ((m = re.exec(content)) !== null) {
+    const url = m[1];
+    if (siteUrl && url.startsWith(siteUrl)) continue;
+    if (url.includes("/r2/images/")) continue;
+    urls.push(url);
+  }
+  return urls;
+}
+
 export function MarkdownImportModal({ open, onClose, onImport }: Props) {
   const [raw, setRaw] = useState("");
   const [preview, setPreview] = useState<ImportedData | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageResult, setImageResult] = useState<{ imported: number; errors: string[] } | null>(null);
 
   function handleParse() {
     if (!raw.trim()) return;
@@ -101,17 +118,48 @@ export function MarkdownImportModal({ open, onClose, onImport }: Props) {
     setPreview({ title, content, tags, category });
   }
 
+  const externalImages = useMemo(
+    () => (preview ? findExternalImages(preview.content) : []),
+    [preview]
+  );
+
+  async function handleImportImages() {
+    if (!preview) return;
+    setImageLoading(true);
+    setImageResult(null);
+    try {
+      const res = await fetch("/api/v1/import-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markdown: preview.content }),
+      });
+      const data = await res.json() as { markdown?: string; imported?: number; errors?: string[]; error?: string };
+      if (!res.ok) {
+        setImageResult({ imported: 0, errors: [data.error || "取得に失敗しました"] });
+        return;
+      }
+      setPreview({ ...preview, content: data.markdown || preview.content });
+      setImageResult({ imported: data.imported || 0, errors: data.errors || [] });
+    } catch (e: any) {
+      setImageResult({ imported: 0, errors: [e.message || "通信エラー"] });
+    } finally {
+      setImageLoading(false);
+    }
+  }
+
   function handleImport() {
     if (!preview) return;
     onImport(preview);
     setRaw("");
     setPreview(null);
+    setImageResult(null);
     onClose();
   }
 
   function handleClose() {
     setRaw("");
     setPreview(null);
+    setImageResult(null);
     onClose();
   }
 
@@ -198,6 +246,59 @@ category: Zero Trust
                   </dd>
                 </div>
               </dl>
+
+              {/* External images detection */}
+              {externalImages.length > 0 && !imageResult && (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-sm font-medium text-amber-800">
+                    外部画像が {externalImages.length} 件検出されました
+                  </p>
+                  <p className="mt-1 text-xs text-amber-600">
+                    外部画像をこのサイトの R2 ストレージに取り込むことができます。取り込まない場合、元の URL のままインポートされます。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleImportImages}
+                    disabled={imageLoading}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                  >
+                    {imageLoading ? (
+                      <>
+                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        画像を取り込み中...
+                      </>
+                    ) : (
+                      "画像を R2 に取り込む"
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Image import result */}
+              {imageResult && (
+                <div className={`mt-4 rounded-lg border px-4 py-3 ${
+                  imageResult.errors.length > 0
+                    ? "border-amber-200 bg-amber-50"
+                    : "border-green-200 bg-green-50"
+                }`}>
+                  <p className={`text-sm font-medium ${
+                    imageResult.errors.length > 0 ? "text-amber-800" : "text-green-800"
+                  }`}>
+                    {imageResult.imported} 件の画像を R2 に取り込みました
+                    {imageResult.errors.length > 0 && `（${imageResult.errors.length} 件失敗）`}
+                  </p>
+                  {imageResult.errors.length > 0 && (
+                    <ul className="mt-1 space-y-0.5 text-xs text-amber-600">
+                      {imageResult.errors.map((err, i) => (
+                        <li key={i} className="truncate">• {err}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
