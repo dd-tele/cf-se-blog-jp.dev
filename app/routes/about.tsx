@@ -837,6 +837,99 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* Markdown Import */}
+        <section className="mb-20">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900">Markdown インポート</h2>
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            既存の Markdown 記事（Qiita、Zenn、社内 Wiki 等）をそのままインポートして記事化できます。
+            YAML Frontmatter からタイトル・タグ・カテゴリを自動抽出し、フォームに反映します。
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+              <FlowStep step={1} title="Markdown を貼り付け" desc="Frontmatter 付きの原稿をペースト" />
+              <FlowStep step={2} title="自動解析" desc="タイトル・タグ・カテゴリを抽出" />
+              <FlowStep step={3} title="プレビュー確認" desc="解析結果を確認して取り込み" />
+              <FlowStep step={4} title="公開時に画像を R2 へ" desc="外部画像を自動で R2 に取り込み" />
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6">
+              <h3 className="mb-2 font-bold text-emerald-700">YAML Frontmatter 対応</h3>
+              <p className="text-sm text-gray-600">
+                <code className="rounded bg-emerald-100 px-1 text-xs text-emerald-700">title</code>、
+                <code className="rounded bg-emerald-100 px-1 text-xs text-emerald-700">tags</code>、
+                <code className="rounded bg-emerald-100 px-1 text-xs text-emerald-700">category</code> を
+                Frontmatter から自動抽出。Frontmatter がない場合は最初の <code className="rounded bg-emerald-100 px-1 text-xs text-emerald-700"># 見出し</code> をタイトルとして使用。
+              </p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6">
+              <h3 className="mb-2 font-bold text-emerald-700">外部画像の自動 R2 取り込み</h3>
+              <p className="text-sm text-gray-600">
+                記事を公開する際に、Markdown 内の外部画像 URL（Qiita、S3 等）を自動検出し、
+                Cloudflare R2 にコピー。URL を R2 パスに自動置換するため、投稿者の操作は不要です。
+              </p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6">
+              <h3 className="mb-2 font-bold text-emerald-700">デフォルトテンプレート</h3>
+              <p className="text-sm text-gray-600">
+                インポートモーダルを開くと Frontmatter のテンプレートがあらかじめ入力されており、
+                既存原稿を貼り付けるだけで即座に解析を開始できます。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Disclaimer Policy */}
+        <section className="mb-20">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900">免責事項ポリシー</h2>
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            本ブログは Cloudflare Japan のソリューションエンジニアが運営していますが、掲載内容は公式な製品仕様や動作保証を意味するものではありません。
+            この位置づけを明確にするため、サイト上の複数箇所に免責事項を掲載しています。
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-3 font-bold text-gray-900">ホームページ — 概要説明</h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                ヒーローセクション直下に、本ブログの位置づけを簡潔に説明する免責文を掲載。
+                執筆者個人の経験・見解に基づく情報であること、公式ドキュメントへの参照リンクを含みます。
+              </p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-3 font-bold text-gray-900">各記事ページ — 詳細な免責事項</h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                記事本文の末尾に「免責事項」ボックスを表示。
+                Cloudflare, Inc. の公式見解・推奨・仕様保証を構成するものではないこと、
+                すべてのお客様環境への適用を保証するものではないことを明記しています。
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-5">
+            <h4 className="mb-2 text-sm font-bold text-gray-700">なぜ免責事項が必要か</h4>
+            <ul className="space-y-1 text-sm text-gray-600">
+              <li>- 投稿者は SE 個人の立場で経験・知見を共有しており、Cloudflare の公式メッセージとは異なります</li>
+              <li>- お客様の環境はそれぞれ異なるため、記事の手順や構成がすべてに適用できるとは限りません</li>
+              <li>- 他部署や社外のステークホルダーがこのブログの位置づけを正しく理解できるようにするためです</li>
+              <li>- 最新の仕様や正式なサポートは <a href="https://developers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="underline text-brand-600 hover:text-brand-700">Cloudflare 公式ドキュメント</a> をご参照ください</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Change Log Link */}
+        <section className="mb-20">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm text-center">
+            <h2 className="mb-3 text-2xl font-bold text-gray-900">Change Log</h2>
+            <p className="mb-6 text-sm text-gray-500">
+              基礎設計から現在に至るまでの実装・変更履歴をまとめています。
+            </p>
+            <Link
+              to="/changelog"
+              className="inline-block rounded-lg bg-gray-900 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gray-800"
+            >
+              Change Log を見る →
+            </Link>
+          </div>
+        </section>
+
         {/* Specs Table */}
         <section className="mb-20">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">仕様一覧</h2>

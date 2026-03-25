@@ -58,7 +58,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   };
 }
 
-const TOTAL_SLIDES = 15;
+const TOTAL_SLIDES = 16;
 
 export default function AdminPresentation() {
   const { user, stats } = useLoaderData<typeof loader>();
@@ -631,10 +631,63 @@ export default function AdminPresentation() {
     </div>,
   );
 
-  /* ── Slide 11: Challenges ── */
+  /* ── Slide 11: Markdown Import & Disclaimer ── */
+  slides.push(
+    <div key="md-import" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
+      <SlideHeader number={12} title="Markdown インポート & 免責事項ポリシー" />
+      <div className="grid gap-8 sm:grid-cols-2">
+        {/* Markdown Import */}
+        <div>
+          <h3 className="mb-4 text-lg font-bold text-emerald-700">Markdown インポート</h3>
+          <p className="mb-4 text-sm leading-relaxed text-gray-600">
+            既存の Markdown 記事（Qiita、Zenn、社内 Wiki 等）をそのままインポートして記事化。
+            YAML Frontmatter からタイトル・タグ・カテゴリを自動抽出します。
+          </p>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <h4 className="mb-1 text-sm font-bold text-emerald-800">Frontmatter 自動解析</h4>
+              <p className="text-xs text-gray-600">title / tags / category を抽出。Frontmatter がない場合は # 見出しをタイトルに使用</p>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <h4 className="mb-1 text-sm font-bold text-emerald-800">外部画像の自動 R2 取り込み</h4>
+              <p className="text-xs text-gray-600">公開時に外部画像 URL を自動検出 → R2 にコピー → URL を自動置換。投稿者の操作不要</p>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <h4 className="mb-1 text-sm font-bold text-emerald-800">デフォルトテンプレート</h4>
+              <p className="text-xs text-gray-600">モーダルを開くと Frontmatter テンプレートが入力済み。貼り付けるだけで即座に解析開始</p>
+            </div>
+          </div>
+        </div>
+        {/* Disclaimer */}
+        <div>
+          <h3 className="mb-4 text-lg font-bold text-gray-700">免責事項ポリシー</h3>
+          <p className="mb-4 text-sm leading-relaxed text-gray-600">
+            SE 個人の経験・見解に基づく情報であり、Cloudflare の公式見解ではないことを明確化。
+            社内外のステークホルダーがブログの位置づけを正しく理解できるよう、複数箇所に掲載しています。
+          </p>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <h4 className="mb-1 text-sm font-bold text-gray-800">ホームページ</h4>
+              <p className="text-xs text-gray-600">ヒーロー直下に概要免責文を掲載。個人の経験・見解に基づく情報である旨を説明</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <h4 className="mb-1 text-sm font-bold text-gray-800">各記事ページ</h4>
+              <p className="text-xs text-gray-600">記事末尾に「免責事項」ボックス。公式見解・仕様保証ではないこと、公式ドキュメントへの参照リンクを明記</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <h4 className="mb-1 text-sm font-bold text-gray-800">「このブログについて」ページ</h4>
+              <p className="text-xs text-gray-600">免責事項の背景と理由を詳しく説明。なぜ必要か、誰のために掲載しているかを記載</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+  );
+
+  /* ── Slide 12: Challenges ── */
   slides.push(
     <div key="challenges" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={12} title="現在の課題と取り組み" />
+      <SlideHeader number={13} title="現在の課題と取り組み" />
       <div className="grid gap-8 sm:grid-cols-2">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8">
           <h3 className="mb-3 text-lg font-bold text-amber-800">課題</h3>
@@ -671,7 +724,7 @@ export default function AdminPresentation() {
   /* ── Slide 12: Roadmap ── */
   slides.push(
     <div key="roadmap" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={13} title="ロードマップ" />
+      <SlideHeader number={14} title="ロードマップ" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <RoadmapPhase phase="Phase 1" title="MVP" status="completed" items={["Public Blog", "User Portal", "Admin Dashboard", "認証/認可 (Access)", "基本セキュリティ"]} />
         <RoadmapPhase phase="Phase 2" title="AI & エンゲージメント" status="in-progress" items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "API Shield ✅", "Turnstile ✅", "AI Gateway ✅", "AI 精度向上", "サードパーティ連携"]} />
