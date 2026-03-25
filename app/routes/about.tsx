@@ -936,7 +936,7 @@ export default function AboutPage() {
             </div>
           </div>
           <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-5">
-            <h4 className="mb-2 text-sm font-bold text-gray-700">なぜ免責事項が必要か</h4>
+            <h4 className="mb-2 text-sm font-bold text-gray-700">免責事項について</h4>
             <ul className="space-y-1 text-sm text-gray-600">
               <li>- 投稿者は SE 個人の立場で経験・知見を共有しており、Cloudflare の公式メッセージとは異なります</li>
               <li>- お客様の環境はそれぞれ異なるため、記事の手順や構成がすべてに適用できるとは限りません</li>
