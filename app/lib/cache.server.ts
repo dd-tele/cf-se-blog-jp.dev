@@ -84,6 +84,25 @@ export async function invalidateCache(
   }
 }
 
+/**
+ * Invalidate post-list caches (first N pages × "all" + given category).
+ * Call after publish / unpublish / delete.
+ */
+export async function invalidatePostListCaches(
+  kv: KVNamespace,
+  categorySlug?: string,
+  pages = 3
+) {
+  const keys: string[] = [];
+  for (let p = 1; p <= pages; p++) {
+    keys.push(CacheKeys.publishedPosts(p, ""));          // "すべて"
+    if (categorySlug) {
+      keys.push(CacheKeys.publishedPosts(p, categorySlug));
+    }
+  }
+  await Promise.allSettled(keys.map((k) => invalidateCache(kv, k)));
+}
+
 // Common cache key builders
 export const CacheKeys = {
   publishedPosts: (page = 0, cat = "") => `posts:list:${page}:${cat}`,

@@ -37,6 +37,7 @@ import {
 } from "~/lib/posts.server";
 import { refineWithEssence } from "~/lib/ai.server";
 import { importExternalImages } from "~/api/routes/import-images";
+import { invalidatePostListCaches } from "~/lib/cache.server";
 import { ImageUploader } from "~/components/ImageUploader";
 import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
@@ -132,6 +133,12 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
         await updatePost(db, postId, { content: imgResult.markdown }, user);
       }
       const published = await publishPost(db, postId, user);
+      // Invalidate post-list KV cache so new post appears immediately
+      const kv = env.PAGE_CACHE;
+      const catSlug = categoryId
+        ? (await getAllCategories(db)).find((c) => c.id === categoryId)?.slug
+        : undefined;
+      await invalidatePostListCaches(kv, catSlug);
       return redirect(`/posts/${published.slug}`);
     }
     return { success: true, message: "下書きを保存しました" };
