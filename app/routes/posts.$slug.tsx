@@ -296,6 +296,14 @@ export default function PostDetail() {
           </div>
         )}
 
+        {/* Disclaimer */}
+        <div className="mt-10 rounded-lg border border-gray-200 bg-gray-50 px-5 py-4">
+          <p className="text-xs font-semibold text-gray-500">免責事項</p>
+          <p className="mt-1 text-xs leading-relaxed text-gray-400">
+            本記事は Cloudflare Japan のソリューションエンジニアが技術的な知見の共有を目的として個人の立場で執筆したものです。記事の内容は執筆時点の情報および執筆者の主観的な見解を含んでおり、Cloudflare, Inc. の公式な見解・推奨・仕様保証を構成するものではありません。また、記載された構成や手順がすべてのお客様環境で同様に適用できることを保証するものでもありません。製品の正式な仕様や技術サポートについては、<a href="https://developers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-500">Cloudflare 公式ドキュメント</a>または担当チームにお問い合わせください。
+          </p>
+        </div>
+
         {/* Related posts */}
         {relatedPosts.length > 0 && (
           <div className="mt-10 border-t pt-8">

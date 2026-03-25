@@ -120,6 +120,15 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Disclaimer */}
+      <section className="border-b bg-gray-50 py-4">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <p className="text-xs leading-relaxed text-gray-400">
+            本ブログは Cloudflare Japan のソリューションエンジニアが、お客様の技術的な活用事例や知見を共有する場として運営しています。掲載されている情報は執筆者個人の経験・見解に基づくものであり、Cloudflare としての公式な製品仕様のコミットメントや、すべての環境での動作を保証するものではありません。最新の仕様や正式なサポート情報については、<a href="https://developers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Cloudflare 公式ドキュメント</a>をご参照ください。
+          </p>
+        </div>
+      </section>
+
       {/* Categories */}
       <section className="border-b py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
