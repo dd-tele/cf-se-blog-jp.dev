@@ -71,7 +71,7 @@ function extractTitleFromHeading(content: string): { title: string; body: string
 
 const DEFAULT_FRONTMATTER = `---
 title: 記事タイトル
-tags: [Workers, D1, セキュリティ]
+tags: Gateway
 category: Zero Trust
 ---
 `;
