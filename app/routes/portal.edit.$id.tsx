@@ -36,6 +36,7 @@ import {
   getAllCategories,
 } from "~/lib/posts.server";
 import { refineWithEssence } from "~/lib/ai.server";
+import { importExternalImages } from "~/api/routes/import-images";
 import { ImageUploader } from "~/components/ImageUploader";
 import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
@@ -124,6 +125,12 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
     );
 
     if (intent === "publish") {
+      // Import external images to R2 before publishing
+      const siteUrl = env.SITE_URL || "https://cf-se-blog-jp.dev";
+      const imgResult = await importExternalImages(content, env.R2_BUCKET, siteUrl);
+      if (imgResult.imported > 0) {
+        await updatePost(db, postId, { content: imgResult.markdown }, user);
+      }
       const published = await publishPost(db, postId, user);
       return redirect(`/posts/${published.slug}`);
     }

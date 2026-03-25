@@ -69,28 +69,11 @@ function extractTitleFromHeading(content: string): { title: string; body: string
   return { title: "", body: content };
 }
 
-/** Count external image URLs in markdown */
-const MD_IMAGE_RE = /!\[[^\]]*\]\((https?:\/\/[^)]+)\)/g;
-function findExternalImages(content: string, siteUrl?: string): string[] {
-  const urls: string[] = [];
-  let m: RegExpExecArray | null;
-  const re = new RegExp(MD_IMAGE_RE.source, MD_IMAGE_RE.flags);
-  while ((m = re.exec(content)) !== null) {
-    const url = m[1];
-    if (siteUrl && url.startsWith(siteUrl)) continue;
-    if (url.includes("/r2/images/")) continue;
-    urls.push(url);
-  }
-  return urls;
-}
-
 export function MarkdownImportModal({ open, onClose, onImport }: Props) {
   const [raw, setRaw] = useState("");
   const [preview, setPreview] = useState<ImportedData | null>(null);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageResult, setImageResult] = useState<{ imported: number; errors: string[] } | null>(null);
 
-  async function handleParse() {
+  function handleParse() {
     if (!raw.trim()) return;
 
     const { meta, body } = parseFrontmatter(raw);
@@ -115,31 +98,6 @@ export function MarkdownImportModal({ open, onClose, onImport }: Props) {
       meta.categories ||
       "";
 
-    // Auto-import external images to R2
-    const extImages = findExternalImages(content);
-    if (extImages.length > 0) {
-      setImageLoading(true);
-      setImageResult(null);
-      try {
-        const res = await fetch("/api/v1/import-images", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ markdown: content }),
-        });
-        const data = await res.json() as { markdown?: string; imported?: number; errors?: string[]; error?: string };
-        if (res.ok && data.markdown) {
-          content = data.markdown;
-          setImageResult({ imported: data.imported || 0, errors: data.errors || [] });
-        } else {
-          setImageResult({ imported: 0, errors: [data.error || "画像の取り込みに失敗しました"] });
-        }
-      } catch (e: any) {
-        setImageResult({ imported: 0, errors: [e.message || "通信エラー"] });
-      } finally {
-        setImageLoading(false);
-      }
-    }
-
     setPreview({ title, content, tags, category });
   }
 
@@ -148,14 +106,12 @@ export function MarkdownImportModal({ open, onClose, onImport }: Props) {
     onImport(preview);
     setRaw("");
     setPreview(null);
-    setImageResult(null);
     onClose();
   }
 
   function handleClose() {
     setRaw("");
     setPreview(null);
-    setImageResult(null);
     onClose();
   }
 
@@ -176,19 +132,10 @@ export function MarkdownImportModal({ open, onClose, onImport }: Props) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {imageLoading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <svg className="h-8 w-8 animate-spin text-brand-500" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              <p className="mt-3 text-sm font-medium text-gray-600">解析中…外部画像を R2 に取り込んでいます</p>
-            </div>
-          )}
-          {!preview && !imageLoading && (
+          {!preview && (
             <>
               <p className="mb-3 text-sm text-gray-600">
-                Markdown テキストを貼り付けてください。YAML Frontmatter があればタイトル・タグ・カテゴリを自動抽出します。外部画像は自動的に R2 に取り込まれます。
+                Markdown テキストを貼り付けてください。YAML Frontmatter があればタイトル・タグ・カテゴリを自動抽出します。
               </p>
               <div className="mb-3 rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
                 <p className="mb-1 font-semibold text-gray-600">対応フォーマット例:</p>
@@ -253,28 +200,6 @@ category: Zero Trust
                 </div>
               </dl>
 
-              {/* Image import result */}
-              {imageResult && (
-                <div className={`mt-4 rounded-lg border px-4 py-3 ${
-                  imageResult.errors.length > 0
-                    ? "border-amber-200 bg-amber-50"
-                    : "border-green-200 bg-green-50"
-                }`}>
-                  <p className={`text-sm font-medium ${
-                    imageResult.errors.length > 0 ? "text-amber-800" : "text-green-800"
-                  }`}>
-                    {imageResult.imported} 件の画像を R2 に取り込みました
-                    {imageResult.errors.length > 0 && `（${imageResult.errors.length} 件失敗）`}
-                  </p>
-                  {imageResult.errors.length > 0 && (
-                    <ul className="mt-1 space-y-0.5 text-xs text-amber-600">
-                      {imageResult.errors.map((err, i) => (
-                        <li key={i} className="truncate">• {err}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
             </>
           )}
         </div>
@@ -284,7 +209,7 @@ category: Zero Trust
           {preview ? (
             <>
               <button
-                onClick={() => { setPreview(null); setImageResult(null); }}
+                onClick={() => setPreview(null)}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 戻る
@@ -296,7 +221,7 @@ category: Zero Trust
                 インポート
               </button>
             </>
-          ) : !imageLoading ? (
+          ) : (
             <>
               <button
                 onClick={handleClose}
@@ -312,7 +237,7 @@ category: Zero Trust
                 解析する
               </button>
             </>
-          ) : null}
+          )}
         </div>
       </div>
     </div>
