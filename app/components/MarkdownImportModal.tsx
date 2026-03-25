@@ -69,8 +69,15 @@ function extractTitleFromHeading(content: string): { title: string; body: string
   return { title: "", body: content };
 }
 
+const DEFAULT_FRONTMATTER = `---
+title: 記事タイトル
+tags: [Workers, D1, セキュリティ]
+category: Zero Trust
+---
+`;
+
 export function MarkdownImportModal({ open, onClose, onImport }: Props) {
-  const [raw, setRaw] = useState("");
+  const [raw, setRaw] = useState(DEFAULT_FRONTMATTER);
   const [preview, setPreview] = useState<ImportedData | null>(null);
 
   function handleParse() {
@@ -104,13 +111,13 @@ export function MarkdownImportModal({ open, onClose, onImport }: Props) {
   function handleImport() {
     if (!preview) return;
     onImport(preview);
-    setRaw("");
+    setRaw(DEFAULT_FRONTMATTER);
     setPreview(null);
     onClose();
   }
 
   function handleClose() {
-    setRaw("");
+    setRaw(DEFAULT_FRONTMATTER);
     setPreview(null);
     onClose();
   }
