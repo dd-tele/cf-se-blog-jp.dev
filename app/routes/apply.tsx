@@ -169,9 +169,9 @@ export default function ApplyPage() {
             </div>
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
               <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-600">Step 2</div>
-              <h3 className="text-sm font-semibold text-gray-900">管理者が審査</h3>
+              <h3 className="text-sm font-semibold text-gray-900">管理者が確認</h3>
               <p className="mt-1 text-xs leading-relaxed text-gray-500">
-                Cloudflare エンジニアが申請内容を確認し、承認または却下を判断します。
+                Cloudflare エンジニアが申請内容を確認します。
               </p>
             </div>
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">

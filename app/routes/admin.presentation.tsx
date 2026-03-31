@@ -58,7 +58,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   };
 }
 
-const TOTAL_SLIDES = 16;
+const TOTAL_SLIDES = 17;
 
 export default function AdminPresentation() {
   const { user, stats } = useLoaderData<typeof loader>();
@@ -684,10 +684,63 @@ export default function AdminPresentation() {
     </div>,
   );
 
-  /* ── Slide 12: Challenges ── */
+  /* ── Slide 12: Post Visibility ── */
+  slides.push(
+    <div key="visibility" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
+      <SlideHeader number={13} title="記事の公開範囲設定（公開 / 限定公開）" />
+      <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
+        記事ごとに<strong className="text-gray-900">「公開」または「限定公開」</strong>を選択可能に。
+        限定公開の記事はログインユーザーのみ閲覧でき、プレミアムなナレッジをご契約ユーザーに提供する仕組みです。
+      </p>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-brand-800">エディタ UI</h4>
+          <p className="text-sm leading-relaxed text-gray-600">
+            ラジオボタン式の公開範囲セレクター。「公開（誰でも閲覧可能）」と「限定公開（ログインユーザーのみ）」を直感的に切り替え。
+            ヘッダーにも限定バッジを表示。
+          </p>
+        </div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-amber-800">アクセス制御</h4>
+          <p className="text-sm leading-relaxed text-gray-600">
+            未ログインユーザーが限定記事にアクセスすると、ロックアイコン付きのゲート画面を表示。
+            ログイン誘導で自然なコンバージョンフローを実現。
+          </p>
+        </div>
+        <div className="rounded-xl border border-green-200 bg-green-50 p-6">
+          <h4 className="mb-2 text-base font-bold text-green-800">一覧 & フィード制御</h4>
+          <p className="text-sm leading-relaxed text-gray-600">
+            ホーム・記事一覧・検索・著者ページで限定記事を非表示。
+            RSS フィード・Sitemap からも除外し、SEO 上の整合性を維持。
+          </p>
+        </div>
+      </div>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h4 className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400">想定ユースケース</h4>
+          <ul className="space-y-1.5 text-sm text-gray-600">
+            <li>• Cloudflare ユーザー会での共有情報をプレミアムコンテンツとして限定公開</li>
+            <li>• ご契約ユーザー向けの詳細な技術ナレッジ・設定手順を限定配信</li>
+            <li>• 公開に難色を示す企業の事例を、ログインユーザー限定で共有</li>
+          </ul>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h4 className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400">技術実装</h4>
+          <ul className="space-y-1.5 text-sm text-gray-600">
+            <li>• D1: posts テーブルに visibility カラム (public | limited) を追加</li>
+            <li>• Drizzle ORM スキーマ + 全クエリに visibility フィールドを反映</li>
+            <li>• サーバーサイドでセッション有無を判定し、表示/非表示をフィルタリング</li>
+            <li>• 管理画面・ポータルに「限定」バッジを一貫表示</li>
+          </ul>
+        </div>
+      </div>
+    </div>,
+  );
+
+  /* ── Slide 13: Challenges ── */
   slides.push(
     <div key="challenges" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={13} title="現在の課題と取り組み" />
+      <SlideHeader number={14} title="現在の課題と取り組み" />
       <div className="grid gap-8 sm:grid-cols-2">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8">
           <h3 className="mb-3 text-lg font-bold text-amber-800">課題</h3>
@@ -724,10 +777,10 @@ export default function AdminPresentation() {
   /* ── Slide 12: Roadmap ── */
   slides.push(
     <div key="roadmap" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={14} title="ロードマップ" />
+      <SlideHeader number={15} title="ロードマップ" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <RoadmapPhase phase="Phase 1" title="MVP" status="completed" items={["Public Blog", "User Portal", "Admin Dashboard", "認証/認可 (Access)", "基本セキュリティ"]} />
-        <RoadmapPhase phase="Phase 2" title="AI & エンゲージメント" status="in-progress" items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "API Shield ✅", "Turnstile ✅", "AI Gateway ✅", "AI 精度向上", "サードパーティ連携"]} />
+        <RoadmapPhase phase="Phase 2" title="AI & エンゲージメント" status="in-progress" items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "API Shield ✅", "Turnstile ✅", "AI Gateway ✅", "記事公開範囲設定 ✅", "AI 精度向上", "サードパーティ連携"]} />
         <RoadmapPhase phase="Phase 3" title="Advanced" status="planned" items={["Durable Objects", "Queues 非同期処理", "Logpush"]} />
         <RoadmapPhase phase="Phase 4" title="Scale" status="planned" items={["パフォーマンス最適化", "アナリティクス", "多言語対応", "コミュニティ機能", "外部連携"]} />
       </div>
