@@ -65,7 +65,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         limit: 20,
         offset: 0,
       });
-      posts = keywordPosts.map((p: { id: string; title: string; slug: string; excerpt: string | null; authorId: string; authorName: string | null; categoryName: string | null; publishedAt: string | null }) => ({
+      posts = keywordPosts.map((p: any) => ({
         id: p.id,
         title: p.title,
         slug: p.slug,
@@ -74,14 +74,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         authorName: p.authorName ?? "",
         categoryName: p.categoryName,
         publishedAt: p.publishedAt,
+        visibility: p.visibility ?? "public",
       }));
     }
   }
 
+  // Hide limited posts from non-logged-in users
+  const visiblePosts = user
+    ? posts
+    : posts.filter((p) => (p as any).visibility !== "limited");
+
   return {
     query,
     mode,
-    posts,
+    posts: visiblePosts,
     semanticAvailable,
     user,
     siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",

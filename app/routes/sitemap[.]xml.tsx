@@ -6,7 +6,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const siteUrl = context.cloudflare.env.SITE_URL ?? "https://cf-se-blog-jp.dev";
 
   const [posts, categories] = await Promise.all([
-    getPublishedPosts(db, { limit: 500, offset: 0 }),
+    getPublishedPosts(db, { limit: 500, offset: 0, visibility: "public" }),
     getAllCategories(db),
   ]);
 

@@ -84,6 +84,9 @@ export const posts = sqliteTable("posts", {
   })
     .notNull()
     .default("draft"),
+  visibility: text("visibility", { enum: ["public", "limited"] })
+    .notNull()
+    .default("public"),
   auto_approved: integer("auto_approved", { mode: "boolean" })
     .notNull()
     .default(false),

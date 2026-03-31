@@ -27,12 +27,18 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       : getCached(kv, CacheKeys.publishedPosts(page, categorySlug ?? ""), () =>
           getPublishedPosts(db, { limit, offset, categorySlug, search })
         ),
+    // user is fetched in parallel below — filtering happens after
     getCached(kv, CacheKeys.categories(), () => getAllCategories(db), 600),
     getSessionUser(request),
   ]);
 
+  // Filter limited posts for non-logged-in users
+  const visiblePosts = user
+    ? postsList
+    : postsList.filter((p: { visibility?: string | null }) => (p.visibility ?? "public") === "public");
+
   return {
-    posts: postsList,
+    posts: visiblePosts,
     categories: categoriesList,
     currentCategory: categorySlug ?? null,
     search: search ?? null,
@@ -153,6 +159,11 @@ export default function PostsIndex() {
                 className="group relative flex flex-col rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-md"
               >
                 <div className="mb-3 flex flex-wrap items-center gap-2">
+                  {(post as any).visibility === "limited" && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                      限定
+                    </span>
+                  )}
                   {post.categoryName && (
                     <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                       {post.categoryName}

@@ -18,7 +18,11 @@ export const meta: MetaFunction = () => {
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
   const db = context.cloudflare.env.DB;
-  const latestPosts = await getPublishedPosts(db, { limit: 6 });
+  const allLatest = await getPublishedPosts(db, { limit: 6 });
+  // Hide limited posts from non-logged-in users
+  const latestPosts = user
+    ? allLatest
+    : allLatest.filter((p: { visibility?: string | null }) => (p.visibility ?? "public") === "public");
   return {
     siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
     user,
@@ -202,6 +206,11 @@ export default function Index() {
                   className="group relative flex flex-col rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-md"
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
+                    {(post as any).visibility === "limited" && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        限定
+                      </span>
+                    )}
                     {post.categoryName && (
                       <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                         {post.categoryName}

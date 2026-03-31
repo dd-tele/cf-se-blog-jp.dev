@@ -19,18 +19,23 @@ export interface CreatePostInput {
 
 export interface UpdatePostInput extends Partial<CreatePostInput> {
   status?: "draft" | "published";
+  visibility?: "public" | "limited";
 }
 
 // ─── Queries ──────────────────────────────────────────────
 
 export async function getPublishedPosts(
   db: D1Database,
-  opts: { limit?: number; offset?: number; categorySlug?: string; search?: string } = {}
+  opts: { limit?: number; offset?: number; categorySlug?: string; search?: string; visibility?: "public" | "all" } = {}
 ) {
-  const { limit = 20, offset = 0, categorySlug, search } = opts;
+  const { limit = 20, offset = 0, categorySlug, search, visibility = "all" } = opts;
   const d = getDb(db);
 
   const conditions = [eq(posts.status, "published")];
+
+  if (visibility === "public") {
+    conditions.push(eq(posts.visibility, "public"));
+  }
 
   if (categorySlug) {
     const cat = await d.select().from(categories).where(eq(categories.slug, categorySlug)).get();
@@ -64,6 +69,7 @@ export async function getPublishedPosts(
       tagsJson: posts.tags_json,
       readingTimeMinutes: posts.reading_time_minutes,
       viewCount: posts.view_count,
+      visibility: posts.visibility,
       publishedAt: posts.published_at,
     })
     .from(posts)
@@ -104,6 +110,7 @@ export async function getPostBySlug(db: D1Database, slug: string) {
       publishedAt: posts.published_at,
       createdAt: posts.created_at,
       updatedAt: posts.updated_at,
+      visibility: posts.visibility,
       status: posts.status,
     })
     .from(posts)
@@ -138,6 +145,7 @@ export async function getUserPosts(
       title: posts.title,
       slug: posts.slug,
       excerpt: posts.excerpt,
+      visibility: posts.visibility,
       status: posts.status,
       categoryName: categories.name,
       viewCount: posts.view_count,
@@ -182,6 +190,7 @@ export async function getAuthorPublicProfile(db: D1Database, authorId: string) {
       categorySlug: categories.slug,
       tagsJson: posts.tags_json,
       readingTimeMinutes: posts.reading_time_minutes,
+      visibility: posts.visibility,
       viewCount: posts.view_count,
       publishedAt: posts.published_at,
     })
@@ -284,6 +293,7 @@ export async function updatePost(
   if (input.coverImageUrl !== undefined) updateData.cover_image_url = input.coverImageUrl;
   if (input.metaDescription !== undefined) updateData.meta_description = input.metaDescription;
   if (input.status !== undefined) updateData.status = input.status;
+  if (input.visibility !== undefined) updateData.visibility = input.visibility;
 
   await d.update(posts).set(updateData).where(eq(posts.id, postId));
   return { id: postId, slug: existing.slug };
@@ -355,6 +365,7 @@ export async function getAllPostsForAdmin(db: D1Database) {
       authorId: posts.author_id,
       authorName: sql<string>`COALESCE(${users.nickname}, ${users.display_name}, ${posts.author_name_snapshot})`.as("author_name"),
       categoryName: categories.name,
+      visibility: posts.visibility,
       status: posts.status,
       viewCount: posts.view_count,
       publishedAt: posts.published_at,

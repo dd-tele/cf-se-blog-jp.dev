@@ -133,6 +133,11 @@ export default function PortalPosts() {
                         >
                           {statusInfo.label}
                         </span>
+                        {post.visibility === "limited" && (
+                          <span className="ml-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                            限定
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">
                         {post.viewCount}

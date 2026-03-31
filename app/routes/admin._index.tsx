@@ -174,6 +174,11 @@ export default function AdminIndex() {
                       }`}>
                         {post.status === "published" ? "公開" : "下書き"}
                       </span>
+                      {post.visibility === "limited" && (
+                        <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                          限定
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                       {new Date(post.updatedAt).toLocaleDateString("ja-JP")}

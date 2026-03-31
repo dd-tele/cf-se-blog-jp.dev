@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getAuthorPublicProfile } from "~/lib/posts.server";
+import { getSessionUser } from "~/lib/auth.server";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data?.author) return [{ title: "著者が見つかりません" }];
@@ -10,15 +11,23 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   ];
 };
 
-export async function loader({ params, context }: LoaderFunctionArgs) {
+export async function loader({ params, context, request }: LoaderFunctionArgs) {
   const db = context.cloudflare.env.DB;
   const authorId = params.id;
   if (!authorId) throw new Response("Not Found", { status: 404 });
 
-  const result = await getAuthorPublicProfile(db, authorId);
+  const [result, user] = await Promise.all([
+    getAuthorPublicProfile(db, authorId),
+    getSessionUser(request),
+  ]);
   if (!result) throw new Response("Not Found", { status: 404 });
 
-  return { author: result.author, posts: result.posts };
+  // Hide limited posts from non-logged-in users
+  const visiblePosts = user
+    ? result.posts
+    : result.posts.filter((p) => (p.visibility ?? "public") === "public");
+
+  return { author: result.author, posts: visiblePosts, user };
 }
 
 export default function AuthorProfile() {
@@ -108,6 +117,9 @@ export default function AuthorProfile() {
                         <p className="mt-1 text-sm text-gray-500 line-clamp-2">{post.excerpt}</p>
                       )}
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                        {post.visibility === "limited" && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-700">限定</span>
+                        )}
                         {post.categoryName && (
                           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">{post.categoryName}</span>
                         )}

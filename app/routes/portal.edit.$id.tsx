@@ -107,6 +107,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
       )
     : undefined;
   const status = (formData.get("status") as string) || undefined;
+  const visibility = (formData.get("visibility") as string) || undefined;
 
   if (!title || !content) {
     return { error: "タイトルと本文は必須です" };
@@ -121,6 +122,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
         content,
         categoryId,
         tagsJson,
+        visibility: visibility as "public" | "limited" | undefined,
       },
       user
     );
@@ -284,6 +286,11 @@ export default function EditPost() {
             >
               {post.status === "published" ? "公開中" : "下書き"}
             </span>
+            {post.visibility === "limited" && (
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                限定
+              </span>
+            )}
             <a
               href={`/posts/${post.slug}`}
               target="_blank"
@@ -366,6 +373,31 @@ export default function EditPost() {
               defaultValue={tags.join(", ")}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">公開範囲</label>
+            <div className="flex gap-3">
+              <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                (post.visibility ?? "public") === "public" ? "border-brand-300 bg-brand-50" : "border-gray-200 bg-white hover:bg-gray-50"
+              }`}>
+                <input type="radio" name="visibility" value="public" defaultChecked={(post.visibility ?? "public") === "public"} className="accent-brand-500" />
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">公開</span>
+                  <p className="text-xs text-gray-500">誰でも閲覧可能</p>
+                </div>
+              </label>
+              <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                post.visibility === "limited" ? "border-amber-300 bg-amber-50" : "border-gray-200 bg-white hover:bg-gray-50"
+              }`}>
+                <input type="radio" name="visibility" value="limited" defaultChecked={post.visibility === "limited"} className="accent-amber-500" />
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">限定公開</span>
+                  <p className="text-xs text-gray-500">ログインユーザーのみ閲覧可能</p>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* Content */}

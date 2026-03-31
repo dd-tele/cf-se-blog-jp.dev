@@ -8,7 +8,7 @@ import { findRelatedPosts } from "~/lib/vectorize.server";
 import { ChatWidget } from "~/components/ChatWidget";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data?.post) return [{ title: "記事が見つかりません" }];
+  if (!data || data.gated || !data.post) return [{ title: "記事が見つかりません" }];
   const p = data.post;
   const title = `${p.metaTitle || p.title} — Cloudflare Solution Blog`;
   const description = p.metaDescription || p.excerpt || "";
@@ -51,6 +51,19 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
     }
   }
 
+  // Gate limited posts for non-logged-in users
+  if (post.visibility === "limited") {
+    const user = await getSessionUser(request);
+    if (!user) {
+      return {
+        gated: true as const,
+        postTitle: post.title,
+        postSlug: post.slug,
+        siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+      };
+    }
+  }
+
   // Fire-and-forget view count increment
   incrementViewCount(db, post.id).catch(() => {});
 
@@ -83,6 +96,7 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
   const contentHtml = renderMarkdown(post.content);
 
   return {
+    gated: false as const,
     post: { ...post, contentHtml },
     user,
     aiSummary,
@@ -94,7 +108,49 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
 }
 
 export default function PostDetail() {
-  const { post, user, aiSummary, relatedPosts, siteName, turnstileSiteKey } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
+
+  if (data.gated) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
+              {data.siteName}
+            </Link>
+            <nav className="flex items-center gap-4">
+              <Link to="/posts" className="text-sm text-gray-600 hover:text-gray-900">記事一覧</Link>
+              <a href="/portal" className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors">ログイン</a>
+            </nav>
+          </div>
+        </header>
+        <main className="flex flex-1 items-center justify-center px-4">
+          <div className="mx-auto max-w-lg text-center">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h1 className="mb-2 text-2xl font-bold text-gray-900">限定公開の記事です</h1>
+            <p className="mb-2 text-lg font-medium text-gray-700">{data.postTitle}</p>
+            <p className="mb-8 text-sm leading-relaxed text-gray-500">
+              この記事はログインユーザー限定で公開されています。<br />
+              Cloudflare ユーザー会メンバーやご契約ユーザーの方は、ログインしてご覧ください。
+            </p>
+            <a
+              href="/portal"
+              className="inline-block rounded-lg bg-gray-900 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gray-800"
+            >
+              ログインして閲覧する
+            </a>
+            <div className="mt-4">
+              <Link to="/posts" className="text-sm text-gray-500 hover:text-gray-700">← 記事一覧に戻る</Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const { post, user, aiSummary, relatedPosts, siteName, turnstileSiteKey } = data;
 
   const tags: string[] = post.tagsJson ? JSON.parse(post.tagsJson) : [];
 
@@ -201,6 +257,11 @@ export default function PostDetail() {
 
         {/* Category + Meta */}
         <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+          {post.visibility === "limited" && (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              限定公開
+            </span>
+          )}
           {post.categoryName && (
             <Link
               to={`/posts?category=${post.categorySlug}`}

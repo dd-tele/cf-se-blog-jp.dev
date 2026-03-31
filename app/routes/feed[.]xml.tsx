@@ -6,7 +6,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const siteUrl = context.cloudflare.env.SITE_URL ?? "https://cf-se-blog-jp.dev";
   const siteName = context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog";
 
-  const posts = await getPublishedPosts(db, { limit: 50, offset: 0 });
+  const posts = await getPublishedPosts(db, { limit: 50, offset: 0, visibility: "public" });
 
   const items = posts
     .map((p) => {
