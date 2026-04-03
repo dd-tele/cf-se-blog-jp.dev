@@ -7,9 +7,94 @@ import {
   useRouteError,
   isRouteErrorResponse,
 } from "@remix-run/react";
-import type { LinksFunction } from "@remix-run/cloudflare";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/cloudflare";
+import { redirect } from "@remix-run/cloudflare";
+import {
+  getSession,
+  getSessionUser,
+  sessionStorage,
+  isAccessConfigured,
+} from "~/lib/auth.server";
+import {
+  getAccessJWT,
+  verifyAccessJWT,
+  resolveRole,
+  buildSessionUserFromAccess,
+} from "~/lib/access.server";
+import { ensureUser } from "~/lib/posts.server";
 
 import stylesheet from "~/tailwind.css?url";
+
+// ─── Auto-login: create app session from Cloudflare Access JWT ───
+// When the entire site is behind Access, every visitor already has a valid
+// CF_Authorization JWT. This loader transparently converts it into an app
+// session so child loaders see the user via getSessionUser().
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  // Already has a valid app session — nothing to do
+  const user = await getSessionUser(request);
+  if (user) return null;
+
+  const env = context.cloudflare.env;
+  if (!isAccessConfigured(env)) return null;
+
+  // Skip auto-login for non-page requests (RSS, sitemap, API, etc.)
+  const url = new URL(request.url);
+  const path = url.pathname;
+  if (
+    path.endsWith(".xml") ||
+    path.endsWith(".json") ||
+    path.endsWith(".txt") ||
+    path.endsWith(".ico") ||
+    path.startsWith("/api/") ||
+    path.startsWith("/r2/") ||
+    path.startsWith("/cdn-cgi/")
+  ) {
+    return null;
+  }
+
+  // Prevent redirect loop: if a session cookie was already sent but is
+  // invalid/empty, getSessionUser returned null above. Don't try again.
+  const cookieHeader = request.headers.get("Cookie") || "";
+  if (cookieHeader.includes("__cf_blog_session")) return null;
+
+  const jwt = getAccessJWT(request);
+  if (!jwt) return null;
+
+  try {
+    const result = await verifyAccessJWT(
+      jwt,
+      env.CF_ACCESS_TEAM_DOMAIN!,
+      env.CF_ACCESS_AUD!
+    );
+    if (!result.ok) return null;
+
+    const role = resolveRole(
+      result.payload.email,
+      env.ADMIN_EMAILS,
+      env.SE_EMAIL_DOMAINS
+    );
+    const sessionUser = buildSessionUserFromAccess(result.payload, role);
+
+    // Ensure user record exists in D1 and reflect DB profile
+    const dbUser = await ensureUser(env.DB, sessionUser);
+    if (dbUser) {
+      if (!dbUser.is_active) return null;
+      sessionUser.displayName = dbUser.nickname || dbUser.display_name;
+      if (dbUser.role) sessionUser.role = dbUser.role as typeof sessionUser.role;
+    }
+
+    // Persist session and redirect to the same URL so the cookie is set
+    const session = await getSession(request);
+    session.set("user", sessionUser);
+    throw redirect(path + url.search, {
+      headers: { "Set-Cookie": await sessionStorage.commitSession(session) },
+    });
+  } catch (err) {
+    if (err instanceof Response) throw err; // re-throw our redirect
+    console.error("[Root Auto-Login] Error:", err);
+    return null;
+  }
+}
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
