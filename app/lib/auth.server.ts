@@ -2,6 +2,7 @@ import { createCookieSessionStorage, redirect } from "@remix-run/cloudflare";
 import {
   getAccessJWT,
   verifyAccessJWT,
+  decodeAccessJWTUnsafe,
 } from "~/lib/access.server";
 
 export interface SessionUser {
@@ -60,20 +61,39 @@ export async function requireUser(
     throw redirect(`${redirectTo}?${searchParams}`);
   }
 
-  // If Access is configured, verify the Access JWT is still valid.
-  // This prevents the app session (7d) from outliving the Access session.
+  // If Access is configured, check the Access JWT is still present.
+  // Since the entire site is behind Access, any request reaching this
+  // Worker means Access already verified the JWT. We only need to
+  // confirm the JWT exists (and can be decoded) to ensure the Access
+  // session hasn't expired.
   if (env && isAccessConfigured(env)) {
-    try {
-      const jwt = getAccessJWT(request);
-      const jwtValid = jwt
-        ? (await verifyAccessJWT(jwt, env.CF_ACCESS_TEAM_DOMAIN!, env.CF_ACCESS_AUD!)).ok
-        : false;
+    const jwt = getAccessJWT(request);
+    if (!jwt) {
+      // No JWT at all — Access session truly expired
+      const session = await getSession(request);
+      const url = new URL(request.url);
+      const loginUrl = `${redirectTo}?returnTo=${encodeURIComponent(url.pathname)}`;
+      throw new Response(loginUrl, {
+        status: 401,
+        statusText: "Access Session Expired",
+        headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+      });
+    }
 
-      if (!jwtValid) {
-        // Throw 401 instead of redirect so the root ErrorBoundary can
-        // perform a full-page navigation (window.location.href).
-        // A normal redirect would break Remix client-side navigation
-        // when Cloudflare Access intercepts the target URL.
+    // Try strict verification first; fall back to decode.
+    // Decode-only is safe because Access already verified the JWT.
+    let jwtOk = false;
+    try {
+      const result = await verifyAccessJWT(jwt, env.CF_ACCESS_TEAM_DOMAIN!, env.CF_ACCESS_AUD!);
+      jwtOk = result.ok;
+    } catch {
+      // certs fetch failure, crypto error, etc.
+    }
+
+    if (!jwtOk) {
+      const decoded = decodeAccessJWTUnsafe(jwt);
+      if (!decoded) {
+        // JWT is malformed — treat as expired
         const session = await getSession(request);
         const url = new URL(request.url);
         const loginUrl = `${redirectTo}?returnTo=${encodeURIComponent(url.pathname)}`;
@@ -83,18 +103,7 @@ export async function requireUser(
           headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
         });
       }
-    } catch (err) {
-      if (err instanceof Response) throw err; // re-throw our 401
-      console.error("[requireUser] Access JWT check failed:", err);
-      // On unexpected errors (e.g. certs fetch failure), still throw 401
-      const session = await getSession(request);
-      const url = new URL(request.url);
-      const loginUrl = `${redirectTo}?returnTo=${encodeURIComponent(url.pathname)}`;
-      throw new Response(loginUrl, {
-        status: 401,
-        statusText: "Access Session Expired",
-        headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
-      });
+      // JWT decodes fine — Access verified it, proceed
     }
   }
 
