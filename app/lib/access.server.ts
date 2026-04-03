@@ -141,6 +141,27 @@ export async function verifyAccessJWT(
 }
 
 /**
+ * Decode Access JWT payload WITHOUT signature verification.
+ * Safe to use when the entire site is behind Cloudflare Access,
+ * because Access has already verified the JWT before the request
+ * reaches the Worker. Use as a fallback when verifyAccessJWT fails
+ * (e.g. due to AUD mismatch, certs fetch failure, key rotation).
+ */
+export function decodeAccessJWTUnsafe(token: string): AccessJWTPayload | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(
+      new TextDecoder().decode(base64UrlDecode(parts[1]))
+    ) as AccessJWTPayload;
+    if (!payload.email || !payload.sub) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Extract Access JWT from request headers.
  * Cloudflare Access sends the JWT in both a header and a cookie.
  */

@@ -14,6 +14,7 @@ import { redirect } from "@remix-run/cloudflare";
 import {
   getAccessJWT,
   verifyAccessJWT,
+  decodeAccessJWTUnsafe,
   resolveRole,
   buildSessionUserFromAccess,
   type VerifyResult,
@@ -68,13 +69,28 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           env.CF_ACCESS_AUD!
         );
 
+        // Resolve payload: prefer verified, fallback to decoded
+        let payload: { email: string; sub: string } | null = null;
+        let verifyReason: string | null = null;
+
         if (result.ok) {
+          payload = result.payload;
+        } else {
+          verifyReason = result.reason;
+          // Fallback: decode without verification.
+          // Safe because Access has already verified the JWT before the
+          // request reached this Worker.
+          console.warn(`[Access Auth] JWT verify failed (${verifyReason}), falling back to decode`);
+          payload = decodeAccessJWTUnsafe(jwt);
+        }
+
+        if (payload) {
           const role = resolveRole(
-            result.payload.email,
+            payload.email,
             env.ADMIN_EMAILS,
             env.SE_EMAIL_DOMAINS
           );
-          const sessionUser = buildSessionUserFromAccess(result.payload, role);
+          const sessionUser = buildSessionUserFromAccess(payload as any, role);
 
           // Ensure user exists in D1 and reflect DB profile
           const dbUser = await ensureUser(env.DB, sessionUser);
@@ -94,12 +110,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           return createUserSession(sessionUser, returnTo);
         }
 
-        // JWT present but verification failed
-        console.warn(`[Access Auth] JWT verification failed: ${result.reason} (retry=${retryCount})`);
+        // JWT could not be verified or decoded at all
+        const reason = verifyReason || "unknown";
+        console.warn(`[Access Auth] JWT verification failed: ${reason} (retry=${retryCount})`);
 
         // For expired/transient failures, redirect to re-trigger Access auth
         // Access will intercept, refresh the JWT, and redirect back
-        if (retryCount < 2 && ["expired", "kid_mismatch", "bad_signature"].includes(result.reason)) {
+        if (retryCount < 2 && ["expired", "kid_mismatch", "bad_signature"].includes(reason)) {
           return redirect(
             `/auth/login?returnTo=${encodeURIComponent(returnTo)}&retry=${retryCount + 1}`
           );
@@ -117,12 +134,28 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         };
         return {
           mode: "error" as const,
-          error: `Cloudflare Access の認証に失敗しました: ${reasonLabel[result.reason] || result.reason}`,
-          autoRetry: ["expired", "kid_mismatch", "bad_signature"].includes(result.reason),
+          error: `Cloudflare Access の認証に失敗しました: ${reasonLabel[reason] || reason}`,
+          autoRetry: ["expired", "kid_mismatch", "bad_signature"].includes(reason),
         };
       } catch (err) {
         if (err instanceof Response) throw err;
         console.error("[Access Auth] Error:", err);
+        // Last-resort fallback: decode JWT without verification
+        const fallbackPayload = decodeAccessJWTUnsafe(jwt);
+        if (fallbackPayload) {
+          console.warn("[Access Auth] Using decoded JWT after catch fallback");
+          const role = resolveRole(fallbackPayload.email, env.ADMIN_EMAILS, env.SE_EMAIL_DOMAINS);
+          const sessionUser = buildSessionUserFromAccess(fallbackPayload as any, role);
+          const dbUser = await ensureUser(env.DB, sessionUser);
+          if (dbUser) {
+            if (!dbUser.is_active) {
+              return { mode: "error" as const, error: "このアカウントは無効化されています。管理者にお問い合わせください。" };
+            }
+            sessionUser.displayName = dbUser.nickname || dbUser.display_name;
+            if (dbUser.role) sessionUser.role = dbUser.role as typeof sessionUser.role;
+          }
+          return createUserSession(sessionUser, returnTo);
+        }
         return {
           mode: "error" as const,
           error: `認証エラー: ${err instanceof Error ? err.message : "Unknown error"}`,

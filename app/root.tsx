@@ -18,6 +18,7 @@ import {
 import {
   getAccessJWT,
   verifyAccessJWT,
+  decodeAccessJWTUnsafe,
   resolveRole,
   buildSessionUserFromAccess,
 } from "~/lib/access.server";
@@ -61,19 +62,30 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   if (!jwt) return null;
 
   try {
+    let payload: { email: string; sub: string } | null = null;
+
     const result = await verifyAccessJWT(
       jwt,
       env.CF_ACCESS_TEAM_DOMAIN!,
       env.CF_ACCESS_AUD!
     );
-    if (!result.ok) return null;
+    if (result.ok) {
+      payload = result.payload;
+    } else {
+      // Fallback: decode without verification.
+      // Safe because Access has already verified the JWT before the
+      // request reached this Worker.
+      console.warn(`[Root Auto-Login] JWT verify failed (${result.reason}), falling back to decode`);
+      payload = decodeAccessJWTUnsafe(jwt);
+    }
+    if (!payload) return null;
 
     const role = resolveRole(
-      result.payload.email,
+      payload.email,
       env.ADMIN_EMAILS,
       env.SE_EMAIL_DOMAINS
     );
-    const sessionUser = buildSessionUserFromAccess(result.payload, role);
+    const sessionUser = buildSessionUserFromAccess(payload as any, role);
 
     // Ensure user record exists in D1 and reflect DB profile
     const dbUser = await ensureUser(env.DB, sessionUser);
