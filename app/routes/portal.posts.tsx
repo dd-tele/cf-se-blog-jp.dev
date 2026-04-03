@@ -102,6 +102,9 @@ export default function PortalPosts() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                     更新日
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    操作
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -144,6 +147,17 @@ export default function PortalPosts() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">
                         {new Date(post.updatedAt).toLocaleDateString("ja-JP")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          to={`/portal/edit/${post.id}`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-brand-600 transition-colors"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          編集
+                        </Link>
                       </td>
                     </tr>
                   );
