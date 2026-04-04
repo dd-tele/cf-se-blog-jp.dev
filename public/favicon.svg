@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#g)"/>
+  <!-- Cloud -->
+  <path d="M38 78h52a18 18 0 00-2-36 1 1 0 01-1-1 22 22 0 00-43 4 1 1 0 01-1 1A16 16 0 0038 78z" fill="#fff"/>
+  <!-- Pen nib -->
+  <path d="M82 72l16-16 6 6-16 16z" fill="#fff"/>
+  <path d="M104 56l4-4a3 3 0 000-4l-2-2a3 3 0 00-4 0l-4 4z" fill="#fff"/>
+  <path d="M80 74l-4 10 10-4z" fill="#fff"/>
+</svg>
