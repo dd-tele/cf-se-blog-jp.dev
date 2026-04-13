@@ -96,35 +96,61 @@ export default function PortalTemplates() {
 
         {/* Writing mode selector */}
         <div className="mb-10 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border-2 border-brand-200 bg-brand-50/40 p-5">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-600">
-              Recommended
+          {/* Template mode – brand orange */}
+          <div className="relative rounded-xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-orange-50 p-6">
+            <span className="absolute -top-2.5 left-4 rounded-full bg-brand-500 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+              おすすめ
+            </span>
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 text-brand-600">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
             </div>
-            <h3 className="text-base font-semibold text-gray-900">
+            <h3 className="text-base font-bold text-gray-900">
               テンプレートで書く
             </h3>
-            <p className="mt-1 text-sm leading-relaxed text-gray-500">
-              構造化された入力フォームに沿って記入すると、AI がブログ下書きを自動生成。生成後は自由に編集できます。
+            <p className="mt-1.5 text-sm leading-relaxed text-gray-600">
+              フォームに沿って記入するだけで <span className="font-medium text-brand-700">AI がブログ下書きを自動生成</span>。初めての方や、構成に迷ったときに最適。
             </p>
-            <span className="mt-3 inline-block text-xs text-brand-600">
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-medium text-brand-700">AI 自動生成</span>
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-medium text-brand-700">構造化フォーム</span>
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-medium text-brand-700">初心者向け</span>
+            </div>
+            <span className="mt-4 inline-block text-xs font-medium text-brand-600">
               ↓ 下のテンプレートから選択
             </span>
           </div>
+
+          {/* Freeform mode – teal/emerald */}
           <Link
             to="/portal/new"
-            className="group rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-sm"
+            className="group relative rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 transition-all hover:border-emerald-300 hover:shadow-md"
           >
-            <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">
-              Freeform
+            <span className="absolute -top-2.5 left-4 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+              おすすめ
+            </span>
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-            <h3 className="text-base font-semibold text-gray-900 group-hover:text-brand-600">
-              白紙から書く
+            <h3 className="text-base font-bold text-gray-900 group-hover:text-emerald-700">
+              Markdown フリーフォーム
             </h3>
-            <p className="mt-1 text-sm leading-relaxed text-gray-500">
-              タイトルと本文を自由に記述します。テンプレートの制約なしに、独自の構成で書きたい場合に。Markdown の貼り付けインポートにも対応しています。
+            <p className="mt-1.5 text-sm leading-relaxed text-gray-600">
+              Markdown を<span className="font-medium text-emerald-700">そのまま貼り付け</span>て記事を作成。ChatGPT・Claude などの AI 出力や、他のブログからの<span className="font-medium text-emerald-700">記事移行</span>に最適。
             </p>
-            <span className="mt-3 inline-block text-sm font-medium text-gray-600 group-hover:text-brand-600">
-              エディターを開く →
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Markdown 貼り付け</span>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">AI 出力の取り込み</span>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">記事移行</span>
+            </div>
+            <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-emerald-600 group-hover:text-emerald-700">
+              エディターを開く
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </span>
           </Link>
         </div>
