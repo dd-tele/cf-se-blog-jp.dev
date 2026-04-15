@@ -214,7 +214,7 @@ chat.post("/", requireAuth, async (c) => {
           await saveMessage(db, threadId, {
             role: "ai",
             content: fullResponse,
-            metadata: { model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
+            metadata: { model: "@cf/google/gemma-4-26b-a4b-it" },
           });
         } catch (e) {
           console.error("Failed to save AI response:", e);

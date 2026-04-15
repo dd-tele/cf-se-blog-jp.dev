@@ -161,7 +161,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
     // Call Workers AI
     const systemPrompt = stylePreamble + template.aiPromptTemplate;
     const aiResponse: any = await ai.run(
-      "@cf/meta/llama-3.1-70b-instruct" as any,
+      "@cf/google/gemma-4-26b-a4b-it" as any,
       {
         messages: [
           { role: "system", content: systemPrompt },
@@ -204,7 +204,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
       post_id: result.id,
       input_data_json: JSON.stringify(inputs),
       generated_content: generatedContent,
-      model_used: "@cf/meta/llama-3.1-70b-instruct",
+      model_used: "@cf/google/gemma-4-26b-a4b-it",
       latency_ms: latencyMs,
       status: "completed",
       created_at: now,
@@ -225,7 +225,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
         user_id: user.id,
         template_id: template.id,
         input_data_json: JSON.stringify(inputs),
-        model_used: "@cf/meta/llama-3.1-70b-instruct",
+        model_used: "@cf/google/gemma-4-26b-a4b-it",
         latency_ms: latencyMs,
         status: "failed",
         created_at: now,

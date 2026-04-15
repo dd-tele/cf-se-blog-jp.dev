@@ -121,7 +121,7 @@ JSON のみを出力し、他のテキストは含めないでください。`;
   let generatedInputs: Record<string, any> = {};
   try {
     const inputResponse: any = await ai.run(
-      "@cf/meta/llama-3.1-70b-instruct" as any,
+      "@cf/google/gemma-4-26b-a4b-it" as any,
       {
         messages: [
           { role: "system", content: "You output valid JSON only. No markdown fences, no explanation." },
@@ -178,7 +178,7 @@ JSON のみを出力し、他のテキストは含めないでください。`;
   try {
     const systemPrompt = stylePreamble + template.aiPromptTemplate;
     const aiResponse: any = await ai.run(
-      "@cf/meta/llama-3.1-70b-instruct" as any,
+      "@cf/google/gemma-4-26b-a4b-it" as any,
       {
         messages: [
           { role: "system", content: systemPrompt },
@@ -223,7 +223,7 @@ JSON のみを出力し、他のテキストは含めないでください。`;
       post_id: result.id,
       input_data_json: JSON.stringify(inputs),
       generated_content: generatedContent,
-      model_used: "@cf/meta/llama-3.1-70b-instruct",
+      model_used: "@cf/google/gemma-4-26b-a4b-it",
       latency_ms: latencyMs,
       status: "completed",
       created_at: now,
@@ -332,7 +332,7 @@ JSON のみを出力し、他のテキストは含めないでください。`;
   let generatedInputs: Record<string, any> = {};
   try {
     const inputResponse: any = await ai.run(
-      "@cf/meta/llama-3.1-70b-instruct" as any,
+      "@cf/google/gemma-4-26b-a4b-it" as any,
       {
         messages: [
           { role: "system", content: "You output valid JSON only. No markdown fences, no explanation." },
@@ -386,7 +386,7 @@ JSON のみを出力し、他のテキストは含めないでください。`;
   try {
     const systemPrompt = stylePreamble + template.aiPromptTemplate;
     const aiResponse: any = await ai.run(
-      "@cf/meta/llama-3.1-70b-instruct" as any,
+      "@cf/google/gemma-4-26b-a4b-it" as any,
       {
         messages: [
           { role: "system", content: systemPrompt },
@@ -428,7 +428,7 @@ JSON のみを出力し、他のテキストは含めないでください。`;
       post_id: result.id,
       input_data_json: JSON.stringify(inputs),
       generated_content: generatedContent,
-      model_used: "@cf/meta/llama-3.1-70b-instruct",
+      model_used: "@cf/google/gemma-4-26b-a4b-it",
       latency_ms: latencyMs,
       status: "completed",
       created_at: now,

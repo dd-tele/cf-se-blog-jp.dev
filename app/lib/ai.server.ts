@@ -9,7 +9,7 @@ function gwOpts(): Record<string, unknown> {
 }
 
 // ─── Text model helper ─────────────────────────────────────
-const TEXT_MODEL = "@cf/meta/llama-3.1-70b-instruct" as const;
+const TEXT_MODEL = "@cf/google/gemma-4-26b-a4b-it" as const;
 const EMBED_MODEL = "@cf/baai/bge-base-en-v1.5" as const;
 
 const SUMMARY_SYSTEM_PROMPT = `あなたは Cloudflare の技術ブログを分析する AI アシスタントです。

@@ -5,7 +5,7 @@ import { ulid } from "~/lib/ulid";
 import { generateEmbedding } from "~/lib/ai.server";
 
 // ─── Constants ──────────────────────────────────────────────
-const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const TEXT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const MODERATION_MODEL = "@cf/meta/llama-guard-3-8b";
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_MESSAGES_PER_MINUTE = 10;
