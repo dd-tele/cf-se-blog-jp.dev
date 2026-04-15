@@ -35,6 +35,7 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey, isLoggedIn }: 
   const [loaded, setLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
+  const compositionEndTimeRef = useRef(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetId = useRef<string | null>(null);
@@ -200,7 +201,17 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey, isLoggedIn }: 
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !isComposingRef.current) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      // Block send while IME is active or just finished composing.
+      // Chrome/Edge fire keydown(Enter) AFTER compositionEnd, so
+      // isComposing is already false. The 100ms time guard catches this.
+      if (
+        e.nativeEvent.isComposing ||
+        isComposingRef.current ||
+        Date.now() - compositionEndTimeRef.current < 100
+      ) {
+        return;
+      }
       e.preventDefault();
       handleSend();
     }
@@ -316,7 +327,10 @@ export function ChatWidget({ postId, postTitle, turnstileSiteKey, isLoggedIn }: 
                 }}
                 onKeyDown={handleKeyDown}
                 onCompositionStart={() => { isComposingRef.current = true; }}
-                onCompositionEnd={() => { setTimeout(() => { isComposingRef.current = false; }, 50); }}
+                onCompositionEnd={() => {
+                  isComposingRef.current = false;
+                  compositionEndTimeRef.current = Date.now();
+                }}
                 placeholder="質問を入力...（Shift+Enter で改行）"
                 disabled={isStreaming}
                 rows={1}
