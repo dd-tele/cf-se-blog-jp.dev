@@ -190,8 +190,8 @@ export default function AboutPage() {
             <TechCard
               color="amber"
               title="Workers AI"
-              description="Llama 3.3 70B モデルを使用し、テンプレートベースの記事ドラフトを AI が自動生成。Hono の streamSSE でチャット応答をリアルタイム配信。"
-              tags={["LLM", "Llama 3.3", "70B"]}
+              description="Google Gemma 4 26B A4B モデルを使用し、テンプレートベースの記事ドラフトを AI が自動生成。Hono の streamSSE でチャット応答をリアルタイム配信。"
+              tags={["LLM", "Gemma 4", "MoE"]}
             />
             <TechCard
               color="pink"
@@ -269,7 +269,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 divide-y sm:grid-cols-6 sm:divide-x sm:divide-y-0">
               <FlowStep step={1} title="テンプレート選択" desc="6種類のテンプレートから選択" />
               <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" />
-              <FlowStep step={3} title="AI ドラフト生成" desc="Llama 3.3 70B が記事化" />
+              <FlowStep step={3} title="AI ドラフト生成" desc="Gemma 4 26B が記事化" />
               <FlowStep step={4} title="編集・画像追加" desc="Markdown エディタで調整" />
               <FlowStep step={5} title="AI アシスト修正" desc="追加エッセンスで改善" />
               <FlowStep step={6} title="公開" desc="ワンクリックで公開" />
@@ -429,7 +429,7 @@ export default function AboutPage() {
               <h3 className="mb-2 font-bold text-indigo-700">JSON インポート & 記事生成</h3>
               <p className="text-sm text-gray-600">
                 AI が出力した JSON をインポートするとフォームが自動入力。
-                内容を確認・微調整後、Workers AI（Llama 3.3 70B）が Markdown 記事に変換。
+                内容を確認・微調整後、Workers AI（Gemma 4 26B A4B）が Markdown 記事に変換。
               </p>
             </div>
           </div>
@@ -726,7 +726,7 @@ export default function AboutPage() {
               <h3 className="mb-2 font-bold text-blue-700">アーキテクチャ</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>Hono <code className="text-xs">streamSSE</code> による SSE ストリーミング</li>
-                <li>Llama 3.3 70B fp8-fast（回答生成）</li>
+                <li>Gemma 4 26B A4B（回答生成）</li>
                 <li>Llama Guard 3 8B（コンテンツモデレーション）</li>
                 <li>RAG: Vectorize で記事コンテキスト + 関連記事を自動取得</li>
                 <li>会話履歴 10 件を保持してコンテキスト継続</li>
@@ -739,7 +739,7 @@ export default function AboutPage() {
                 <li><strong>Turnstile</strong> — invisible CAPTCHA で Bot を排除</li>
                 <li><strong>入力バリデーション</strong> — 1,000 文字制限 + スパムパターン検出</li>
                 <li><strong>KV レート制限</strong> — IP あたり 10 回/分</li>
-                <li><strong>Llama Guard</strong> — 有害コンテンツを自動フラグ & 拒否</li>
+                <li><strong>Llama Guard</strong> — 有害コンテンツを自動フラグ &amp; 拒否</li>
                 <li><strong>AI Gateway</strong> — ガードレール・ログ・レート制限</li>
                 <li>フラグ付きメッセージは DB に証跡保存（管理画面で確認可能）</li>
               </ul>
@@ -833,7 +833,7 @@ export default function AboutPage() {
                   <p className="text-xs leading-relaxed text-gray-600">
                     ユーザー入力 → Turnstile 検証 → バリデーション → KV レート制限
                     → Llama Guard モデレーション（AI Gateway 経由）
-                    → RAG コンテキスト取得 → Llama 3.3 70B で回答生成（AI Gateway 経由・SSE ストリーミング）
+                    → RAG コンテキスト取得 → Gemma 4 26B A4B で回答生成（AI Gateway 経由・SSE ストリーミング）
                     → D1 に保存。AI Gateway ダッシュボードでリクエスト数・レイテンシ・トークン消費量をリアルタイム監視可能。
                   </p>
                 </div>
@@ -980,7 +980,7 @@ export default function AboutPage() {
                 <SpecRow label="データベース" value="Cloudflare D1 (SQLite at edge) + Drizzle ORM" />
                 <SpecRow label="ストレージ" value="Cloudflare R2 (S3 互換・エグレス無料)" />
                 <SpecRow label="API レイヤー" value="Hono — streamSSE, 型付き Bindings, CORS / Auth / Logger ミドルウェア" />
-                <SpecRow label="AI モデル" value="Llama 3.3 70B fp8-fast (ドラフト・チャット) + Llama Guard 3 8B (モデレーション)" />
+                <SpecRow label="AI モデル" value="Google Gemma 4 26B A4B (ドラフト・チャット) + Llama Guard 3 8B (モデレーション)" />
                 <SpecRow label="AI Gateway" value="AI 呼び出しの一元管理 — ログ・分析・レート制限・ガードレール（稼働中）" />
                 <SpecRow label="ベクトル検索" value="Cloudflare Vectorize — セマンティック検索 + RAG チャット Q&A" />
                 <SpecRow label="WAF / DDoS" value="OWASP Core Ruleset + Bot Management + カスタムルール" />

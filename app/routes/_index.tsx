@@ -120,6 +120,12 @@ export default function Index() {
             >
               このブログについて
             </Link>
+            <Link
+              to="/vibe-coding"
+              className="rounded-lg bg-gradient-to-r from-brand-500 to-emerald-500 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:from-brand-600 hover:to-emerald-600"
+            >
+              Vibe Coding × Cloudflare
+            </Link>
           </div>
         </div>
       </section>

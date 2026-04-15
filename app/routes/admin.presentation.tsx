@@ -160,7 +160,7 @@ export default function AdminPresentation() {
       <div className="flex flex-wrap justify-center gap-3">
         <Badge>100% Cloudflare Stack</Badge>
         <Badge>Hono + Remix</Badge>
-        <Badge>Workers AI (Llama 3.3 70B)</Badge>
+        <Badge>Workers AI (Gemma 4 26B)</Badge>
         <Badge>RAG Chat Q&A</Badge>
         <Badge>Semantic Search</Badge>
         <Badge>Email Workers</Badge>
@@ -235,7 +235,7 @@ export default function AdminPresentation() {
       </p>
       <div className="grid gap-6 sm:grid-cols-2">
         <ProblemCard number={1} problem="現場のリアルな導入事例・技術適用が見つからない" solution="キーワード + Vectorize セマンティック検索で、意味的に近い事例をすばやく発見。記事ごとの AI チャット Q&A で疑問をその場で解消。導入のリアルを記事として蓄積・共有。" />
-        <ProblemCard number={2} problem="知見の発信に時間がかかり、後回しになる" solution="6 種類のテンプレートから選択し、メモ書きレベルの入力だけで Llama 3.3 70B が Markdown 記事を自動生成。タグ提案・文章改善もワンクリック。発信のハードルを限りなく下げる。" />
+        <ProblemCard number={2} problem="知見の発信に時間がかかり、後回しになる" solution="6 種類のテンプレートから選択し、メモ書きレベルの入力だけで Gemma 4 26B A4B が Markdown 記事を自動生成。タグ提案・文章改善もワンクリック。発信のハードルを限りなく下げる。" />
         <ProblemCard number={3} problem="ユーザー同士・エンジニア同士の接点が限られている" solution="投稿者プロフィール（会社・専門分野）を公開し、記事から著者ページへ遷移。誰がどんな分野で実績があるかを可視化し、企業や立場を超えた相互支援・コラボレーションを促進。" />
         <ProblemCard number={4} problem="導入判断に必要な実践情報が分散している" solution="ブログ記事・RSS フィード・セマンティック検索を軸に、Cloudflare 技術の実践ナレッジハブとして機能。導入検討中のユーザーにも、現場発のリアルな情報を提供。" />
       </div>
@@ -323,7 +323,7 @@ export default function AdminPresentation() {
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
           <h4 className="mb-1 text-sm font-bold text-amber-800">AI ドラフト</h4>
-          <p className="text-sm leading-relaxed text-gray-600">Llama 3.3 70B による自動生成。完了率が高いほどテンプレートの品質が良い証拠。</p>
+          <p className="text-sm leading-relaxed text-gray-600">Gemma 4 26B A4B による自動生成。完了率が高いほどテンプレートの品質が良い証拠。</p>
         </div>
         <div className="rounded-xl border border-green-200 bg-green-50 p-5">
           <h4 className="mb-1 text-sm font-bold text-green-800">Q&A チャット</h4>
@@ -359,7 +359,7 @@ export default function AdminPresentation() {
               <StackItem name="Pages" desc="ホスティング + GitHub CI/CD" />
               <StackItem name="D1" desc="SQLite DB — 13 テーブル、Drizzle ORM" />
               <StackItem name="R2" desc="画像 / アバターストレージ（S3 互換）" />
-              <StackItem name="Workers AI" desc="Llama 3.3 70B（ドラフト/チャット）+ Llama Guard 3 8B（モデレーション）+ bge-base-en（Embedding）" highlight />
+              <StackItem name="Workers AI" desc="Gemma 4 26B A4B（ドラフト/チャット）+ Llama Guard 3 8B（モデレーション）+ bge-base-en（Embedding）" highlight />
               <StackItem name="Vectorize" desc="ベクトル検索 — セマンティック検索 + 関連記事推薦" />
               <StackItem name="KV" desc="セッション / レート制限 / キャッシュ" />
               <StackItem name="Access" desc="Zero Trust 認証（Google SSO）+ RBAC + API 連携" />
@@ -390,7 +390,7 @@ export default function AdminPresentation() {
     <div key="features" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={6} title="主要機能" />
       <div className="space-y-5">
-        <FeatureRow number="01" title="AI ドラフト生成" desc="6種類のテンプレートから選択 → メモ書きレベルの入力 → Llama 3.3 70B が Markdown 記事を自動生成。プロンプトエンジニアリングで Cloudflare 事例スタイルに最適化。" color="amber" tags={["Workers AI", "テンプレート", "Llama 3.3"]} />
+        <FeatureRow number="01" title="AI ドラフト生成" desc="6種類のテンプレートから選択 → メモ書きレベルの入力 → Gemma 4 26B A4B が Markdown 記事を自動生成。プロンプトエンジニアリングで Cloudflare 事例スタイルに最適化。" color="amber" tags={["Workers AI", "テンプレート", "Gemma 4"]} />
         <FeatureRow number="02" title="AI チャット Q&A" desc="記事ページのフローティングウィジェット。記事コンテキスト優先 + Cloudflare 全般の知識で補足回答。Vectorize RAG + SSE ストリーミング。Turnstile Bot 保護 → 入力バリデーション → KV レート制限 → Llama Guard モデレーション → AI Gateway ガードレールの多層防御。24h TTL で自動クリーンアップ。" color="blue" tags={["Hono streamSSE", "RAG", "Llama Guard", "AI Gateway", "Turnstile"]} />
         <FeatureRow number="03" title="関連記事レコメンド" desc="Vectorize に記事の Embedding を保存し、コンテンツの類似度ベースで関連記事を推薦。読者のエンゲージメントを向上。" color="purple" tags={["Vectorize", "bge-base-en", "Embedding"]} />
         <FeatureRow number="04" title="キーワード＋セマンティック検索" desc="キーワード検索に加え、Vectorize を活用したセマンティック検索で意味的に近い記事を発見。事例検索の労力を大幅に削減。" color="green" tags={["Vectorize", "Semantic Search", "bge-base-en"]} />
@@ -474,7 +474,7 @@ export default function AdminPresentation() {
           <PipelineStep step={3} label="KV レート制限" desc="10回/分/IP" color="amber" />
           <PipelineStep step={4} label="Llama Guard" desc="コンテンツモデレーション" color="red" />
           <PipelineStep step={5} label="RAG コンテキスト" desc="Vectorize + 記事本文" color="purple" />
-          <PipelineStep step={6} label="Llama 3.3 70B" desc="SSE ストリーミング回答" color="green" />
+          <PipelineStep step={6} label="Gemma 4 26B" desc="SSE ストリーミング回答" color="green" />
         </div>
       </div>
       <div className="mb-6 overflow-hidden rounded-2xl border bg-white shadow-sm">
@@ -525,7 +525,7 @@ export default function AdminPresentation() {
           <div className="rounded-lg border border-amber-200 bg-white p-5">
             <h4 className="mb-1.5 text-sm font-bold text-blue-700">二重モデレーション</h4>
             <p className="text-sm leading-relaxed text-gray-600">
-              Llama Guard（コンテンツ分類・Fail-open）+ AI Gateway（ガードレール）の多層構成。
+              Llama Guard 3 8B（コンテンツ分類・Fail-open）+ AI Gateway（ガードレール）の多層構成。
               フラグ付きメッセージは DB に証跡保存、管理画面で確認可能。
             </p>
           </div>
@@ -553,7 +553,7 @@ export default function AdminPresentation() {
         <div className="grid grid-cols-1 divide-y sm:grid-cols-6 sm:divide-x sm:divide-y-0">
           <FlowStep step={1} title="テンプレート選択" desc="6種類から選択" />
           <FlowStep step={2} title="フォーム入力" desc="メモ書きレベルでOK" />
-          <FlowStep step={3} title="AI ドラフト" desc="Llama 3.3 70B が記事化" />
+          <FlowStep step={3} title="AI ドラフト" desc="Gemma 4 26B が記事化" />
           <FlowStep step={4} title="編集・プレビュー" desc="Markdown エディタ" />
           <FlowStep step={5} title="AI アシスト修正" desc="追加エッセンスで改善" />
           <FlowStep step={6} title="公開" desc="ワンクリック" />
@@ -570,7 +570,7 @@ export default function AdminPresentation() {
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-6">
           <h4 className="mb-2 text-base font-bold text-blue-800">Step 3: AI ドラフト生成</h4>
           <p className="text-sm leading-relaxed text-gray-600">
-            Llama 3.3 70B がテンプレートの構造に沿って Markdown 記事を自動生成。
+            Gemma 4 26B A4B がテンプレートの構造に沿って Markdown 記事を自動生成。
             Cloudflare 事例スタイルに最適化されたプロンプトエンジニアリング。
             タグ提案（suggest-tags）・文章改善（improve）もワンクリックで利用可能。
           </p>
@@ -602,7 +602,7 @@ export default function AdminPresentation() {
       <div className="grid gap-5 sm:grid-cols-2">
         <SecurityCard title="Cloudflare Access" items={["Google / Okta SSO 連携", "JWT ベース認証 + 自動リトライ", "RBAC (admin / se / user)", "OTP 再認証時のレジリエンス強化"]} />
         <SecurityCard title="WAF + Bot Management" items={["OWASP Top 10 防御（SQLi / XSS 等）", "API エンドポイント保護", "Bot 検知・自動化攻撃軽減", "コードスニペット WAF 誤検知回避"]} />
-        <SecurityCard title="コンテンツモデレーション" items={["Llama Guard 3 8B", "スパムフィルター", "フラグ & 手動レビュー"]} />
+        <SecurityCard title="コンテンツモデレーション" items={["Llama Guard 3 8B (Meta)", "スパムフィルター", "フラグ & 手動レビュー"]} />
         <SecurityCard title="API Shield" items={["OpenAPI 3.0 スキーマで全 16 エンドポイントを検証", "メソッド・パス・リクエストボディのバリデーション", "スキーマ不一致リクエストを自動ブロック", "Bearer / Cookie / CF Access 3 種の認証定義"]} />
         <SecurityCard title="Turnstile ✅ 稼働中" items={["チャット Q&A に invisible モード統合・稼働中", "ボットによる自動投稿を Workers 到達前にブロック", "siteverify API でサーバー側トークン検証", "Fail open 設計 — 障害時はスキップして可用性優先"]} />
         <SecurityCard title="AI Gateway ✅ 稼働中" items={["チャット AI 呼び出しを Gateway 経由でルーティング済み", "全リクエスト/レスポンスのログ・分析", "Gateway レベルのレート制限・キャッシュ", "プロンプト/レスポンスのガードレール"]} />
