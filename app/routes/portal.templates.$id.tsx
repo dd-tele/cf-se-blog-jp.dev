@@ -394,7 +394,6 @@ export default function TemplateInput() {
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${typeInfo.className}`}>
               {typeInfo.label}
             </span>
-            <span className="text-[11px] text-gray-400">約{template.estimatedMinutes}分</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
           {template.description && (

@@ -240,9 +240,6 @@ export default function PortalTemplates() {
                         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${typeInfo.className}`}>
                           {typeInfo.label}
                         </span>
-                        <span className="text-[11px] text-gray-400">
-                          約{t.estimatedMinutes}分
-                        </span>
                       </div>
                       <h3 className="text-base font-semibold text-gray-900 group-hover:text-brand-600">
                         {t.name}
