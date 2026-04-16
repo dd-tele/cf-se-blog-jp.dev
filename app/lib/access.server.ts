@@ -177,6 +177,17 @@ export function getAccessJWT(request: Request): string | null {
 }
 
 /**
+ * Extract the email from an Access JWT.
+ * Tries verification first, falls back to decode (safe behind Access).
+ */
+export function resolveAccessEmail(
+  jwt: string,
+): string | null {
+  const decoded = decodeAccessJWTUnsafe(jwt);
+  return decoded?.email?.toLowerCase() ?? null;
+}
+
+/**
  * Determine user role based on email and configuration.
  */
 export function resolveRole(

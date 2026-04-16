@@ -7,14 +7,17 @@ import { useState, useEffect } from "react";
 import { Form, useLoaderData, useSearchParams } from "@remix-run/react";
 import {
   createUserSession,
+  getSession,
   getSessionUser,
   isAccessConfigured,
+  sessionStorage,
 } from "~/lib/auth.server";
 import { redirect } from "@remix-run/cloudflare";
 import {
   getAccessJWT,
   verifyAccessJWT,
   decodeAccessJWTUnsafe,
+  resolveAccessEmail,
   resolveRole,
   buildSessionUserFromAccess,
   type VerifyResult,
@@ -47,12 +50,34 @@ const DEV_USERS = [
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const user = await getSessionUser(request);
-  if (user) {
+  const existingUser = await getSessionUser(request);
+  const env = context.cloudflare.env;
+
+  // If a session exists, check that it still matches the Access JWT user.
+  // If a different user logged in via Access (new CF_Authorization cookie),
+  // destroy the stale session and fall through to create a new one.
+  if (existingUser) {
+    if (isAccessConfigured(env)) {
+      const jwt = getAccessJWT(request);
+      if (jwt) {
+        const jwtEmail = resolveAccessEmail(jwt);
+        if (jwtEmail && jwtEmail !== existingUser.email.toLowerCase()) {
+          console.warn(
+            `[Login] Email mismatch: session=${existingUser.email}, jwt=${jwtEmail}. Re-authenticating.`
+          );
+          // Destroy stale session — fall through to normal auth flow below
+          const session = await getSession(request);
+          const headers = new Headers();
+          headers.set("Set-Cookie", await sessionStorage.destroySession(session));
+          // Redirect back here without the old session cookie
+          const url = new URL(request.url);
+          return redirect(url.toString(), { headers });
+        }
+      }
+    }
+    // Session email matches JWT (or no Access) — reuse existing session
     return redirect("/portal");
   }
-
-  const env = context.cloudflare.env;
 
   // Production: authenticate via Cloudflare Access JWT
   if (isAccessConfigured(env)) {

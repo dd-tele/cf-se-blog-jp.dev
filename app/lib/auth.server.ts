@@ -3,6 +3,7 @@ import {
   getAccessJWT,
   verifyAccessJWT,
   decodeAccessJWTUnsafe,
+  resolveAccessEmail,
 } from "~/lib/access.server";
 
 export interface SessionUser {
@@ -61,11 +62,10 @@ export async function requireUser(
     throw redirect(`${redirectTo}?${searchParams}`);
   }
 
-  // If Access is configured, check the Access JWT is still present.
-  // Since the entire site is behind Access, any request reaching this
-  // Worker means Access already verified the JWT. We only need to
-  // confirm the JWT exists (and can be decoded) to ensure the Access
-  // session hasn't expired.
+  // If Access is configured, check the Access JWT is still present
+  // AND that the JWT email matches the session email.
+  // If a different user logged in via Access, the session must be
+  // recreated for the new user to prevent identity mismatch.
   if (env && isAccessConfigured(env)) {
     const jwt = getAccessJWT(request);
     if (!jwt) {
@@ -76,6 +76,20 @@ export async function requireUser(
       throw new Response(loginUrl, {
         status: 401,
         statusText: "Access Session Expired",
+        headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+      });
+    }
+
+    // Check for email mismatch (different user logged in via Access)
+    const jwtEmail = resolveAccessEmail(jwt);
+    if (jwtEmail && jwtEmail !== user.email.toLowerCase()) {
+      console.warn(
+        `[Auth] Email mismatch: session=${user.email}, jwt=${jwtEmail}. Destroying stale session.`
+      );
+      const session = await getSession(request);
+      const url = new URL(request.url);
+      const loginUrl = `${redirectTo}?returnTo=${encodeURIComponent(url.pathname)}`;
+      throw redirect(loginUrl, {
         headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
       });
     }
