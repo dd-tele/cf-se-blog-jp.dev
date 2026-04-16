@@ -86,10 +86,12 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <main ref={mainRef} className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <main ref={mainRef} className="w-full">
 
         {/* Architecture Overview */}
-        <section id="architecture" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="architecture">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">アーキテクチャ概要</h2>
           <div
             className="group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md"
@@ -134,7 +136,7 @@ export default function AboutPage() {
         </section>
 
         {/* Section Navigation */}
-        <nav className="mb-16 rounded-xl border border-gray-200 bg-gray-50/80 px-5 py-4">
+        <nav className="mt-16 rounded-xl border border-gray-200 bg-gray-50/80 px-5 py-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">目次</p>
           <div className="flex flex-wrap gap-2">
             {[
@@ -164,9 +166,13 @@ export default function AboutPage() {
             ))}
           </div>
         </nav>
+        </div>
+        </div>
 
         {/* Tech Stack Grid */}
-        <section id="tech-stack" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="tech-stack">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">技術スタック</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TechCard
@@ -261,9 +267,13 @@ export default function AboutPage() {
             />
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Feature Flow */}
-        <section id="post-flow" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="post-flow">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">記事作成フロー</h2>
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="grid grid-cols-1 divide-y sm:grid-cols-6 sm:divide-x sm:divide-y-0">
@@ -276,9 +286,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* AI Prompt Engineering */}
-        <section id="ai-draft" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="ai-draft">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">AI ドラフト生成のしくみ</h2>
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -320,9 +334,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* AI Assist Refinement */}
-        <section id="ai-assist" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="ai-assist">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">AI 修正アシスト</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             AI が生成した下書きを読んで気づいた補足情報や修正指示を、手動で書き直さずに AI で自然に本文に組み込む機能です。
@@ -381,9 +399,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Template Types */}
-        <section id="templates" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="templates">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">テンプレート一覧</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TemplateCard title="Zero Trust 導入ガイド" desc="Access / Gateway / Tunnel の導入事例を構造化して記述" category="Zero Trust" />
@@ -394,9 +416,13 @@ export default function AboutPage() {
             <TemplateCard title="Tips &amp; Tricks" desc="短めの実用的な Cloudflare 活用テクニック" category="General" />
           </div>
         </section>
+        </div>
+        </div>
 
         {/* JSON Import — External AI Integration */}
-        <section id="json-import" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="json-import">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">JSON インポート — 他生成 AI との連携</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             Gemini、ChatGPT、Claude などの外部 AI ツールで作成したフィールド入力データを、テンプレートフォームに JSON インポートして記事を生成できます。
@@ -444,9 +470,13 @@ export default function AboutPage() {
             </p>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Access Request & Email Flow */}
-        <section id="access-request" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="access-request">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">投稿者申請 &amp; メール通知フロー</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             外部エンジニアが投稿者として参加するには、公開申請フォーム（<code className="rounded bg-gray-100 px-1 text-xs">/apply</code>）から申請を送信します。
@@ -485,9 +515,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Hono API Architecture */}
-        <section id="hono-api" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="hono-api">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">Hono API アーキテクチャ</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             本ブログの API レイヤーは、Cloudflare Workers に最適化された超軽量フレームワーク
@@ -548,9 +582,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Data Model */}
-        <section id="data-model" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="data-model">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">データモデル</h2>
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <svg viewBox="0 0 800 380" className="w-full" xmlns="http://www.w3.org/2000/svg">
@@ -646,9 +684,13 @@ export default function AboutPage() {
             </svg>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Security & Infra */}
-        <section id="security" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="security">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">セキュリティ & インフラ</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -711,9 +753,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* AI Chatbot Deep Dive */}
-        <section id="ai-chatbot" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="ai-chatbot">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">AI チャットボット — 実装・改善・チューニング</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             各記事ページにフローティングチャットウィジェットを設置。読者が記事内容や Cloudflare 全般について質問でき、
@@ -868,9 +914,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Markdown Import */}
-        <section id="md-import" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="md-import">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">Markdown インポート</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             既存の Markdown 記事（Qiita、Zenn、社内 Wiki 等）をそのままインポートして記事化できます。
@@ -910,9 +960,13 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Disclaimer Policy */}
-        <section id="disclaimer" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="disclaimer">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">免責事項ポリシー</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             本ブログは Cloudflare Japan のソリューションエンジニアが運営していますが、掲載内容は公式な製品仕様や動作保証を意味するものではありません。
@@ -945,9 +999,13 @@ export default function AboutPage() {
             </ul>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Change Log Link */}
-        <section id="changelog" className="mb-20">
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="changelog">
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm text-center">
             <h2 className="mb-3 text-2xl font-bold text-gray-900">Change Log</h2>
             <p className="mb-6 text-sm text-gray-500">
@@ -961,9 +1019,13 @@ export default function AboutPage() {
             </Link>
           </div>
         </section>
+        </div>
+        </div>
 
         {/* Specs Table */}
-        <section id="specs" className="mb-20">
+        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="specs">
           <h2 className="mb-8 text-2xl font-bold text-gray-900">仕様一覧</h2>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="w-full text-sm">
@@ -999,6 +1061,8 @@ export default function AboutPage() {
             </table>
           </div>
         </section>
+        </div>
+        </div>
 
       </main>
 
