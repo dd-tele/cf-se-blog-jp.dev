@@ -26,13 +26,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   const session = await getSession(request);
+  const user = session.get("user") as { email?: string } | undefined;
 
   // Destroy the app session. The CF_Authorization cookie (set by Cloudflare
   // Access edge) cannot be cleared via Set-Cookie from the origin server.
   // The logged-out page will redirect to /cdn-cgi/access/logout to clear it.
-  return redirect("/auth/logged-out", {
-    headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
-  });
+  //
+  // Also set a short-lived cookie with the logged-out email. The login loader
+  // uses this to detect stale Access JWTs that weren't properly cleared.
+  const headers = new Headers();
+  headers.append("Set-Cookie", await sessionStorage.destroySession(session));
+  if (user?.email) {
+    headers.append(
+      "Set-Cookie",
+      `__cf_blog_pre_logout_email=${encodeURIComponent(user.email)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
+    );
+  }
+  return redirect("/auth/logged-out", { headers });
 }
 
 export default function LogoutPage() {

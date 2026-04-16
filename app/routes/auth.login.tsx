@@ -11,6 +11,7 @@ import {
   getSessionUser,
   isAccessConfigured,
   sessionStorage,
+  type SessionUser,
 } from "~/lib/auth.server";
 import { redirect } from "@remix-run/cloudflare";
 import {
@@ -27,6 +28,27 @@ import { ensureUser } from "~/lib/posts.server";
 export const meta: MetaFunction = () => [
   { title: "ログイン — Cloudflare Solution Blog" },
 ];
+
+const CLEAR_PRE_LOGOUT_COOKIE =
+  "__cf_blog_pre_logout_email=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0";
+
+function getPreLogoutEmail(request: Request): string | null {
+  const cookies = request.headers.get("Cookie") || "";
+  const match = cookies.match(/__cf_blog_pre_logout_email=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function createUserSessionAndClearPreLogout(
+  user: SessionUser,
+  redirectTo: string
+) {
+  const session = await sessionStorage.getSession();
+  session.set("user", user);
+  const headers = new Headers();
+  headers.append("Set-Cookie", await sessionStorage.commitSession(session));
+  headers.append("Set-Cookie", CLEAR_PRE_LOGOUT_COOKIE);
+  return redirect(redirectTo, { headers });
+}
 
 const DEV_USERS = [
   {
@@ -87,6 +109,27 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     const retryCount = parseInt(url.searchParams.get("retry") || "0", 10);
 
     if (jwt) {
+      // Detect stale Access JWTs left over from a failed logout.
+      // The logout action sets __cf_blog_pre_logout_email cookie.
+      // If the JWT email still matches the logged-out email, the Access
+      // session wasn't properly cleared. Force a full-page redirect to
+      // /cdn-cgi/access/logout to ensure it's cleaned up.
+      const preLogoutEmail = getPreLogoutEmail(request);
+      if (preLogoutEmail) {
+        const jwtEmail = resolveAccessEmail(jwt);
+        if (jwtEmail && jwtEmail === preLogoutEmail.toLowerCase()) {
+          console.warn(
+            `[Login] Stale JWT detected after logout: jwt=${jwtEmail} matches pre_logout=${preLogoutEmail}. Forcing Access logout.`
+          );
+          const headers = new Headers();
+          // Clear the pre_logout cookie so we don't loop
+          headers.append("Set-Cookie", CLEAR_PRE_LOGOUT_COOKIE);
+          return redirect("/cdn-cgi/access/logout", { headers });
+        }
+        // JWT email differs from pre_logout → new user authenticated, clear cookie
+        // (will be cleared when session is created below)
+      }
+
       try {
         const result: VerifyResult = await verifyAccessJWT(
           jwt,
@@ -132,7 +175,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           }
 
           // Create session and redirect (works for document requests)
-          return createUserSession(sessionUser, returnTo);
+          return createUserSessionAndClearPreLogout(sessionUser, returnTo);
         }
 
         // JWT could not be verified or decoded at all
@@ -179,7 +222,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
             sessionUser.displayName = dbUser.nickname || dbUser.display_name;
             if (dbUser.role) sessionUser.role = dbUser.role as typeof sessionUser.role;
           }
-          return createUserSession(sessionUser, returnTo);
+          return createUserSessionAndClearPreLogout(sessionUser, returnTo);
         }
         return {
           mode: "error" as const,
