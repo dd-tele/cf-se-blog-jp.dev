@@ -154,11 +154,23 @@ chat.post("/", requireAuth, async (c) => {
       gatewayId
     );
 
+    // Gemma 4 may return a Response object instead of a raw ReadableStream
+    let readable: ReadableStream;
+    if (aiStream instanceof ReadableStream) {
+      readable = aiStream;
+    } else if (aiStream && typeof (aiStream as any).body?.getReader === "function") {
+      readable = (aiStream as any).body;
+    } else {
+      // Fallback: try to treat as EventSource-like stream
+      readable = aiStream as ReadableStream;
+    }
+
     return streamSSE(c, async (stream) => {
-      const reader = (aiStream as ReadableStream).getReader();
+      const reader = readable.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";
       let lineBuf = "";
+      let chunkCount = 0;
 
       try {
         while (true) {
@@ -166,6 +178,10 @@ chat.post("/", requireAuth, async (c) => {
           if (done) break;
 
           const chunk = decoder.decode(value as ArrayBuffer, { stream: true });
+          chunkCount++;
+          if (chunkCount <= 3) {
+            console.log(`[Chat Stream] chunk #${chunkCount} (${chunk.length} bytes):`, chunk.slice(0, 300));
+          }
           lineBuf += chunk;
           const parts = lineBuf.split("\n");
           lineBuf = parts.pop() || "";
@@ -177,11 +193,21 @@ chat.post("/", requireAuth, async (c) => {
             if (payload === "[DONE]") continue;
             try {
               const parsed = JSON.parse(payload);
-              if (parsed.response) {
-                fullResponse += parsed.response;
+              // Support multiple response formats:
+              // Workers AI standard: { response: "text" }
+              // OpenAI-compatible:   { choices: [{ delta: { content: "text" } }] }
+              const token =
+                parsed.response ??
+                parsed.choices?.[0]?.delta?.content ??
+                parsed.result?.response ??
+                null;
+              if (token) {
+                fullResponse += token;
                 await stream.writeSSE({
-                  data: JSON.stringify({ text: parsed.response }),
+                  data: JSON.stringify({ text: token }),
                 });
+              } else if (chunkCount <= 5) {
+                console.log("[Chat Stream] unrecognized payload:", JSON.stringify(parsed).slice(0, 300));
               }
             } catch {
               // Incomplete JSON — skip
@@ -195,6 +221,12 @@ chat.post("/", requireAuth, async (c) => {
             error: "AI Gateway またはモデルからの応答が中断されました。内容を変えて再度お試しください。",
           }),
         });
+      }
+
+      if (chunkCount === 0) {
+        console.error("[Chat Stream] No chunks received from AI stream");
+      } else if (!fullResponse.trim()) {
+        console.error(`[Chat Stream] ${chunkCount} chunks received but no response extracted. Last lineBuf:`, lineBuf.slice(0, 500));
       }
 
       // If stream completed but produced no content, notify the client
