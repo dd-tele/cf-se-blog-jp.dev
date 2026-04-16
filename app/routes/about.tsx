@@ -92,7 +92,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="architecture">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">アーキテクチャ概要</h2>
+          <SectionHeader tag="01" title="アーキテクチャ概要" />
           <div
             className="group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md"
             onClick={openDiagram}
@@ -140,21 +140,21 @@ export default function AboutPage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">目次</p>
           <div className="flex flex-wrap gap-2">
             {[
-              ["tech-stack", "技術スタック"],
-              ["post-flow", "記事作成フロー"],
-              ["ai-draft", "AI ドラフト生成"],
-              ["ai-assist", "AI 修正アシスト"],
-              ["templates", "テンプレート一覧"],
-              ["json-import", "JSON インポート"],
-              ["access-request", "投稿者申請"],
-              ["hono-api", "Hono API"],
-              ["data-model", "データモデル"],
-              ["security", "セキュリティ"],
-              ["ai-chatbot", "AI チャットボット"],
-              ["md-import", "Markdown インポート"],
-              ["disclaimer", "免責事項"],
-              ["changelog", "Change Log"],
-              ["specs", "仕様一覧"],
+              ["tech-stack", "02 技術スタック"],
+              ["post-flow", "03 記事作成フロー"],
+              ["ai-draft", "04 AI ドラフト生成"],
+              ["ai-assist", "05 AI 修正アシスト"],
+              ["templates", "06 テンプレート一覧"],
+              ["json-import", "07 JSON インポート"],
+              ["access-request", "08 投稿者申請"],
+              ["hono-api", "09 Hono API"],
+              ["data-model", "10 データモデル"],
+              ["security", "11 セキュリティ"],
+              ["ai-chatbot", "12 AI チャットボット"],
+              ["md-import", "13 Markdown インポート"],
+              ["disclaimer", "14 免責事項"],
+              ["changelog", "15 Change Log"],
+              ["specs", "16 仕様一覧"],
             ].map(([id, label]) => (
               <a
                 key={id}
@@ -170,10 +170,10 @@ export default function AboutPage() {
         </div>
 
         {/* Tech Stack Grid */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="tech-stack">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">技術スタック</h2>
+          <SectionHeader tag="02" title="技術スタック" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TechCard
               color="blue"
@@ -274,7 +274,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="post-flow">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">記事作成フロー</h2>
+          <SectionHeader tag="03" title="記事作成フロー" />
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="grid grid-cols-1 divide-y sm:grid-cols-6 sm:divide-x sm:divide-y-0">
               <FlowStep step={1} title="テンプレート選択" desc="6種類のテンプレートから選択" />
@@ -290,10 +290,10 @@ export default function AboutPage() {
         </div>
 
         {/* AI Prompt Engineering */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="ai-draft">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">AI ドラフト生成のしくみ</h2>
+          <SectionHeader tag="04" title="AI ドラフト生成のしくみ" />
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-600">入力</h3>
@@ -341,7 +341,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="ai-assist">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">AI 修正アシスト</h2>
+          <SectionHeader tag="05" title="AI 修正アシスト" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             AI が生成した下書きを読んで気づいた補足情報や修正指示を、手動で書き直さずに AI で自然に本文に組み込む機能です。
             修正案は HTML プレビューと Markdown ソースのタブ切替で確認し、納得できたら適用します。
@@ -403,10 +403,10 @@ export default function AboutPage() {
         </div>
 
         {/* Template Types */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="templates">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">テンプレート一覧</h2>
+          <SectionHeader tag="06" title="テンプレート一覧" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TemplateCard title="Zero Trust 導入ガイド" desc="Access / Gateway / Tunnel の導入事例を構造化して記述" category="Zero Trust" />
             <TemplateCard title="Workers / Pages 開発記" desc="サーバーレスアプリケーションの設計・実装事例" category="Workers" />
@@ -423,7 +423,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="json-import">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">JSON インポート — 他生成 AI との連携</h2>
+          <SectionHeader tag="07" title="JSON インポート — 他生成 AI との連携" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             Gemini、ChatGPT、Claude などの外部 AI ツールで作成したフィールド入力データを、テンプレートフォームに JSON インポートして記事を生成できます。
             API キー不要でブラウザ内だけで完結するワークフローです。
@@ -474,10 +474,10 @@ export default function AboutPage() {
         </div>
 
         {/* Access Request & Email Flow */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="access-request">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">投稿者申請 &amp; メール通知フロー</h2>
+          <SectionHeader tag="08" title="投稿者申請 & メール通知フロー" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             外部エンジニアが投稿者として参加するには、公開申請フォーム（<code className="rounded bg-gray-100 px-1 text-xs">/apply</code>）から申請を送信します。
             Cloudflare Email Routing と専用 Email Worker を組み合わせた通知メールの仕組みが組み込まれています。
@@ -522,7 +522,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="hono-api">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">Hono API アーキテクチャ</h2>
+          <SectionHeader tag="09" title="Hono API アーキテクチャ" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             本ブログの API レイヤーは、Cloudflare Workers に最適化された超軽量フレームワーク
             <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
@@ -586,10 +586,10 @@ export default function AboutPage() {
         </div>
 
         {/* Data Model */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="data-model">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">データモデル</h2>
+          <SectionHeader tag="10" title="データモデル" />
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <svg viewBox="0 0 800 380" className="w-full" xmlns="http://www.w3.org/2000/svg">
               <rect width="800" height="380" fill="#fafafa" rx="12" />
@@ -691,7 +691,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="security">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">セキュリティ & インフラ</h2>
+          <SectionHeader tag="11" title="セキュリティ & インフラ" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-2 font-bold text-gray-900">認証・認可</h3>
@@ -757,10 +757,10 @@ export default function AboutPage() {
         </div>
 
         {/* AI Chatbot Deep Dive */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="ai-chatbot">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">AI チャットボット — 実装・改善・チューニング</h2>
+          <SectionHeader tag="12" title="AI チャットボット — 実装・改善・チューニング" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             各記事ページにフローティングチャットウィジェットを設置。読者が記事内容や Cloudflare 全般について質問でき、
             AI がリアルタイムでストリーミング回答します。セキュリティ・モデレーション・UX を多層的に設計しています。
@@ -921,7 +921,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="md-import">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">Markdown インポート</h2>
+          <SectionHeader tag="13" title="Markdown インポート" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             既存の Markdown 記事（Qiita、Zenn、社内 Wiki 等）をそのままインポートして記事化できます。
             YAML Frontmatter からタイトル・タグ・カテゴリを自動抽出し、フォームに反映します。
@@ -964,10 +964,10 @@ export default function AboutPage() {
         </div>
 
         {/* Disclaimer Policy */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="disclaimer">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">免責事項ポリシー</h2>
+          <SectionHeader tag="14" title="免責事項ポリシー" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             本ブログは Cloudflare Japan のソリューションエンジニアが運営していますが、掲載内容は公式な製品仕様や動作保証を意味するものではありません。
             この位置づけを明確にするため、サイト上の複数箇所に免責事項を掲載しています。
@@ -1007,7 +1007,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="changelog">
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm text-center">
-            <h2 className="mb-3 text-2xl font-bold text-gray-900">Change Log</h2>
+            <div className="mb-3"><span className="mb-2 block text-xs font-bold uppercase tracking-widest text-brand-500">15</span><h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Change Log</h2></div>
             <p className="mb-6 text-sm text-gray-500">
               基礎設計から現在に至るまでの実装・変更履歴をまとめています。
             </p>
@@ -1023,10 +1023,10 @@ export default function AboutPage() {
         </div>
 
         {/* Specs Table */}
-        <div className="border-b border-gray-200 bg-gray-50/60 py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="specs">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900">仕様一覧</h2>
+          <SectionHeader tag="16" title="仕様一覧" />
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="w-full text-sm">
               <thead>
@@ -1079,6 +1079,15 @@ export default function AboutPage() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function SectionHeader({ tag, title }: { tag: string; title: string }) {
+  return (
+    <div className="mb-8">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-brand-500">{tag}</span>
+      <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">{title}</h2>
     </div>
   );
 }
