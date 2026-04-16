@@ -1,11 +1,24 @@
 import { useEffect, useCallback } from "react";
 import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
+import { json } from "@remix-run/cloudflare";
 import { useLoaderData } from "@remix-run/react";
 import { isAccessConfigured } from "~/lib/auth.server";
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
   const env = context.cloudflare.env;
-  return { useAccessLogout: isAccessConfigured(env) };
+  const url = new URL(request.url);
+  const email = url.searchParams.get("email");
+
+  // Set a short-lived cookie with the logged-out email.
+  // The login loader uses this to detect stale Access JWTs that
+  // weren't properly cleared by the iframe logout below.
+  const headers: HeadersInit = {};
+  if (email) {
+    (headers as Record<string, string>)["Set-Cookie"] =
+      `__cf_blog_pre_logout_email=${encodeURIComponent(email)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`;
+  }
+
+  return json({ useAccessLogout: isAccessConfigured(env) }, { headers });
 }
 
 export default function LoggedOutPage() {

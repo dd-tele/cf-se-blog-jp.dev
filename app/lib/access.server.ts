@@ -164,16 +164,37 @@ export function decodeAccessJWTUnsafe(token: string): AccessJWTPayload | null {
 /**
  * Extract Access JWT from request headers.
  * Cloudflare Access sends the JWT in both a header and a cookie.
+ *
+ * When an iframe-based Access logout fails to clear the CF_Authorization
+ * cookie, a subsequent login can result in TWO CF_Authorization cookies
+ * (old user + new user). In that case we decode each and pick the one
+ * with the latest `iat` (issued-at) timestamp.
  */
 export function getAccessJWT(request: Request): string | null {
-  // Header takes priority
+  // Header takes priority — always set by Access for the current identity
   const headerToken = request.headers.get("CF-Access-JWT-Assertion");
   if (headerToken) return headerToken;
 
-  // Fallback to cookie
+  // Fallback to cookie(s)
   const cookies = request.headers.get("Cookie") || "";
-  const match = cookies.match(/CF_Authorization=([^;]+)/);
-  return match ? match[1] : null;
+  const matches = [...cookies.matchAll(/CF_Authorization=([^;]+)/g)];
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0][1];
+
+  // Multiple CF_Authorization cookies — pick the most recently issued one
+  let bestToken = matches[0][1];
+  let bestIat = 0;
+  for (const m of matches) {
+    const decoded = decodeAccessJWTUnsafe(m[1]);
+    if (decoded && decoded.iat > bestIat) {
+      bestIat = decoded.iat;
+      bestToken = m[1];
+    }
+  }
+  console.warn(
+    `[Access] Found ${matches.length} CF_Authorization cookies, using token with iat=${bestIat}`
+  );
+  return bestToken;
 }
 
 /**

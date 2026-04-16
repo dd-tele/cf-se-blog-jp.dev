@@ -32,17 +32,16 @@ export async function action({ request }: ActionFunctionArgs) {
   // Access edge) cannot be cleared via Set-Cookie from the origin server.
   // The logged-out page will redirect to /cdn-cgi/access/logout to clear it.
   //
-  // Also set a short-lived cookie with the logged-out email. The login loader
-  // uses this to detect stale Access JWTs that weren't properly cleared.
-  const headers = new Headers();
-  headers.append("Set-Cookie", await sessionStorage.destroySession(session));
-  if (user?.email) {
-    headers.append(
-      "Set-Cookie",
-      `__cf_blog_pre_logout_email=${encodeURIComponent(user.email)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
-    );
-  }
-  return redirect("/auth/logged-out", { headers });
+  // Pass the email to the logged-out page via URL param.
+  // The logged-out page sets the pre_logout cookie so the login loader can
+  // detect stale Access JWTs that weren't cleared by the iframe logout.
+  const email = user?.email || "";
+  const loggedOutUrl = email
+    ? `/auth/logged-out?email=${encodeURIComponent(email)}`
+    : "/auth/logged-out";
+  return redirect(loggedOutUrl, {
+    headers: { "Set-Cookie": await sessionStorage.destroySession(session) },
+  });
 }
 
 export default function LogoutPage() {
