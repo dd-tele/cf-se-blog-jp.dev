@@ -116,7 +116,7 @@ export default function Index() {
             </Link>
             <Link
               to="/about"
-              className="rounded-lg border border-gray-300 bg-white px-7 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+              className="rounded-lg bg-gradient-to-r from-blue-500 to-violet-500 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:from-blue-600 hover:to-violet-600"
             >
               このブログについて
             </Link>
