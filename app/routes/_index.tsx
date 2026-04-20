@@ -93,7 +93,7 @@ export default function Index() {
           <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
             Cloudflare
             <br />
-            <span className="text-brand-600">フィールドノート</span>
+            <span className="text-brand-600">Field Notes</span>
           </h1>
           <p className="mt-5 text-sm tracking-wide text-gray-400">
             — 現場のエンジニアリングを、検証や事例で伝える
