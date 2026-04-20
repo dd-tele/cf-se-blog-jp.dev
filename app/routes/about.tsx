@@ -152,9 +152,10 @@ export default function AboutPage() {
               ["security", "11 セキュリティ"],
               ["ai-chatbot", "12 AI チャットボット"],
               ["md-import", "13 Markdown インポート"],
-              ["disclaimer", "14 免責事項"],
-              ["changelog", "15 Change Log"],
-              ["specs", "16 仕様一覧"],
+              ["how-to-use", "14 このブログの使い方"],
+              ["disclaimer", "15 免責事項"],
+              ["changelog", "16 Change Log"],
+              ["specs", "17 仕様一覧"],
             ].map(([id, label]) => (
               <a
                 key={id}
@@ -963,11 +964,84 @@ export default function AboutPage() {
         </div>
         </div>
 
-        {/* Disclaimer Policy */}
+        {/* How to Use This Blog */}
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="how-to-use">
+          <SectionHeader tag="14" title="このブログの使い方" />
+          <p className="mb-8 text-sm leading-relaxed text-gray-600">
+            Cloudflare フィールドノートは、SE が現場で得た技術知見を検証や事例の形で共有する場です。
+            対象読者ごとに最適な活用方法をまとめました。
+          </p>
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">👤</span>
+                <h3 className="font-bold text-gray-900">お客様・ユーザー</h3>
+              </div>
+              <ul className="space-y-2 text-sm leading-relaxed text-gray-600">
+                <li className="flex gap-2"><span className="text-blue-400">▸</span>Cloudflare 技術の理解・学習に</li>
+                <li className="flex gap-2"><span className="text-blue-400">▸</span>構成例や設計パターンの参考に</li>
+                <li className="flex gap-2"><span className="text-blue-400">▸</span>PoC や検証の出発点として</li>
+              </ul>
+              <div className="mt-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                ⚠ 環境差異があるため、必ず検証のうえ適用してください
+              </div>
+            </div>
+            <div className="rounded-xl border border-brand-200 bg-gradient-to-br from-orange-50 to-white p-6 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">🔧</span>
+                <h3 className="font-bold text-gray-900">SE・社内エンジニア</h3>
+              </div>
+              <ul className="space-y-2 text-sm leading-relaxed text-gray-600">
+                <li className="flex gap-2"><span className="text-brand-400">▸</span>お客様提案の技術リファレンスに</li>
+                <li className="flex gap-2"><span className="text-brand-400">▸</span>チーム内のナレッジ共有に</li>
+                <li className="flex gap-2"><span className="text-brand-400">▸</span>新人オンボーディングの教材に</li>
+              </ul>
+              <div className="mt-4 rounded-lg bg-orange-50 px-3 py-2 text-xs text-brand-700">
+                ⚠ 公式ドキュメントと併用し、社外共有時は位置づけを説明してください
+              </div>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-700">🤝</span>
+                <h3 className="font-bold text-gray-900">パートナー</h3>
+              </div>
+              <ul className="space-y-2 text-sm leading-relaxed text-gray-600">
+                <li className="flex gap-2"><span className="text-emerald-400">▸</span>共同提案時の技術コンテキスト共有に</li>
+                <li className="flex gap-2"><span className="text-emerald-400">▸</span>Cloudflare 技術の概要把握に</li>
+                <li className="flex gap-2"><span className="text-emerald-400">▸</span>お客様向け説明資料の補足に</li>
+              </ul>
+              <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                ⚠ 正式仕様は必ず公式ドキュメントをご参照ください
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h4 className="mb-3 font-bold text-gray-900">このブログの位置づけ</h4>
+            <div className="flex items-center gap-2 overflow-x-auto text-xs">
+              <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-500">公式ドキュメント</span>
+              <span className="text-gray-300">›</span>
+              <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-500">Cloudflare Blog</span>
+              <span className="text-gray-300">›</span>
+              <span className="whitespace-nowrap rounded-full border-2 border-brand-300 bg-brand-50 px-3 py-1.5 font-bold text-brand-700">フィールドノート ← ここ</span>
+              <span className="text-gray-300">›</span>
+              <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-500">個人ブログ・Zenn・Qiita</span>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-gray-500">
+              SE が現場で得た知見を共有するフィールドノートです。公式ドキュメントとは異なり、個人の経験・見解に基づく情報を含みます。
+              最新の仕様は <a href="https://developers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="underline text-brand-600 hover:text-brand-700">developers.cloudflare.com</a> をご参照ください。
+            </p>
+          </div>
+        </section>
+        </div>
+        </div>
+
+        {/* Disclaimer Policy */}
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="disclaimer">
-          <SectionHeader tag="14" title="免責事項ポリシー" />
+          <SectionHeader tag="15" title="免責事項ポリシー" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             本ブログは Cloudflare Japan のソリューションエンジニアが運営していますが、掲載内容は公式な製品仕様や動作保証を意味するものではありません。
             この位置づけを明確にするため、サイト上の複数箇所に免責事項を掲載しています。
@@ -1007,7 +1081,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="changelog">
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm text-center">
-            <div className="mb-3"><span className="mb-2 block text-xs font-bold uppercase tracking-widest text-brand-500">15</span><h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Change Log</h2></div>
+            <div className="mb-3"><span className="mb-2 block text-xs font-bold uppercase tracking-widest text-brand-500">16</span><h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Change Log</h2></div>
             <p className="mb-6 text-sm text-gray-500">
               基礎設計から現在に至るまでの実装・変更履歴をまとめています。
             </p>
@@ -1026,7 +1100,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="specs">
-          <SectionHeader tag="16" title="仕様一覧" />
+          <SectionHeader tag="17" title="仕様一覧" />
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="w-full text-sm">
               <thead>
