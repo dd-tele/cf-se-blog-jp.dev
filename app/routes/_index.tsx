@@ -39,7 +39,7 @@ export default function Index() {
       <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-            {siteName}
+            Cloudflare Field Notes
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             <Link
@@ -97,7 +97,7 @@ export default function Index() {
             — 現場のエンジニアリングを、検証や事例で伝える
           </p>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-400">
-            Cloudflare SE とテックチャンピオンが現場で得た設計判断、実装パターン、運用の工夫を共有するフィールドノートです。
+            Cloudflare SE とユーザーのテックチャンピオンが現場で得た設計判断、実装パターン、運用の工夫を共有するフィールドノートです。
           </p>
           <div className="mt-10 flex items-center gap-4">
             <Link
@@ -298,7 +298,7 @@ export default function Index() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <Link to="/" className="text-sm font-medium text-gray-400 hover:text-gray-300 transition-colors">
-              {siteName}
+              Cloudflare Field Notes
             </Link>
             <div className="flex items-center gap-4">
               <a href="/feed.xml" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">RSS</a>
