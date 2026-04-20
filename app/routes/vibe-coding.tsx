@@ -17,7 +17,7 @@ export default function VibeCoding() {
       <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-            Cloudflare Solution Blog
+            Cloudflare フィールドノート
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
@@ -146,7 +146,7 @@ export default function VibeCoding() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <SectionHeader tag="03" title="このブログが実証していること" />
           <p className="mb-10 max-w-3xl text-base leading-relaxed text-gray-600">
-            Cloudflare Solution Blog 自体が、Windsurf (Cascade) と Cloudflare Developer Platform による Vibe Coding で開発されています。
+            Cloudflare フィールドノート自体が、Windsurf (Cascade) と Cloudflare Developer Platform による Vibe Coding で開発されています。
             機能追加・バグ修正・デプロイのすべてが IDE 内の対話で完結しています。
           </p>
 
@@ -299,7 +299,7 @@ export default function VibeCoding() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <Link to="/" className="text-sm font-medium text-gray-400 hover:text-gray-300 transition-colors">
-              Cloudflare Solution Blog
+              Cloudflare フィールドノート
             </Link>
             <span className="text-xs text-gray-600">
               Built with Vibe Coding — Windsurf × Cloudflare Developer Platform

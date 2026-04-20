@@ -11,7 +11,7 @@ import { aiSummaries, aiDraftRequests, posts, categories } from "~/db/schema";
 import { sql, desc, eq, count, and, gte } from "drizzle-orm";
 
 export const meta: MetaFunction = () => [
-  { title: "AI インサイト — Cloudflare Solution Blog" },
+  { title: "AI インサイト — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -177,7 +177,7 @@ export default function AIInsights() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-              Cloudflare Solution Blog
+              Cloudflare フィールドノート
             </Link>
             <span className="text-sm text-gray-400">|</span>
             <span className="text-sm font-semibold text-red-600">Admin</span>

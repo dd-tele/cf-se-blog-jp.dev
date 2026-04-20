@@ -5,18 +5,18 @@ import { getSessionUser } from "~/lib/auth.server";
 import { ScrollReveal, useAutoReveal } from "~/components/ScrollReveal";
 
 export const meta: MetaFunction = () => [
-  { title: "このブログについて — Cloudflare Solution Blog" },
+  { title: "このブログについて — Cloudflare フィールドノート" },
   {
     name: "description",
     content:
-      "Cloudflare Solution Blog のアーキテクチャ、使用技術、機能構成について紹介します。",
+      "Cloudflare フィールドノートのアーキテクチャ、使用技術、機能構成について紹介します。",
   },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
   return {
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
     user,
   };
 }

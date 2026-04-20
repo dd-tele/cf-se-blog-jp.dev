@@ -36,7 +36,7 @@ aiGuide.get("/", requireAuth, async (c) => {
 
   return c.json({
     guide: {
-      system: "Cloudflare Solution Blog — Template API",
+      system: "Cloudflare フィールドノート — Template API",
       description:
         "このブログは Cloudflare SE が技術ブログ記事を投稿するプラットフォームです。テンプレートごとにフィールド定義があり、各フィールドに入力データを埋めると AI が記事を自動生成します。",
       your_user: {

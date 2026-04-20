@@ -10,7 +10,7 @@ import { ChatWidget } from "~/components/ChatWidget";
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data || data.gated || !data.post) return [{ title: "記事が見つかりません" }];
   const p = data.post;
-  const title = `${p.metaTitle || p.title} — Cloudflare Solution Blog`;
+  const title = `${p.metaTitle || p.title} — Cloudflare フィールドノート`;
   const description = p.metaDescription || p.excerpt || "";
   const url = `${data.siteUrl}/posts/${p.slug}`;
   const image = p.coverImageUrl || "";
@@ -24,7 +24,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { property: "og:description", content: description },
     { property: "og:url", content: url },
     ...(image ? [{ property: "og:image", content: image }] : []),
-    { property: "og:site_name", content: "Cloudflare Solution Blog" },
+    { property: "og:site_name", content: "Cloudflare フィールドノート" },
     ...(p.publishedAt
       ? [{ property: "article:published_time", content: p.publishedAt }]
       : []),
@@ -59,7 +59,7 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
         gated: true as const,
         postTitle: post.title,
         postSlug: post.slug,
-        siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+        siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
       };
     }
   }
@@ -101,7 +101,7 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
     user,
     aiSummary,
     relatedPosts,
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
     siteUrl: context.cloudflare.env.SITE_URL ?? "https://cf-se-blog-jp.dev",
     turnstileSiteKey: context.cloudflare.env.TURNSTILE_SITE_KEY ?? "",
   };

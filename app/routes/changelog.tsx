@@ -3,18 +3,18 @@ import { useLoaderData, Link } from "@remix-run/react";
 import { getSessionUser } from "~/lib/auth.server";
 
 export const meta: MetaFunction = () => [
-  { title: "Change Log — Cloudflare Solution Blog" },
+  { title: "Change Log — Cloudflare フィールドノート" },
   {
     name: "description",
     content:
-      "Cloudflare Solution Blog の基礎設計から現在に至るまでの実装・変更履歴。",
+      "Cloudflare フィールドノートの基礎設計から現在に至るまでの実装・変更履歴。",
   },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
   return {
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
     user,
   };
 }

@@ -5,7 +5,7 @@ import { requireUser } from "~/lib/auth.server";
 import { getActiveTemplates } from "~/lib/templates.server";
 
 export const meta: MetaFunction = () => [
-  { title: "テンプレートを選ぶ — Cloudflare Solution Blog" },
+  { title: "テンプレートを選ぶ — Cloudflare フィールドノート" },
 ];
 
 const TYPE_MAP: Record<string, { label: string; className: string }> = {
@@ -77,7 +77,7 @@ export default function PortalTemplates() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-              Cloudflare Solution Blog
+              Cloudflare フィールドノート
             </Link>
             <span className="text-sm text-gray-400">|</span>
             <span className="text-sm font-medium text-gray-600">テンプレート</span>

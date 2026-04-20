@@ -15,7 +15,7 @@ import { requireRole } from "~/lib/auth.server";
 import { getAllUsers, deleteUser, removeEmailFromAccessPolicy, deleteEmailDestination } from "~/lib/access-requests.server";
 
 export const meta: MetaFunction = () => [
-  { title: "ユーザー管理 — Cloudflare Solution Blog" },
+  { title: "ユーザー管理 — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -89,7 +89,7 @@ export default function AdminUsers() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-              Cloudflare Solution Blog
+              Cloudflare フィールドノート
             </Link>
             <span className="text-sm text-gray-400">|</span>
             <span className="text-sm font-semibold text-red-600">Admin</span>

@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "Cloudflare Solution Blog API",
+    "title": "Cloudflare フィールドノート API",
     "description": "Cloudflare SE Blog Platform の API スキーマ。Cloudflare API Shield で利用するための OpenAPI 定義。",
     "version": "1.0.0",
     "contact": {

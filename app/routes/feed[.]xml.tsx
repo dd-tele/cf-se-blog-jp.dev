@@ -4,7 +4,7 @@ import { getPublishedPosts } from "~/lib/posts.server";
 export async function loader({ context }: LoaderFunctionArgs) {
   const db = context.cloudflare.env.DB;
   const siteUrl = context.cloudflare.env.SITE_URL ?? "https://cf-se-blog-jp.dev";
-  const siteName = context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog";
+  const siteName = context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート";
 
   const posts = await getPublishedPosts(db, { limit: 50, offset: 0, visibility: "public" });
 

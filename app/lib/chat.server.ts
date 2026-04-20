@@ -232,7 +232,7 @@ export async function getRAGContext(
 
 // ─── Build AI system prompt ─────────────────────────────────
 export function buildChatSystemPrompt(postTitle: string, context: string): string {
-  return `あなたは Cloudflare Solution Blog の Q&A アシスタントです。現在、記事「${postTitle}」のページで質問を受けています。
+  return `あなたは Cloudflare フィールドノートの Q&A アシスタントです。現在、記事「${postTitle}」のページで質問を受けています。
 
 ## 回答の優先順位
 1. **記事コンテキスト優先** — まず下記の「記事コンテキスト」から回答を探してください。該当する内容がある場合は「記事では〜と述べています」と出典を明示してください。

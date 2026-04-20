@@ -13,7 +13,7 @@ interface SendRequest {
 }
 
 const SENDER = "noreply@cf-se-blog-jp.dev";
-const SENDER_NAME = "Cloudflare Solution Blog";
+const SENDER_NAME = "Cloudflare フィールドノート";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {

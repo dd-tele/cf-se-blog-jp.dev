@@ -26,7 +26,7 @@ import {
 import { ensureUser } from "~/lib/posts.server";
 
 export const meta: MetaFunction = () => [
-  { title: "ログイン — Cloudflare Solution Blog" },
+  { title: "ログイン — Cloudflare フィールドノート" },
 ];
 
 const CLEAR_PRE_LOGOUT_COOKIE =
@@ -283,7 +283,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            Cloudflare Solution Blog
+            Cloudflare フィールドノート
           </h1>
           <p className="mt-2 text-sm text-gray-500">
             開発用ログイン
@@ -355,7 +355,7 @@ function LoginError({ error, autoRetry, returnTo }: { error: string; autoRetry: 
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            Cloudflare Solution Blog
+            Cloudflare フィールドノート
           </h1>
           <p className="mt-2 text-sm text-gray-500">認証エラー</p>
         </div>

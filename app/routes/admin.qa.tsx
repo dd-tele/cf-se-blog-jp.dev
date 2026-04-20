@@ -18,7 +18,7 @@ import {
 import { writeAuditLog } from "~/lib/audit.server";
 
 export const meta: MetaFunction = () => [
-  { title: "Q&A 管理 — Cloudflare Solution Blog" },
+  { title: "Q&A 管理 — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -127,7 +127,7 @@ export default function AdminQA() {
               to="/"
               className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors"
             >
-              Cloudflare Solution Blog
+              Cloudflare フィールドノート
             </Link>
             <span className="text-sm text-gray-400">|</span>
             <span className="text-sm font-semibold text-red-600">Admin</span>

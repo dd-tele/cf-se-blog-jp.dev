@@ -6,7 +6,7 @@ pages_build_output_dir = "./build/client"
 
 [vars]
 ENVIRONMENT = "production"
-SITE_NAME = "Cloudflare Solution Blog"
+SITE_NAME = "Cloudflare フィールドノート"
 SITE_URL = "https://cf-se-blog-jp.dev"
 EMAIL_WORKER_URL = "https://cf-se-blog-email-worker.cloudflare-japan-se.workers.dev"
 

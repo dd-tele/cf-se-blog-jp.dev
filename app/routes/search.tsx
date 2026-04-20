@@ -6,7 +6,7 @@ import { getPublishedPosts } from "~/lib/posts.server";
 import { stripMarkdown } from "~/lib/utils";
 
 export const meta: MetaFunction = () => [
-  { title: "検索 — Cloudflare Solution Blog" },
+  { title: "検索 — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -90,7 +90,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     posts: visiblePosts,
     semanticAvailable,
     user,
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
   };
 }
 

@@ -6,7 +6,7 @@ import { getCached, CacheKeys } from "~/lib/cache.server";
 import { stripMarkdown } from "~/lib/utils";
 
 export const meta: MetaFunction = () => [
-  { title: "事例一覧 — Cloudflare Solution Blog" },
+  { title: "事例一覧 — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
@@ -44,7 +44,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     search: search ?? null,
     page,
     user,
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
   };
 }
 

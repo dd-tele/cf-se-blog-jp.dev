@@ -15,7 +15,7 @@ import { createAccessRequest, registerEmailDestination } from "~/lib/access-requ
 import { redirect } from "@remix-run/cloudflare";
 
 export const meta: MetaFunction = () => [
-  { title: "投稿者申請 — Cloudflare Solution Blog" },
+  { title: "投稿者申請 — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -139,7 +139,7 @@ export default function ApplyPage() {
       <header className="border-b bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-            Cloudflare Solution Blog
+            Cloudflare フィールドノート
           </Link>
           <a
             href="/portal"
@@ -155,7 +155,7 @@ export default function ApplyPage() {
         <div className="mb-10 rounded-2xl border bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-900">投稿者になるには</h1>
           <p className="mt-3 text-sm leading-relaxed text-gray-500">
-            Cloudflare Solution Blog では、Cloudflare のエンジニアが承認したユーザーのみが記事を投稿できます。
+            Cloudflare フィールドノートでは、Cloudflare のエンジニアが承認したユーザーのみが記事を投稿できます。
             これは記事の品質と信頼性を維持するための仕組みです。
           </p>
 

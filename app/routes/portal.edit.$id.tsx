@@ -43,7 +43,7 @@ import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
-  { title: `${data?.post?.title ?? "記事"} を編集 — Cloudflare Solution Blog` },
+  { title: `${data?.post?.title ?? "記事"} を編集 — Cloudflare フィールドノート` },
 ];
 
 export async function loader({ params, request, context }: LoaderFunctionArgs) {
@@ -269,7 +269,7 @@ export default function EditPost() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-              Cloudflare Solution Blog
+              Cloudflare フィールドノート
             </Link>
             <span className="text-sm text-gray-400">|</span>
             <Link to="/portal/posts" className="text-sm text-gray-500 hover:text-gray-700">

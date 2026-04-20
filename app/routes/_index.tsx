@@ -6,11 +6,11 @@ import { stripMarkdown } from "~/lib/utils";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Cloudflare Solution Blog — Engineering Case Studies" },
+    { title: "Cloudflare フィールドノート — 現場のエンジニアリングを検証や事例で伝える" },
     {
       name: "description",
       content:
-        "Cloudflare SE とユーザーが実践したエンジニアリング事例を共有するテクニカルブログ。設計判断、実装パターン、運用知見をリアルな現場目線で発信します。",
+        "Cloudflare SE が現場で得た設計判断、実装パターン、運用知見を検証や事例で共有するフィールドノートです。",
     },
   ];
 };
@@ -24,7 +24,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     ? allLatest
     : allLatest.filter((p: { visibility?: string | null }) => (p.visibility ?? "public") === "public");
   return {
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Solution Blog",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
     user,
     latestPosts,
   };
@@ -91,15 +91,15 @@ export default function Index() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f8fafc_1px,transparent_1px),linear-gradient(to_bottom,#f8fafc_1px,transparent_1px)] bg-[size:4rem_4rem]" />
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-brand-600">
-            Engineering Case Studies
+            Cloudflare Field Notes
           </p>
           <h1 className="text-4xl font-bold leading-[1.15] tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
             現場のエンジニアリングを、
             <br />
-            <span className="text-brand-600">事例で伝える。</span>
+            <span className="text-brand-600">検証や事例で伝える。</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-gray-500">
-            Cloudflare SE とユーザーが取り組んだ設計判断、実装パターン、運用の工夫をリアルな視点で共有するテクニカルブログです。
+            Cloudflare SE が現場で得た設計判断、実装パターン、運用の工夫を検証や事例で共有するフィールドノートです。
           </p>
           <div className="mt-10 flex items-center gap-4">
             <Link

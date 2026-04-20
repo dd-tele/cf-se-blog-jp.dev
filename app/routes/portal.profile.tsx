@@ -16,7 +16,7 @@ import { getUserProfile, updateUserProfile } from "~/lib/access-requests.server"
 import { AvatarCropModal } from "~/components/AvatarCropModal";
 
 export const meta: MetaFunction = () => [
-  { title: "プロフィール編集 — Cloudflare Solution Blog" },
+  { title: "プロフィール編集 — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -139,7 +139,7 @@ export default function PortalProfile() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-              Cloudflare Solution Blog
+              Cloudflare フィールドノート
             </Link>
             <span className="text-sm text-gray-400">|</span>
             <Link to="/portal" className="text-sm text-gray-500 hover:text-gray-700">
