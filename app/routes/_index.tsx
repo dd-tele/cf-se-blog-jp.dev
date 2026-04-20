@@ -97,7 +97,7 @@ export default function Index() {
             — 現場のエンジニアリングを、検証や事例で伝える
           </p>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-400">
-            Cloudflare SE が現場で得た設計判断、実装パターン、運用の工夫を共有するフィールドノートです。
+            Cloudflare SE とテックチャンピオンが現場で得た設計判断、実装パターン、運用の工夫を共有するフィールドノートです。
           </p>
           <div className="mt-10 flex items-center gap-4">
             <Link
