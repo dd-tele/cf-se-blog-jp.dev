@@ -91,9 +91,7 @@ export default function Index() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f8fafc_1px,transparent_1px),linear-gradient(to_bottom,#f8fafc_1px,transparent_1px)] bg-[size:4rem_4rem]" />
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-            Cloudflare
-            <br />
-            <span className="text-brand-600">Field Notes</span>
+            Cloudflare <span className="text-brand-600">Field Notes</span>
           </h1>
           <p className="mt-5 text-sm tracking-wide text-gray-400">
             — 現場のエンジニアリングを、検証や事例で伝える
