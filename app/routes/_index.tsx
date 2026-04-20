@@ -90,16 +90,16 @@ export default function Index() {
       <section className="relative overflow-hidden border-b bg-white py-20 sm:py-28">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f8fafc_1px,transparent_1px),linear-gradient(to_bottom,#f8fafc_1px,transparent_1px)] bg-[size:4rem_4rem]" />
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-brand-600">
-            Cloudflare Field Notes
-          </p>
-          <h1 className="text-4xl font-bold leading-[1.15] tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-            現場のエンジニアリングを、
+          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            Cloudflare
             <br />
-            <span className="text-brand-600">検証や事例で伝える。</span>
+            <span className="text-brand-600">フィールドノート</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-gray-500">
-            Cloudflare SE が現場で得た設計判断、実装パターン、運用の工夫を検証や事例で共有するフィールドノートです。
+          <p className="mt-5 text-sm tracking-wide text-gray-400">
+            — 現場のエンジニアリングを、検証や事例で伝える
+          </p>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-400">
+            Cloudflare SE が現場で得た設計判断、実装パターン、運用の工夫を共有するフィールドノートです。
           </p>
           <div className="mt-10 flex items-center gap-4">
             <Link
