@@ -14,7 +14,7 @@ export const meta: MetaFunction = () => [
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
   return {
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Field Notes",
     user,
   };
 }

@@ -44,7 +44,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     search: search ?? null,
     page,
     user,
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Field Notes",
   };
 }
 

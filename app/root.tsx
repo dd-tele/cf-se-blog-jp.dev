@@ -123,7 +123,7 @@ export const links: LinksFunction = () => [
   { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
   { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
   { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-  { rel: "alternate", type: "application/rss+xml", title: "Cloudflare フィールドノート RSS", href: "/feed.xml" },
+  { rel: "alternate", type: "application/rss+xml", title: "Cloudflare Field Notes RSS", href: "/feed.xml" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -281,7 +281,7 @@ export function ErrorBoundary() {
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>セッション期限切れ — Cloudflare フィールドノート</title>
+          <title>セッション期限切れ — Cloudflare Field Notes</title>
         </head>
         <body className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
@@ -323,7 +323,7 @@ export function ErrorBoundary() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-        <title>エラー — Cloudflare フィールドノート</title>
+        <title>エラー — Cloudflare Field Notes</title>
       </head>
       <body
         className="flex min-h-screen items-center justify-center bg-gray-50"

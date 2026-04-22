@@ -16,7 +16,7 @@ export async function sendApprovalEmail(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         to,
-        subject: "【Cloudflare フィールドノート】投稿者アカウントが承認されました",
+        subject: "【Cloudflare Field Notes】投稿者アカウントが承認されました",
         text: [
           `${displayName} さん`,
           "",
@@ -29,7 +29,7 @@ export async function sendApprovalEmail(
           "申請時にご登録いただいたメールアドレスでログインしてください。",
           "",
           "---",
-          "Cloudflare フィールドノート",
+          "Cloudflare Field Notes",
           siteUrl,
         ].join("\n"),
         html: `<!DOCTYPE html>
@@ -37,7 +37,7 @@ export async function sendApprovalEmail(
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
   <div style="border-bottom: 3px solid #f6821f; padding-bottom: 16px; margin-bottom: 24px;">
-    <h1 style="font-size: 18px; margin: 0; color: #1a1a1a;">Cloudflare フィールドノート</h1>
+    <h1 style="font-size: 18px; margin: 0; color: #1a1a1a;">Cloudflare Field Notes</h1>
   </div>
   <p style="font-size: 15px;">${displayName} さん</p>
   <p style="font-size: 15px; line-height: 1.7;">
@@ -55,7 +55,7 @@ export async function sendApprovalEmail(
   </p>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
   <p style="font-size: 12px; color: #9ca3af;">
-    Cloudflare フィールドノート — <a href="${siteUrl}" style="color: #9ca3af;">${siteUrl}</a>
+    Cloudflare Field Notes — <a href="${siteUrl}" style="color: #9ca3af;">${siteUrl}</a>
   </p>
 </body>
 </html>`,

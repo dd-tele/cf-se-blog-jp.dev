@@ -139,7 +139,7 @@ export default function ApplyPage() {
       <header className="border-b bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-            Cloudflare フィールドノート
+            Cloudflare Field Notes
           </Link>
           <a
             href="/portal"

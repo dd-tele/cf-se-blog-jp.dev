@@ -59,7 +59,7 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
         gated: true as const,
         postTitle: post.title,
         postSlug: post.slug,
-        siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
+        siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Field Notes",
       };
     }
   }
@@ -101,7 +101,7 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
     user,
     aiSummary,
     relatedPosts,
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Field Notes",
     siteUrl: context.cloudflare.env.SITE_URL ?? "https://cf-se-blog-jp.dev",
     turnstileSiteKey: context.cloudflare.env.TURNSTILE_SITE_KEY ?? "",
   };

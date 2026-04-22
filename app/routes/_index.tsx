@@ -24,7 +24,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     ? allLatest
     : allLatest.filter((p: { visibility?: string | null }) => (p.visibility ?? "public") === "public");
   return {
-    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare フィールドノート",
+    siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Field Notes",
     user,
     latestPosts,
   };
@@ -114,13 +114,13 @@ export default function Index() {
             </Link>
             <Link
               to="/about"
-              className="rounded-lg bg-gradient-to-r from-blue-500 to-violet-500 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:from-blue-600 hover:to-violet-600"
+              className="rounded-lg border border-gray-200 px-7 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
             >
               このブログについて
             </Link>
             <Link
               to="/vibe-coding"
-              className="rounded-lg bg-gradient-to-r from-brand-500 to-emerald-500 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:from-brand-600 hover:to-emerald-600"
+              className="rounded-lg border border-gray-200 px-7 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
             >
               Vibe Coding × Cloudflare
             </Link>

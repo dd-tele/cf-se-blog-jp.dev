@@ -823,7 +823,7 @@ export default function AdminPresentation() {
       <header className="flex h-12 shrink-0 items-center justify-between border-b bg-white px-6">
         <div className="flex items-center gap-3">
           <Link to="/" className="text-sm font-bold text-gray-900 transition-colors hover:text-brand-600">
-            Cloudflare フィールドノート
+            Cloudflare Field Notes
           </Link>
           <span className="text-xs text-gray-300">|</span>
           <span className="text-xs font-semibold text-red-600">Presentation</span>

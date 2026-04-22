@@ -24,7 +24,7 @@ export default function PresentationHono() {
               to="/"
               className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors"
             >
-              Cloudflare フィールドノート
+              Cloudflare Field Notes
             </Link>
             <span className="text-sm text-gray-400">|</span>
             <span className="text-sm font-semibold text-red-600">Admin</span>
