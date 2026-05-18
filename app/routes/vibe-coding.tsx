@@ -2,11 +2,11 @@ import type { MetaFunction } from "@remix-run/cloudflare";
 import { Link } from "@remix-run/react";
 
 export const meta: MetaFunction = () => [
-  { title: "Vibe Coding × Cloudflare — Windsurf で実現する新しい開発体験" },
+  { title: "Vibe Coding × Cloudflare — AI エージェントで実現する新しい開発体験" },
   {
     name: "description",
     content:
-      "AI エージェント IDE「Windsurf」と Cloudflare Developer Platform の組み合わせが生み出す、これまでにない開発体験。コーディングからデプロイ、エラー修正まですべてを IDE 内で完結。",
+      "AI エージェント IDE（例：Windsurf / Cursor / Claude Code / GitHub Copilot など）と Cloudflare Developer Platform の組み合わせが生み出す、これまでにない開発体験。コーディングからデプロイ、エラー修正まですべてを IDE 内で完結。",
   },
 ];
 
@@ -48,7 +48,7 @@ export default function VibeCoding() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-400">
-            AI エージェント IDE「Windsurf (Cascade)」と Cloudflare Developer Platform の組み合わせが生み出す、
+            AI エージェント IDE（例：Windsurf / Cursor / Claude Code / GitHub Copilot など）と Cloudflare Developer Platform の組み合わせが生み出す、
             コーディングからデプロイ・デバッグまで<strong className="text-white">すべてを IDE 内で完結</strong>させる新しい開発体験。
           </p>
         </div>
@@ -111,7 +111,7 @@ export default function VibeCoding() {
               color="emerald"
               icon={<IconRocket />}
               title="Git Push = 即デプロイ"
-              desc="Windsurf で git commit & push するだけで GitHub Actions → Cloudflare Pages に自動デプロイ。IDE から一歩も出ずに、数十秒で本番環境に反映される。「動くかな？」と思ったら即確認できる。"
+              desc="AI エージェント IDE 上で git commit & push するだけで GitHub Actions → Cloudflare Pages に自動デプロイ。IDE から一歩も出ずに、数十秒で本番環境に反映される。「動くかな？」と思ったら即確認できる。"
             />
             <ReasonCard
               color="blue"
@@ -146,8 +146,8 @@ export default function VibeCoding() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <SectionHeader tag="03" title="このブログが実証していること" />
           <p className="mb-10 max-w-3xl text-base leading-relaxed text-gray-600">
-            Cloudflare フィールドノート自体が、Windsurf (Cascade) と Cloudflare Developer Platform による Vibe Coding で開発されています。
-            機能追加・バグ修正・デプロイのすべてが IDE 内の対話で完結しています。
+            Cloudflare フィールドノート自体が、Vibe Coding（本ブログでは一例として Windsurf / Cascade を使用）と Cloudflare Developer Platform で開発されています。
+            機能追加・バグ修正・デプロイのすべてが IDE 内の対話で完結しています。同様の体験は Cursor、Claude Code、GitHub Copilot など他の AI エージェント IDE でも実現可能です。
           </p>
 
           <div className="mb-10 rounded-2xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-orange-50 p-8">
@@ -264,8 +264,8 @@ export default function VibeCoding() {
             あなたも Vibe Coding を始めてみませんか？
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-400">
-            Windsurf と Cloudflare Developer Platform があれば、アイデアをすぐに形にできます。
-            このブログ自体がその証明です。
+            お好みの AI エージェント IDE（Windsurf / Cursor / Claude Code / GitHub Copilot など）と Cloudflare Developer Platform があれば、アイデアをすぐに形にできます。
+            このブログ自体がその証明です（一例として Windsurf を使用）。
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <a
@@ -273,8 +273,9 @@ export default function VibeCoding() {
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-lg bg-white px-8 py-3 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+              title="一例として Windsurf を紹介しています"
             >
-              Windsurf を試す
+              Windsurf を試す（一例）
             </a>
             <a
               href="https://developers.cloudflare.com/"
@@ -302,7 +303,7 @@ export default function VibeCoding() {
               Cloudflare Field Notes
             </Link>
             <span className="text-xs text-gray-600">
-              Built with Vibe Coding — Windsurf × Cloudflare Developer Platform
+              Built with Vibe Coding — AI Agent IDE × Cloudflare Developer Platform
             </span>
           </div>
         </div>
