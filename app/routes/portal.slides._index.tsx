@@ -5,7 +5,7 @@ import type {
 } from "@remix-run/cloudflare";
 import { useLoaderData, Link, Form, useSearchParams } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
-import { getUserSlides, deleteSlide, userCanUploadSlides } from "~/lib/slides.server";
+import { getManagedSlides, deleteSlide, userCanUploadSlides } from "~/lib/slides.server";
 
 export const meta: MetaFunction = () => [
   { title: "スライド管理 — Cloudflare フィールドノート" },
@@ -15,10 +15,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const env = context.cloudflare.env;
   const user = await requireUser(request, env);
   const [slides, canUpload] = await Promise.all([
-    getUserSlides(env.DB, user.id),
+    getManagedSlides(env.DB, user),
     userCanUploadSlides(env.DB, user),
   ]);
-  return { user, slides, canUpload };
+  return { user, slides, canUpload, isAdmin: user.role === "admin" };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -28,13 +28,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const intent = form.get("intent");
   if (intent === "delete") {
     const id = form.get("id") as string;
-    if (id) await deleteSlide(env.DB, id, user.id);
+    if (id) await deleteSlide(env.DB, id, user);
   }
   return null;
 }
 
 export default function PortalSlides() {
-  const { user, slides, canUpload } = useLoaderData<typeof loader>();
+  const { user, slides, canUpload, isAdmin } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const denied = searchParams.get("denied") === "1";
 
@@ -104,6 +104,7 @@ export default function PortalSlides() {
               <thead className="border-b bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="px-4 py-3">タイトル</th>
+                  {isAdmin && <th className="px-4 py-3">制作者</th>}
                   <th className="px-4 py-3">状態</th>
                   <th className="px-4 py-3">スライド数</th>
                   <th className="px-4 py-3">表示</th>
@@ -121,6 +122,9 @@ export default function PortalSlides() {
                         <span className="ml-2 text-xs text-gray-400">{s.eventName}</span>
                       )}
                     </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-gray-600">{s.authorName}</td>
+                    )}
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -149,6 +153,12 @@ export default function PortalSlides() {
                         >
                           開く
                         </a>
+                        <Link
+                          to={`/portal/slides/${s.id}/edit`}
+                          className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                        >
+                          編集
+                        </Link>
                         <Form method="post" onSubmit={(e) => {
                           if (!confirm("このスライドを削除しますか？")) e.preventDefault();
                         }}>

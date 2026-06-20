@@ -227,6 +227,63 @@ export async function getSlideHtmlBySlug(
   return row ?? null;
 }
 
+/**
+ * Slides for the management screen. Admins see every slide; other
+ * users see only the slides they authored.
+ */
+export async function getManagedSlides(db: D1Database, user: SessionUser) {
+  const d = getDb(db);
+  const base = d
+    .select({
+      id: slides.id,
+      title: slides.title,
+      slug: slides.slug,
+      eventName: slides.event_name,
+      slideCount: slides.slide_count,
+      status: slides.status,
+      visibility: slides.visibility,
+      viewCount: slides.view_count,
+      authorId: slides.author_id,
+      authorName: sql<string>`COALESCE(${users.nickname}, ${users.display_name}, ${slides.author_name_snapshot})`.as(
+        "author_name"
+      ),
+      createdAt: slides.created_at,
+    })
+    .from(slides)
+    .leftJoin(users, eq(slides.author_id, users.id))
+    .orderBy(desc(slides.created_at));
+
+  if (user.role === "admin") return base;
+  return base.where(eq(slides.author_id, user.id));
+}
+
+/** Full slide row by id (excludes the large html blob). */
+export async function getSlideById(db: D1Database, id: string) {
+  const d = getDb(db);
+  return d
+    .select({
+      id: slides.id,
+      title: slides.title,
+      slug: slides.slug,
+      description: slides.description,
+      eventName: slides.event_name,
+      presentedAt: slides.presented_at,
+      coverImageUrl: slides.cover_image_url,
+      slideCount: slides.slide_count,
+      authorId: slides.author_id,
+      authorNameSnapshot: slides.author_name_snapshot,
+      status: slides.status,
+      visibility: slides.visibility,
+      tagsJson: slides.tags_json,
+      viewCount: slides.view_count,
+      createdAt: slides.created_at,
+      updatedAt: slides.updated_at,
+    })
+    .from(slides)
+    .where(eq(slides.id, id))
+    .get();
+}
+
 export async function getUserSlides(db: D1Database, authorId: string) {
   const d = getDb(db);
   return d
@@ -304,7 +361,86 @@ export async function createSlide(
   return { id, slug, slideCount };
 }
 
-export async function deleteSlide(db: D1Database, id: string, authorId: string) {
+/** True if another slide (not `excludeId`) already uses this slug. */
+export async function isSlugTakenByOther(
+  db: D1Database,
+  slug: string,
+  excludeId: string
+): Promise<boolean> {
   const d = getDb(db);
-  await d.delete(slides).where(and(eq(slides.id, id), eq(slides.author_id, authorId)));
+  const row = await d
+    .select({ id: slides.id })
+    .from(slides)
+    .where(and(eq(slides.slug, slug), sql`${slides.id} != ${excludeId}`))
+    .get();
+  return !!row;
+}
+
+export interface UpdateSlideInput {
+  title?: string;
+  slug?: string;
+  description?: string | null;
+  eventName?: string | null;
+  presentedAt?: string | null;
+  coverImageUrl?: string | null;
+  tagsJson?: string | null;
+  status?: "draft" | "published";
+  visibility?: "public" | "limited";
+  authorId?: string;
+}
+
+export async function updateSlide(
+  db: D1Database,
+  id: string,
+  input: UpdateSlideInput
+) {
+  const d = getDb(db);
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+  const data: Record<string, any> = { updated_at: now };
+
+  if (input.title !== undefined) data.title = input.title.trim();
+  if (input.slug !== undefined) data.slug = input.slug;
+  if (input.description !== undefined) data.description = input.description || null;
+  if (input.eventName !== undefined) data.event_name = input.eventName || null;
+  if (input.presentedAt !== undefined) data.presented_at = input.presentedAt || null;
+  if (input.coverImageUrl !== undefined)
+    data.cover_image_url = input.coverImageUrl || null;
+  if (input.tagsJson !== undefined) data.tags_json = input.tagsJson || null;
+  if (input.status !== undefined) data.status = input.status;
+  if (input.visibility !== undefined) data.visibility = input.visibility;
+
+  if (input.authorId !== undefined) {
+    data.author_id = input.authorId;
+    const author = await d
+      .select({
+        nickname: users.nickname,
+        displayName: users.display_name,
+      })
+      .from(users)
+      .where(eq(users.id, input.authorId))
+      .get();
+    data.author_name_snapshot =
+      author?.nickname || author?.displayName || null;
+  }
+
+  await d.update(slides).set(data).where(eq(slides.id, id));
+}
+
+export async function deleteSlide(db: D1Database, id: string, user: SessionUser) {
+  const d = getDb(db);
+  if (user.role === "admin") {
+    await d.delete(slides).where(eq(slides.id, id));
+  } else {
+    await d
+      .delete(slides)
+      .where(and(eq(slides.id, id), eq(slides.author_id, user.id)));
+  }
+}
+
+/** Whether a user may edit/delete a given slide. */
+export function canManageSlide(
+  user: SessionUser,
+  slide: { authorId: string }
+): boolean {
+  return user.role === "admin" || slide.authorId === user.id;
 }
