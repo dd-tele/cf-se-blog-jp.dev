@@ -105,36 +105,39 @@ export default function Index() {
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-400">
             Cloudflare SE とユーザーのテックチャンピオンが現場で得た設計判断、実装パターン、運用の工夫を共有するフィールドノートです。
           </p>
-          <div className="mt-10 flex items-center gap-4">
+          <div className="mt-10 flex flex-wrap items-center gap-3">
             <Link
               to="/posts"
-              className="rounded-lg bg-gray-900 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gray-800"
+              className="whitespace-nowrap rounded-lg bg-gray-900 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gray-800"
             >
               事例を読む
             </Link>
             <Link
+              to="/slides"
+              className="whitespace-nowrap rounded-lg border border-gray-900 bg-white px-7 py-3 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50"
+            >
+              スライドを見る
+            </Link>
+            <Link
               to={user ? "/portal/templates" : "/apply"}
-              className="rounded-lg border border-gray-300 bg-white px-7 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+              className="whitespace-nowrap rounded-lg border border-gray-300 bg-white px-7 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
             >
               事例を投稿する
             </Link>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-500">
             <Link
               to="/about"
-              className="rounded-lg border border-gray-200 px-7 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
+              className="whitespace-nowrap transition-colors hover:text-gray-800"
             >
               このブログについて
             </Link>
+            <span className="text-gray-300">·</span>
             <Link
               to="/vibe-coding"
-              className="rounded-lg border border-gray-200 px-7 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
+              className="whitespace-nowrap transition-colors hover:text-gray-800"
             >
               Vibe Coding × Cloudflare
-            </Link>
-            <Link
-              to="/slides"
-              className="rounded-lg border border-gray-200 px-7 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
-            >
-              スライド
             </Link>
           </div>
         </div>
