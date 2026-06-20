@@ -267,6 +267,7 @@ export const slides = sqliteTable("slides", {
   event_name: text("event_name"),
   presented_at: text("presented_at"),
   html: text("html").notNull(),
+  asset_prefix: text("asset_prefix"), // R2 key prefix for bundled assets (NULL = single HTML)
   cover_image_url: text("cover_image_url"),
   slide_count: integer("slide_count").notNull().default(0),
   author_id: text("author_id")

@@ -121,7 +121,7 @@ export default function SlideDetail() {
           <>
             <div className="mt-8 overflow-hidden rounded-xl border border-gray-200 bg-black shadow-sm">
               <iframe
-                src={`/slides/${slide.slug}/view`}
+                src={`/slides/${slide.slug}/a/`}
                 title={slide.title}
                 className="aspect-[16/9] w-full"
                 allowFullScreen
@@ -129,7 +129,7 @@ export default function SlideDetail() {
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <a
-                href={`/slides/${slide.slug}/view`}
+                href={`/slides/${slide.slug}/a/`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800"

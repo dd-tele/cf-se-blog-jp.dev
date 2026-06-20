@@ -9,12 +9,15 @@ import { useState } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { ensureUser } from "~/lib/posts.server";
 import { createSlide, validateSlideHtml, userCanUploadSlides } from "~/lib/slides.server";
+import { unpackSlideBundle, storeBundleAssets } from "~/lib/slides-bundle.server";
+import { ulid } from "~/lib/ulid";
 
 export const meta: MetaFunction = () => [
   { title: "スライドをアップロード — Cloudflare フィールドノート" },
 ];
 
 const MAX_HTML_BYTES = 2 * 1024 * 1024; // 2MB
+const MAX_ZIP_BYTES = 30 * 1024 * 1024; // 30MB compressed
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const env = context.cloudflare.env;
@@ -43,30 +46,80 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const status = (form.get("status") as string) === "draft" ? "draft" : "published";
   const coverImageUrl = (form.get("coverImageUrl") as string) || undefined;
 
-  // Source HTML: uploaded file takes priority, fall back to pasted text.
-  const file = form.get("htmlFile") as File | null;
-  const pasted = (form.get("htmlText") as string) || "";
-  let rawHtml = "";
-  if (file && file instanceof File && file.size > 0) {
-    if (file.size > MAX_HTML_BYTES) {
-      return { error: "HTML ファイルが大きすぎます（最大 2MB）。" };
-    }
-    rawHtml = await file.text();
-  } else if (pasted.trim()) {
-    rawHtml = pasted;
-  }
-
   if (!title) return { error: "タイトルは必須です。" };
-  if (!rawHtml) return { error: "HTML ファイルを選択するか、HTML を貼り付けてください。" };
-
-  const check = validateSlideHtml(rawHtml);
-  if (!check.ok) return { error: check.error };
 
   const tagsJson = tagsStr
     ? JSON.stringify(tagsStr.split(",").map((t) => t.trim()).filter(Boolean))
     : undefined;
 
+  // Source: ZIP bundle (HTML + assets), single HTML file, or pasted HTML.
+  const file = form.get("htmlFile") as File | null;
+  const pasted = (form.get("htmlText") as string) || "";
+  const isZip =
+    file instanceof File &&
+    file.size > 0 &&
+    (/\.zip$/i.test(file.name) ||
+      file.type === "application/zip" ||
+      file.type === "application/x-zip-compressed");
+
   try {
+    // ─── ZIP bundle ─────────────────────────────────────────
+    if (isZip) {
+      if (file!.size > MAX_ZIP_BYTES) {
+        return { error: "ZIP ファイルが大きすぎます（最大 30MB）。" };
+      }
+      let bundle;
+      try {
+        bundle = unpackSlideBundle(await file!.arrayBuffer());
+      } catch (e: any) {
+        return { error: e?.message || "ZIP の展開に失敗しました。" };
+      }
+
+      const check = validateSlideHtml(bundle.entryHtml);
+      if (!check.ok) return { error: check.error };
+
+      const id = ulid();
+      const assetPrefix = `slides/${id}`;
+      await storeBundleAssets(env.R2_BUCKET, id, bundle.assets);
+
+      const result = await createSlide(
+        env.DB,
+        {
+          id,
+          title,
+          description,
+          eventName,
+          presentedAt,
+          rawHtml: bundle.entryHtml,
+          coverImageUrl,
+          tagsJson,
+          status,
+          visibility,
+          assetPrefix,
+          skipAssetRewrite: true,
+        },
+        user
+      );
+      return redirect(`/slides/${result.slug}`);
+    }
+
+    // ─── Single HTML (file or pasted) ───────────────────────
+    let rawHtml = "";
+    if (file instanceof File && file.size > 0) {
+      if (file.size > MAX_HTML_BYTES) {
+        return { error: "HTML ファイルが大きすぎます（最大 2MB）。" };
+      }
+      rawHtml = await file.text();
+    } else if (pasted.trim()) {
+      rawHtml = pasted;
+    }
+    if (!rawHtml) {
+      return { error: "ZIP / HTML ファイルを選択するか、HTML を貼り付けてください。" };
+    }
+
+    const check = validateSlideHtml(rawHtml);
+    if (!check.ok) return { error: check.error };
+
     const result = await createSlide(
       env.DB,
       {
@@ -113,9 +166,10 @@ export default function NewSlide() {
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-2 text-2xl font-bold text-gray-900">スライドをアップロード</h1>
         <p className="mb-6 text-sm text-gray-500">
-          reveal.js テンプレート（公開用テンプレート）で作成した HTML スライドをアップロードします。
-          テンプレートの背景 SVG（<code className="rounded bg-gray-100 px-1">cf-template-*.svg</code>）と
-          <code className="rounded bg-gray-100 px-1">styles.css</code> は自動的に共有アセットへ置き換えられます。
+          HTML スライドをアップロードします。reveal.js に限らず任意の HTML スライドに対応しています。
+          画像・CSS・JS などのアセットを含む場合は、<code className="rounded bg-gray-100 px-1">index.html</code> を含めた一式を
+          <strong>ZIP</strong> にまとめてアップロードしてください（相対パスはそのまま解決されます）。
+          単一の自己完結 HTML や貼り付けにも対応します。
         </p>
 
         {actionData && "error" in actionData && actionData.error && (
@@ -206,7 +260,7 @@ export default function NewSlide() {
 
           {/* HTML source */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h2 className="mb-3 text-sm font-semibold text-gray-900">スライド HTML *</h2>
+            <h2 className="mb-3 text-sm font-semibold text-gray-900">スライド（ZIP または HTML） *</h2>
             <label
               htmlFor="htmlFile"
               className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center hover:border-brand-400"
@@ -215,20 +269,20 @@ export default function NewSlide() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 7.5 7.5 12M12 7.5V21" />
               </svg>
               <span className="text-sm font-medium text-gray-700">
-                {fileName || ".html ファイルを選択"}
+                {fileName || ".zip または .html ファイルを選択"}
               </span>
-              <span className="mt-1 text-xs text-gray-400">最大 2MB</span>
+              <span className="mt-1 text-xs text-gray-400">ZIP は最大 30MB / 単一 HTML は最大 2MB</span>
               <input
                 type="file"
                 id="htmlFile"
                 name="htmlFile"
-                accept=".html,text/html"
+                accept=".zip,application/zip,.html,text/html"
                 className="hidden"
                 onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
               />
             </label>
 
-            <div className="my-3 text-center text-xs text-gray-400">または HTML を貼り付け</div>
+            <div className="my-3 text-center text-xs text-gray-400">または HTML を貼り付け（単一ファイル）</div>
             <textarea
               name="htmlText"
               rows={6}

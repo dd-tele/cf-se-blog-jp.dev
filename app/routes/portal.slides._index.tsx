@@ -5,7 +5,14 @@ import type {
 } from "@remix-run/cloudflare";
 import { useLoaderData, Link, Form, useSearchParams } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
-import { getManagedSlides, deleteSlide, userCanUploadSlides } from "~/lib/slides.server";
+import {
+  getManagedSlides,
+  deleteSlide,
+  getSlideById,
+  canManageSlide,
+  userCanUploadSlides,
+} from "~/lib/slides.server";
+import { deleteBundleAssets } from "~/lib/slides-bundle.server";
 
 export const meta: MetaFunction = () => [
   { title: "スライド管理 — Cloudflare フィールドノート" },
@@ -28,7 +35,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const intent = form.get("intent");
   if (intent === "delete") {
     const id = form.get("id") as string;
-    if (id) await deleteSlide(env.DB, id, user);
+    if (id) {
+      const slide = await getSlideById(env.DB, id);
+      if (slide && canManageSlide(user, slide)) {
+        if (slide.assetPrefix) {
+          await deleteBundleAssets(env.R2_BUCKET, slide.assetPrefix);
+        }
+        await deleteSlide(env.DB, id, user);
+      }
+    }
   }
   return null;
 }

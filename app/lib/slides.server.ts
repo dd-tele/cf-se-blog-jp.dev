@@ -82,7 +82,11 @@ export interface SlideHtmlValidation {
   detectedTitle: string | null;
 }
 
-/** Basic structural validation that the upload is a usable slide deck. */
+/**
+ * Basic structural validation that the upload is a usable HTML document.
+ * Any self-contained or bundled HTML deck is accepted (not limited to the
+ * reveal.js `<section>` template).
+ */
 export function validateSlideHtml(html: string): SlideHtmlValidation {
   const slideCount = countSlides(html);
   const detectedTitle = extractTitle(html);
@@ -92,15 +96,6 @@ export function validateSlideHtml(html: string): SlideHtmlValidation {
     return {
       ok: false,
       error: "完全な HTML ドキュメント（<html> / <body> を含む）をアップロードしてください。",
-      slideCount,
-      detectedTitle,
-    };
-  }
-  if (slideCount === 0) {
-    return {
-      ok: false,
-      error:
-        "スライド（<section> 要素）が見つかりませんでした。reveal.js テンプレート形式の HTML をアップロードしてください。",
       slideCount,
       detectedTitle,
     };
@@ -209,17 +204,25 @@ export async function getSlideBySlug(db: D1Database, slug: string) {
     .get();
 }
 
-/** Returns the raw stored HTML for a slide (already asset-rewritten on save). */
+/** Returns the stored entry HTML + viewer metadata for a slide. */
 export async function getSlideHtmlBySlug(
   db: D1Database,
   slug: string
-): Promise<{ html: string; status: string; visibility: string } | null> {
+): Promise<{
+  id: string;
+  html: string;
+  status: string;
+  visibility: string;
+  assetPrefix: string | null;
+} | null> {
   const d = getDb(db);
   const row = await d
     .select({
+      id: slides.id,
       html: slides.html,
       status: slides.status,
       visibility: slides.visibility,
+      assetPrefix: slides.asset_prefix,
     })
     .from(slides)
     .where(eq(slides.slug, slug))
@@ -275,6 +278,7 @@ export async function getSlideById(db: D1Database, id: string) {
       status: slides.status,
       visibility: slides.visibility,
       tagsJson: slides.tags_json,
+      assetPrefix: slides.asset_prefix,
       viewCount: slides.view_count,
       createdAt: slides.created_at,
       updatedAt: slides.updated_at,
@@ -324,6 +328,12 @@ export interface CreateSlideInput {
   status?: "draft" | "published";
   visibility?: "public" | "limited";
   slug?: string;
+  /** Pre-generated id (e.g. when assets are stored before insert). */
+  id?: string;
+  /** R2 key prefix for bundled assets. */
+  assetPrefix?: string;
+  /** Skip the shared-template asset rewrite (used for self-contained bundles). */
+  skipAssetRewrite?: boolean;
 }
 
 export async function createSlide(
@@ -332,11 +342,13 @@ export async function createSlide(
   user: SessionUser
 ) {
   const d = getDb(db);
-  const html = rewriteSlideAssets(input.rawHtml);
+  const html = input.skipAssetRewrite
+    ? input.rawHtml
+    : rewriteSlideAssets(input.rawHtml);
   const slideCount = countSlides(html);
   const title = input.title.trim();
   const slug = await generateUniqueSlug(db, title, input.slug);
-  const id = ulid();
+  const id = input.id ?? ulid();
   const now = new Date().toISOString().replace("T", " ").slice(0, 19);
 
   await d.insert(slides).values({
@@ -347,6 +359,7 @@ export async function createSlide(
     event_name: input.eventName?.trim() || null,
     presented_at: input.presentedAt || null,
     html,
+    asset_prefix: input.assetPrefix || null,
     cover_image_url: input.coverImageUrl || null,
     slide_count: slideCount,
     author_id: user.id,
