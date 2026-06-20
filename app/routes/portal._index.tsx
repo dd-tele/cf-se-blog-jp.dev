@@ -132,6 +132,18 @@ export default function PortalIndex() {
           </Link>
 
           <Link
+            to="/portal/slides"
+            className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
+          >
+            <h2 className="text-lg font-semibold text-gray-900 group-hover:text-brand-600">
+              スライド
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              HTML スライド（登壇資料・アーキテクチャ解説）をアップロード・管理
+            </p>
+          </Link>
+
+          <Link
             to="/portal/profile"
             className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
           >

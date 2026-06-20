@@ -1,0 +1,802 @@
+/* Base reveal.js styles — Cloudflare Design System
+ *
+ * Copy this file as styles.css for each new presentation.
+ * Customize the CSS variables if needed, but the defaults reflect the
+ * Cloudflare warm palette and should be used as-is in most cases.
+ *
+ * FONTS
+ * Primary:  FT Kunst Grotesk (Cloudflare brand font) + Apercu Mono Pro
+ * Fallback: DM Sans + DM Mono (Google Fonts, loaded automatically)
+ * The @font-face declarations below point to the let-it-slide font files.
+ * If those aren't available, the Google Fonts import provides the fallback.
+ *
+ * IMPORTANT: All font sizes use pt (points) for predictable sizing.
+ * Base text is intentionally small (16pt) to fit content-heavy slides.
+ * Use .text-lg, .text-xl, etc. classes when slides have less content.
+ */
+
+/* ===========================================
+   FONTS — Cloudflare brand fonts (primary)
+   =========================================== */
+
+@font-face {
+  font-family: "FT Kunst Grotesk";
+  src: url("fonts/Kunst Grotesk Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FT Kunst Grotesk";
+  src: url("fonts/Kunst Grotesk Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apercu Mono Pro";
+  src: url("fonts/Apercu Mono Pro Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Google Fonts fallback — loaded when brand fonts are unavailable */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono&display=swap');
+
+/* ===========================================
+   CSS VARIABLES — Cloudflare warm palette
+   =========================================== */
+:root {
+  /* --- Backgrounds (warm cream hierarchy) --- */
+  --cf-bg-page:    #F5F1EB;  /* Parchment — main slide background */
+  --cf-bg-content: #FFFBF5;  /* Floral White — content areas, cards */
+  --cf-bg-card:    #FFFDFB;  /* Baby Powder — nested containers */
+  --cf-bg-active:  #FEF7ED;  /* Seashell — active/hover states */
+
+  /* --- Text (warm reddish-brown — never pure black) --- */
+  --cf-text:       #521000;
+  --cf-text-muted: #52100099; /* ~60% opacity */
+  --cf-text-subtle:#52100060; /* ~38% opacity — placeholders */
+
+  /* --- Borders --- */
+  --cf-border:       #EBD5C1;  /* Sandy warm beige */
+  --cf-border-light: #EBD5C180;/* 50% opacity */
+
+  /* --- Primary accent --- */
+  --cf-orange: #FF6633;
+  --cf-orange-light: #FF663310;
+
+  /* --- Semantic accent colors (for architecture / categorised content) ---
+     Blue    = compute / Workers / Durable Objects
+     Orange  = developer tooling / sandboxes
+     Purple  = experimental / WebSockets
+     Green   = storage / containers                                       */
+  --cf-blue:          #0A95FF;
+  --cf-blue-light:    #0A95FF10;
+  --cf-purple:        #9333EA;
+  --cf-purple-light:  #9333EA10;
+  --cf-green:         #19B006;
+  --cf-green-light:   #19B00610;
+  --cf-accent-orange: #F6821F;
+  --cf-accent-orange-light: #F6821F10;
+
+  /* --- Typography --- */
+  --heading-font: "FT Kunst Grotesk", "DM Sans", Helvetica, sans-serif;
+  --body-font:    "FT Kunst Grotesk", "DM Sans", Helvetica, sans-serif;
+  --mono-font:    "Apercu Mono Pro", "DM Mono", ui-monospace, "SF Mono", Monaco, Consolas, monospace;
+
+  --base-font-size: 32px;  /* Only px value — sets reveal.js base */
+  --text-size:  16pt;      /* Base body text — intentionally small */
+  --h1-size:    48pt;
+  --h2-size:    36pt;
+  --h3-size:    24pt;
+  --footnote-size: 11pt;
+
+  /* --- Layout --- */
+  --slide-padding:     60px;
+  --slide-padding-top: 40px;
+  --content-gap:       30px;
+  --box-radius:        8px;
+}
+
+/* ===========================================
+   BASE STYLES — Override reveal.js defaults
+   =========================================== */
+
+.reveal {
+  font-family: var(--body-font);
+  font-size: var(--base-font-size);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Restore bold after reset.css strips it */
+.reveal strong,
+.reveal b {
+  font-weight: 600;
+}
+
+/* Slide background */
+.reveal-viewport {
+  background-color: var(--cf-bg-page);
+}
+
+/* Section divider background via data-state */
+.reveal-viewport.is-section-divider .slide-background.present {
+  background-color: var(--cf-bg-page) !important;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  font-family: var(--heading-font);
+  text-transform: none;
+  color: var(--cf-text);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.reveal h1 { font-size: var(--h1-size); }
+.reveal h2 { font-size: var(--h2-size); margin-bottom: 0; }
+.reveal h3 { font-size: var(--h3-size); }
+
+.reveal p,
+.reveal li,
+.reveal td,
+.reveal th,
+.reveal blockquote {
+  font-size: var(--text-size);
+  color: var(--cf-text);
+  line-height: 1.5;
+}
+
+.reveal code,
+.reveal pre {
+  font-family: var(--mono-font);
+}
+
+/* ===========================================
+   LISTS
+   =========================================== */
+
+.reveal ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 15px 0;
+}
+
+.reveal ul li {
+  position: relative;
+  padding-left: 25px;
+  margin-bottom: 10px;
+}
+
+.reveal ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 8px;
+  height: 8px;
+  background: var(--cf-text);
+  border-radius: 50%;
+}
+
+.reveal ul ul li::before {
+  background: var(--cf-text-muted);
+  width: 6px;
+  height: 6px;
+}
+
+/* Prevent double-sizing for nested elements */
+.reveal blockquote p {
+  font-size: inherit;
+}
+
+/* ===========================================
+   SLIDE LAYOUT
+   =========================================== */
+
+.reveal .slides section {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: var(--slide-padding-top) var(--slide-padding) var(--slide-padding) var(--slide-padding) !important;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+/* Vertical stack wrapper — no padding, just pass through */
+.reveal .slides section.stack {
+  padding: 0 !important;
+}
+
+/* Content area — fills remaining space */
+.reveal .slides section > .content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: var(--content-gap);
+  text-align: left;
+}
+
+/* Footnotes at bottom */
+.reveal .slides section > .footnote {
+  position: absolute;
+  bottom: 15px;
+  left: var(--slide-padding);
+  right: var(--slide-padding);
+  font-size: var(--footnote-size);
+  color: var(--cf-text-muted);
+}
+
+/* ===========================================
+   SECTION DIVIDERS — Centered title slides
+   =========================================== */
+
+.reveal .slides section.section-divider {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center;
+}
+
+.reveal .slides section.section-divider h1 {
+  font-size: 56pt;
+  text-align: center;
+}
+
+.reveal .slides section.section-divider p {
+  font-size: 20pt;
+  color: var(--cf-text-muted);
+}
+
+/* ===========================================
+   TEXT SIZE UTILITIES
+
+   Base text is 16pt — use these to scale UP when
+   slides have less content and you want to fill space.
+   =========================================== */
+
+.text-lg   { font-size: 18pt !important; }
+.text-xl   { font-size: 20pt !important; }
+.text-2xl  { font-size: 24pt !important; }
+.text-3xl  { font-size: 28pt !important; }
+.text-4xl  { font-size: 32pt !important; }
+
+.text-muted    { color: var(--cf-text-muted) !important; }
+.text-center   { text-align: center !important; }
+.text-uppercase{ text-transform: uppercase; letter-spacing: 0.1em; }
+.font-light    { font-weight: 300; }
+.font-medium   { font-weight: 500; }
+.font-bold     { font-weight: 600; }
+.font-mono     { font-family: var(--mono-font) !important; }
+
+/* ===========================================
+   PROGRESS BAR — Cloudflare orange on warm beige track
+   =========================================== */
+
+.reveal .progress {
+  height: 4px;
+  background: var(--cf-border);
+}
+
+.reveal .progress span {
+  background: var(--cf-orange);
+  transition: width 0.8s cubic-bezier(0.26, 0.86, 0.44, 0.985);
+}
+
+/* ===========================================
+   BLOCKQUOTES
+   =========================================== */
+
+.reveal blockquote {
+  border-left: 4px solid var(--cf-orange);
+  padding-left: 20px;
+  margin: 20px 0;
+  font-style: italic;
+  background: none;
+  box-shadow: none;
+  width: 100%;
+  max-width: none;
+}
+
+.reveal blockquote cite {
+  display: block;
+  margin-top: 10px;
+  font-style: normal;
+  color: var(--cf-text-muted);
+}
+
+/* ===========================================
+   CARDS & CONTAINERS
+
+   .card         — default: warm background, dashed border
+   .card-solid   — solid border variant
+   .card-orange  — orange accent variant (for CTAs or highlights)
+   .card-blue    — compute/Workers semantic
+   .card-purple  — experimental/WebSocket semantic
+   .card-green   — storage/containers semantic
+
+   NOTE: No corner-square decoration. Slides are full-screen.
+   =========================================== */
+
+.card {
+  background: var(--cf-bg-content);
+  border: 1px dashed var(--cf-border);
+  border-radius: var(--box-radius);
+  padding: 20px;
+}
+
+.card-solid {
+  background: var(--cf-bg-content);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--box-radius);
+  padding: 20px;
+}
+
+.card-orange {
+  background: var(--cf-orange-light);
+  border: 1px solid var(--cf-orange);
+  border-radius: var(--box-radius);
+  padding: 20px;
+}
+
+.card-blue {
+  background: var(--cf-blue-light);
+  border: 1px dashed var(--cf-blue);
+  border-radius: var(--box-radius);
+  padding: 20px;
+}
+
+.card-purple {
+  background: var(--cf-purple-light);
+  border: 1px dashed var(--cf-purple);
+  border-radius: var(--box-radius);
+  padding: 20px;
+}
+
+.card-green {
+  background: var(--cf-green-light);
+  border: 1px dashed var(--cf-green);
+  border-radius: var(--box-radius);
+  padding: 20px;
+}
+
+/* ===========================================
+   BADGES
+
+   .badge         — orange (default)
+   .badge-blue    — compute
+   .badge-purple  — experimental
+   .badge-green   — storage
+   =========================================== */
+
+.badge {
+  display: inline-block;
+  font-family: var(--mono-font);
+  font-size: 10pt;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--cf-orange-light);
+  color: var(--cf-orange);
+  border: 1px solid var(--cf-orange);
+}
+
+.badge-blue {
+  background: var(--cf-blue-light);
+  color: var(--cf-blue);
+  border-color: var(--cf-blue);
+}
+
+.badge-purple {
+  background: var(--cf-purple-light);
+  color: var(--cf-purple);
+  border-color: var(--cf-purple);
+}
+
+.badge-green {
+  background: var(--cf-green-light);
+  color: var(--cf-green);
+  border-color: var(--cf-green);
+}
+
+/* ===========================================
+   CODE BLOCKS
+
+   Applies the Cloudflare syntax highlighting theme.
+   Wrap <pre><code> in <div class="code-block">.
+
+   Token colors mirror PrismHighlighter.tsx in let-it-slide:
+     keywords/imports   → #FF500A  (orange-red)
+     strings/variables  → #0A95FF  (blue)
+     properties/funcs   → #9616FF  (vivid purple)
+     numbers/operators  → #ffab70  (peachy orange)
+     comments/punct     → #52100050 (muted warm brown)
+     attr-names         → #79b8ff  (soft blue)
+   =========================================== */
+
+.code-block {
+  background: var(--cf-bg-content);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--box-radius);
+  overflow: hidden;
+}
+
+.code-block .tab {
+  display: inline-block;
+  font-family: var(--mono-font);
+  font-size: 10pt;
+  color: var(--cf-text-muted);
+  background: var(--cf-bg-active);
+  border-bottom: 1px solid var(--cf-border);
+  padding: 5px 14px;
+}
+
+.reveal .code-block pre {
+  margin: 0;
+  padding: 16px;
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--mono-font);
+  font-size: 13pt;
+  line-height: 1.6;
+}
+
+/* Cloudflare syntax theme — apply via inline style or Highlight.js class overrides */
+.reveal .code-block code .token.keyword,
+.reveal .code-block code .token.module,
+.reveal .code-block code .token.imports,
+.reveal .code-block code .token.exports     { color: #FF500A; }
+
+.reveal .code-block code .token.string,
+.reveal .code-block code .token.url,
+.reveal .code-block code .token.variable    { color: #0A95FF; }
+
+.reveal .code-block code .token.function,
+.reveal .code-block code .token.property,
+.reveal .code-block code .token.class-name  { color: #9616FF; }
+
+.reveal .code-block code .token.number,
+.reveal .code-block code .token.operator,
+.reveal .code-block code .token.tag         { color: #ffab70; }
+
+.reveal .code-block code .token.comment,
+.reveal .code-block code .token.punctuation { color: #52100050; }
+
+.reveal .code-block code .token.attr-name   { color: #79b8ff; }
+
+/* ===========================================
+   HIGHLIGHT.JS — Cloudflare syntax theme
+
+   The scaffold loads the RevealHighlight plugin and a base
+   monokai.css theme. These overrides remap Highlight.js
+   .hljs-* token classes to the Cloudflare palette.
+
+   Always add class="language-xxx" to <code> tags to activate:
+     <pre><code class="language-typescript">...</code></pre>
+
+   Token colors:
+     keywords/imports   → #FF500A  (orange-red)
+     strings            → #0A95FF  (blue)
+     functions/titles   → #9616FF  (vivid purple)
+     numbers/literals   → #ffab70  (peachy orange)
+     comments           → #52100050 (muted warm brown)
+     params/variables   → #521000  (base text)
+     built-in/attr      → #79b8ff  (soft blue)
+   =========================================== */
+
+.reveal pre code.hljs {
+  background: var(--cf-bg-content);
+  color: var(--cf-text);
+  padding: 16px;
+  font-family: var(--mono-font);
+  font-size: 13pt;
+  line-height: 1.6;
+}
+
+/* Keywords, control flow, module */
+.reveal .hljs-keyword,
+.reveal .hljs-type,
+.reveal .hljs-module-access,
+.reveal .hljs-import { color: #FF500A; }
+
+/* Strings, template literals */
+.reveal .hljs-string,
+.reveal .hljs-template-variable,
+.reveal .hljs-template-tag { color: #0A95FF; }
+
+/* Function names, class titles */
+.reveal .hljs-title,
+.reveal .hljs-title.function_,
+.reveal .hljs-title.class_ { color: #9616FF; }
+
+/* Numbers, booleans, null, literals */
+.reveal .hljs-number,
+.reveal .hljs-literal { color: #ffab70; }
+
+/* Comments */
+.reveal .hljs-comment { color: #52100050; }
+
+/* Built-ins, attributes */
+.reveal .hljs-built_in,
+.reveal .hljs-attr { color: #79b8ff; }
+
+/* Variables, params — use base text color */
+.reveal .hljs-variable,
+.reveal .hljs-params { color: var(--cf-text); }
+
+/* Punctuation, operators — slightly muted */
+.reveal .hljs-punctuation,
+.reveal .hljs-operator { color: #52100080; }
+
+/* Property access */
+.reveal .hljs-property { color: #9616FF; }
+
+/* ===========================================
+   OPTIONAL: DOT-GRID PATTERN BACKGROUND
+
+   Add class="pattern-bg" to a slide <section> to
+   apply a subtle dot texture (20–40% opacity recommended).
+
+   Requires: pattern.png from let-it-slide/public/images/pattern.png
+   Copy the file alongside your presentation as pattern.png, then
+   uncomment the rule below.
+   =========================================== */
+
+/*
+.reveal .slides section.pattern-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('pattern.png');
+  background-repeat: repeat;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+.reveal .slides section.pattern-bg > * {
+  position: relative;
+  z-index: 1;
+}
+*/
+
+/* ===========================================
+   OPTIONAL: TITLE WITH UNDERLINE
+
+   Add this to presentations where you want
+   a line under the slide title.
+   =========================================== */
+
+/*
+.reveal .slides section > h1,
+.reveal .slides section > h2 {
+  flex-shrink: 0;
+  margin: 0;
+  padding-bottom: 15px;
+  border-bottom: 2px solid var(--cf-border);
+}
+*/
+
+/* ===========================================
+   CLOUDFLARE TEMPLATE BACKGROUNDS
+   表紙・本文・区切り用のSVG背景を統合
+   =========================================== */
+
+/* 表紙スライド: cover.svg を全面背景に */
+.reveal .slides section.cover-slide {
+  background-image: url('cf-template-cover.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 0 !important;
+  justify-content: flex-end !important;
+  color: #FFFFFF;
+}
+
+.reveal .slides section.cover-slide .cover-content {
+  padding: 0 60px 80px 60px;
+  max-width: 60%;
+}
+
+.reveal .slides section.cover-slide h1 {
+  font-size: 44pt;
+  color: var(--cf-text);
+  line-height: 1.15;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+}
+
+.reveal .slides section.cover-slide .subtitle {
+  font-size: 18pt;
+  color: var(--cf-text);
+  opacity: 0.85;
+  margin: 0;
+}
+
+.reveal .slides section.cover-slide .speaker {
+  margin-top: 30px;
+  font-size: 13pt;
+  color: var(--cf-text);
+  opacity: 0.7;
+  font-family: var(--mono-font);
+}
+
+/* 本文スライド: 上部ラインとCloudflareロゴを再現 */
+.reveal .slides section.content-slide {
+  background-image: url('cf-template-content.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding-top: 70px !important;
+}
+
+/* 区切りスライド: divider.svg を全面背景に */
+.reveal .slides section.divider-slide {
+  background-image: url('cf-template-divider.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 0 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.reveal .slides section.divider-slide h1 {
+  color: #FFFFFF;
+  font-size: 50pt;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 0 60px;
+  line-height: 1.2;
+}
+
+.reveal .slides section.divider-slide .section-num {
+  color: #FFFFFF;
+  font-family: var(--mono-font);
+  font-size: 14pt;
+  opacity: 0.85;
+  letter-spacing: 0.2em;
+  margin-bottom: 20px;
+}
+
+/* Thank You スライド */
+.reveal .slides section.thankyou-slide {
+  background-image: url('cf-template-thankyou.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 0 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.reveal .slides section.thankyou-slide h1 {
+  color: #FFFFFF;
+  font-size: 72pt;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.reveal .slides section.thankyou-slide p {
+  color: #FFFFFF;
+  font-size: 18pt;
+  margin-top: 20px;
+  opacity: 0.9;
+}
+
+/* キーメッセージ用大型テキスト */
+.key-message {
+  font-size: 32pt !important;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--cf-text);
+}
+
+.key-message strong {
+  color: var(--cf-orange);
+  font-weight: 600;
+}
+
+/* スリーカラム/ツーカラム用カード */
+.feature-card {
+  background: var(--cf-bg-content);
+  border: 1px solid var(--cf-border);
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature-card .icon-area {
+  font-size: 28pt;
+  color: var(--cf-orange);
+  line-height: 1;
+}
+
+.feature-card h3 {
+  font-size: 18pt;
+  margin: 0;
+  color: var(--cf-text);
+  font-weight: 600;
+}
+
+.feature-card p {
+  font-size: 14pt;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 対比表 (Before / After) */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.compare-box {
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.compare-box.before {
+  background: #F5F1EB;
+  border: 1px dashed #B8A99A;
+}
+
+.compare-box.before h3 {
+  color: #7A6B5C;
+  font-size: 18pt;
+  margin: 0 0 12px 0;
+}
+
+.compare-box.before p,
+.compare-box.before li {
+  color: #7A6B5C;
+}
+
+.compare-box.after {
+  background: #FFF4ED;
+  border: 1.5px solid var(--cf-orange);
+}
+
+.compare-box.after h3 {
+  color: var(--cf-orange);
+  font-size: 18pt;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+/* ハイライト用のオレンジドット箇条書き */
+.reveal ul.orange-bullets li::before {
+  background: var(--cf-orange);
+}
+
+/* 強調キーワード */
+.kw {
+  color: var(--cf-orange);
+  font-weight: 600;
+}
+
+/* タグ風ピル */
+.pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--cf-orange-light);
+  color: var(--cf-orange);
+  font-size: 12pt;
+  font-family: var(--mono-font);
+  font-weight: 500;
+}

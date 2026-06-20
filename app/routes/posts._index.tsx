@@ -62,6 +62,9 @@ export default function PostsIndex() {
             {siteName}
           </Link>
           <nav className="flex items-center gap-4">
+            <Link to="/slides" className="text-sm text-gray-600 hover:text-gray-900">
+              スライド
+            </Link>
             <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
               このブログについて
             </Link>

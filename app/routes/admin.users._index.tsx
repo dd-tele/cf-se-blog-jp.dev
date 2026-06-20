@@ -191,6 +191,14 @@ export default function AdminUsers() {
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${roleStyle.className}`}>
                           {roleStyle.label}
                         </span>
+                        {(u.role === "admin" || u.role === "se" || u.can_upload_slides) && (
+                          <span
+                            className="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600"
+                            title="スライドアップロード許可"
+                          >
+                            スライド
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${u.is_active ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>

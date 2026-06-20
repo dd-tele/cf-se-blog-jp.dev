@@ -20,6 +20,9 @@ export const users = sqliteTable("users", {
   expertise: text("expertise"),
   profile_comment: text("profile_comment"),
   approved_post_count: integer("approved_post_count").notNull().default(0),
+  can_upload_slides: integer("can_upload_slides", { mode: "boolean" })
+    .notNull()
+    .default(false),
   is_active: integer("is_active", { mode: "boolean" }).notNull().default(true),
   created_at: text("created_at")
     .notNull()
@@ -247,6 +250,37 @@ export const apiKeys = sqliteTable("api_keys", {
   key_hash: text("key_hash").notNull(),
   last_used_at: text("last_used_at"),
   is_active: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ─── Slides ────────────────────────────────────────────────
+export const slides = sqliteTable("slides", {
+  id: text("id").primaryKey(), // ULID
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  event_name: text("event_name"),
+  presented_at: text("presented_at"),
+  html: text("html").notNull(),
+  cover_image_url: text("cover_image_url"),
+  slide_count: integer("slide_count").notNull().default(0),
+  author_id: text("author_id")
+    .notNull()
+    .references(() => users.id),
+  author_name_snapshot: text("author_name_snapshot"),
+  status: text("status", { enum: ["draft", "published"] })
+    .notNull()
+    .default("published"),
+  visibility: text("visibility", { enum: ["public", "limited"] })
+    .notNull()
+    .default("public"),
+  tags_json: text("tags_json"),
+  view_count: integer("view_count").notNull().default(0),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),

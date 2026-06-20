@@ -53,6 +53,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   }
 
   const isActive = formData.get("is_active") === "true";
+  const canUploadSlides = formData.get("can_upload_slides") === "true";
 
   // Avatar URL update (from client-side upload)
   const avatarUrl = formData.get("avatar_url") as string | null;
@@ -73,6 +74,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       profileComment: (formData.get("profile_comment") as string) ?? undefined,
       role: role as "admin" | "se" | "ae" | "user",
       isActive,
+      canUploadSlides,
     });
   } catch (e) {
     console.error("[admin.users.$id] update failed:", e);
@@ -408,6 +410,28 @@ export default function AdminUserEdit() {
                   <option value="true">有効</option>
                   <option value="false">無効（ログイン不可）</option>
                 </select>
+              </div>
+
+              {/* Slide upload permission */}
+              <div className="sm:col-span-2">
+                <label htmlFor="can_upload_slides" className="mb-1 block text-sm font-medium text-gray-700">
+                  スライドアップロード許可
+                </label>
+                <select
+                  id="can_upload_slides"
+                  name="can_upload_slides"
+                  defaultValue={targetUser.can_upload_slides ? "true" : "false"}
+                  disabled={targetUser.role === "admin" || targetUser.role === "se"}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="false">不可</option>
+                  <option value="true">許可</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-400">
+                  {targetUser.role === "admin" || targetUser.role === "se"
+                    ? "Admin / SE ロールは常にアップロード可能です。"
+                    : "許可すると、このユーザーは HTML スライドをアップロードできます。"}
+                </p>
               </div>
             </div>
           </div>

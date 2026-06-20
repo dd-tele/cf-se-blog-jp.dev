@@ -43,6 +43,12 @@ export default function Index() {
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             <Link
+              to="/slides"
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              スライド
+            </Link>
+            <Link
               to="/search"
               className="text-sm text-gray-600 hover:text-gray-900"
             >
@@ -123,6 +129,12 @@ export default function Index() {
               className="rounded-lg border border-gray-200 px-7 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
             >
               Vibe Coding × Cloudflare
+            </Link>
+            <Link
+              to="/slides"
+              className="rounded-lg border border-gray-200 px-7 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
+            >
+              スライド
             </Link>
           </div>
         </div>

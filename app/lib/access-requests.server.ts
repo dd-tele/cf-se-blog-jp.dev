@@ -199,6 +199,7 @@ export interface AdminUserUpdateInput {
   avatarUrl?: string;
   role?: "admin" | "se" | "ae" | "user";
   isActive?: boolean;
+  canUploadSlides?: boolean;
 }
 
 export async function adminUpdateUser(db: D1Database, userId: string, input: AdminUserUpdateInput) {
@@ -218,6 +219,8 @@ export async function adminUpdateUser(db: D1Database, userId: string, input: Adm
   if (input.avatarUrl !== undefined) updateData.avatar_url = input.avatarUrl || null;
   if (input.role !== undefined) updateData.role = input.role;
   if (input.isActive !== undefined) updateData.is_active = input.isActive;
+  if (input.canUploadSlides !== undefined)
+    updateData.can_upload_slides = input.canUploadSlides;
 
   await d.update(users).set(updateData).where(eq(users.id, userId));
 }
