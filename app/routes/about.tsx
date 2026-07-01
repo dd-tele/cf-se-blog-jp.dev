@@ -1022,14 +1022,19 @@ export default function AboutPage() {
             <div className="flex items-center gap-2 overflow-x-auto text-xs">
               <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-500">公式ドキュメント</span>
               <span className="text-gray-300">›</span>
-              <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-500">Cloudflare Blog</span>
+              <a href="https://blog.cloudflare.com/ja-jp/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700">
+                Cloudflare 公式ブログ
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+              </a>
               <span className="text-gray-300">›</span>
               <span className="whitespace-nowrap rounded-full border-2 border-brand-300 bg-brand-50 px-3 py-1.5 font-bold text-brand-700">フィールドノート ← ここ</span>
               <span className="text-gray-300">›</span>
               <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-500">個人ブログ・Zenn・Qiita</span>
             </div>
             <p className="mt-3 text-xs leading-relaxed text-gray-500">
-              SE が現場で得た知見を共有するフィールドノートです。公式ドキュメントとは異なり、個人の経験・見解に基づく情報を含みます。
+              <strong className="font-semibold text-gray-700">本サイトは Cloudflare の公式ブログではありません。</strong>
+              SE が現場で得た知見を共有するフィールドノートであり、個人の経験・見解に基づく情報を含みます。
+              公式発表は <a href="https://blog.cloudflare.com/ja-jp/" target="_blank" rel="noopener noreferrer" className="underline text-brand-600 hover:text-brand-700">Cloudflare 公式ブログ（blog.cloudflare.com）</a>、
               最新の仕様は <a href="https://developers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="underline text-brand-600 hover:text-brand-700">developers.cloudflare.com</a> をご参照ください。
             </p>
           </div>
@@ -1066,6 +1071,7 @@ export default function AboutPage() {
           <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-5">
             <h4 className="mb-2 text-sm font-bold text-gray-700">免責事項について</h4>
             <ul className="space-y-1 text-sm text-gray-600">
+              <li>- <strong className="font-semibold text-gray-700">本サイトは Cloudflare の公式ブログではありません</strong>。公式発表は <a href="https://blog.cloudflare.com/ja-jp/" target="_blank" rel="noopener noreferrer" className="underline text-brand-600 hover:text-brand-700">Cloudflare 公式ブログ（blog.cloudflare.com）</a> をご覧ください</li>
               <li>- 投稿者は SE 個人の立場で経験・知見を共有しており、Cloudflare の公式メッセージとは異なります</li>
               <li>- お客様の環境はそれぞれ異なるため、記事の手順や構成がすべてに適用できるとは限りません</li>
               <li>- 他部署や社外のステークホルダーがこのブログの位置づけを正しく理解できるようにするためです</li>

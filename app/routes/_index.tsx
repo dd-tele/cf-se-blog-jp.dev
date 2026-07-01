@@ -139,6 +139,18 @@ export default function Index() {
             >
               Vibe Coding × Cloudflare
             </Link>
+            <span className="text-gray-300">·</span>
+            <a
+              href="https://blog.cloudflare.com/ja-jp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 whitespace-nowrap transition-colors hover:text-gray-800"
+            >
+              Cloudflare 公式ブログ
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+            </a>
           </div>
         </div>
       </section>
@@ -147,7 +159,8 @@ export default function Index() {
       <section className="border-b bg-gray-50 py-4">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs leading-relaxed text-gray-400">
-            本ブログは Cloudflare Japan のソリューションエンジニアが、お客様の技術的な活用事例や知見を共有する場として運営しています。掲載されている情報は執筆者個人の経験・見解に基づくものであり、Cloudflare としての公式な製品仕様のコミットメントや、すべての環境での動作を保証するものではありません。最新の仕様や正式なサポート情報については、<a href="https://developers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Cloudflare 公式ドキュメント</a>をご参照ください。
+            <strong className="font-semibold text-gray-500">本サイトは Cloudflare の公式ブログ（<a href="https://blog.cloudflare.com/ja-jp/" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">blog.cloudflare.com</a>）ではありません。</strong>
+            Cloudflare Japan のソリューションエンジニアが、お客様の技術的な活用事例や知見を共有する「フィールドノート」として運営しています。掲載されている情報は執筆者個人の経験・見解に基づくものであり、Cloudflare としての公式な製品仕様のコミットメントや、すべての環境での動作を保証するものではありません。公式発表は <a href="https://blog.cloudflare.com/ja-jp/" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Cloudflare 公式ブログ</a>、最新の仕様や正式なサポート情報については <a href="https://developers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Cloudflare 公式ドキュメント</a>をご参照ください。
           </p>
         </div>
       </section>
