@@ -1,9 +1,9 @@
 import { eq, asc } from "drizzle-orm";
 import { getDb } from "~/lib/db.server";
 import { slideNotes } from "~/db/schema";
+import { MAX_NOTE_CHARS, MAX_NOTE_SLIDES } from "~/lib/slide-notes-import";
 
-export const MAX_NOTE_CHARS = 8000;
-export const MAX_NOTE_SLIDES = 500;
+export { MAX_NOTE_CHARS, MAX_NOTE_SLIDES };
 
 /** Speaker notes for a deck as a dense array indexed by linear slide index. */
 export async function getSlideNotes(db: D1Database, slideId: string): Promise<string[]> {
