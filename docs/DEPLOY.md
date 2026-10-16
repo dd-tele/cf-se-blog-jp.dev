@@ -325,13 +325,16 @@ Dashboard → `cf-se-blog-jp.dev` ゾーンで以下を設定:
 
 | 項目 | 値 |
 |---|---|
-| **チーム名** | `cf-se-blog-jp` |
-| **チームURL** | `cf-se-blog-jp.cloudflareaccess.com` |
-| **保護パス** | `/portal/*`, `/admin/*`, `/auth/*` |
+| **チーム名** | `cf-se-jp`（Pages シークレット `CF_ACCESS_TEAM_DOMAIN` にはこのチーム名を設定） |
+| **チームURL** | `cf-se-jp.cloudflareaccess.com` |
+| **保護パス** | `/portal/*`, `/admin/*`（`/`・`/auth/*`・`/api/*` は一般公開。アプリ側で JWT を署名検証する） |
+| **AUD** | `/portal`・`/admin` 共通。Pages シークレット `CF_ACCESS_AUD`（複数ある場合はカンマ区切り） |
+| **セッション署名鍵** | Pages シークレット `SESSION_SECRET`（32文字以上のランダム値。未設定だとログイン不可） |
+| **プレビュー** | `*.cf-se-blog.pages.dev` は Pages の Access ポリシーで全体保護（AUD は本番と別） |
 | **IdP** | Google Workspace |
 | **ポリシー** | Emails ending in `@cloudflare.com` |
 
-ローカル開発時は Access が無効化され、モックログインが表示されます（`CLOUDFLARE_ACCESS_TEAM` 環境変数未設定時）。
+ローカル開発時（localhost かつ `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` 未設定）のみモックログインが表示されます。デプロイ環境ではモックログインは常に無効です。
 
 ---
 

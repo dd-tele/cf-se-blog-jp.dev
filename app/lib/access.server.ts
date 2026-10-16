@@ -33,6 +33,19 @@ interface CertsResponse {
 let cachedKeys: { keys: JWK[]; fetchedAt: number } | null = null;
 const KEY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
+/**
+ * CF_ACCESS_TEAM_DOMAIN is the team name ("cf-se-jp"), but also accept
+ * "cf-se-jp.cloudflareaccess.com" or "https://cf-se-jp.cloudflareaccess.com/".
+ */
+export function normalizeTeamName(teamDomain: string): string {
+  return teamDomain
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/\.cloudflareaccess\.com$/i, "");
+}
+
 async function getPublicKeys(teamDomain: string, forceRefresh = false): Promise<JWK[]> {
   if (!forceRefresh && cachedKeys && Date.now() - cachedKeys.fetchedAt < KEY_CACHE_TTL) {
     return cachedKeys.keys;
@@ -41,7 +54,8 @@ async function getPublicKeys(teamDomain: string, forceRefresh = false): Promise<
   const certsUrl = `https://${teamDomain}.cloudflareaccess.com/cdn-cgi/access/certs`;
   const res = await fetch(certsUrl);
   if (!res.ok) {
-    throw new Error(`Failed to fetch Access certs: ${res.status}`);
+    // A wrong CF_ACCESS_TEAM_DOMAIN shows up here (e.g. 404 for an unknown team).
+    throw new Error(`Failed to fetch Access certs from ${certsUrl}: ${res.status} (check CF_ACCESS_TEAM_DOMAIN)`);
   }
 
   const data = (await res.json()) as CertsResponse;
@@ -83,6 +97,7 @@ export async function verifyAccessJWT(
   teamDomain: string,
   aud: string
 ): Promise<VerifyResult> {
+  teamDomain = normalizeTeamName(teamDomain);
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return { ok: false, reason: "malformed" };
@@ -130,7 +145,7 @@ export async function verifyAccessJWT(
     if (!tokenAud.some((a) => allowed.includes(a))) return { ok: false, reason: "bad_aud" };
 
     // Verify expiration
-    if (payload.exp && payload.exp < Date.now() / 1000) return { ok: false, reason: "expired" };
+    if (!payload.exp || payload.exp < Date.now() / 1000) return { ok: false, reason: "expired" };
 
     // Verify issuer
     const expectedIssuer = `https://${teamDomain}.cloudflareaccess.com`;
@@ -138,7 +153,7 @@ export async function verifyAccessJWT(
 
     return { ok: true, payload };
   } catch (e) {
-    console.error("[JWT] verification error:", e);
+    console.error(`[JWT] verification error (team=${teamDomain}):`, e);
     return { ok: false, reason: "invalid" };
   }
 }

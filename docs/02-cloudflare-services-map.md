@@ -162,11 +162,11 @@ DRAFTS:
 | 項目 | 詳細 |
 |---|---|
 | **用途** | ポータル・管理画面の認証 |
-| **チーム名** | `cf-se-blog-jp` |
-| **チームURL** | `cf-se-blog-jp.cloudflareaccess.com` |
+| **チーム名** | `cf-se-jp` |
+| **チームURL** | `cf-se-jp.cloudflareaccess.com` |
 | **IdP 連携** | Google Workspace |
-| **ポリシー** | `/portal/*`, `/admin/*`, `/auth/*` → 認証済みユーザー |
-| **セッション** | JWT ベース → KV (`SESSIONS`) で管理 |
+| **ポリシー** | `/portal/*`, `/admin/*` → 許可したユーザーのみ（`/`・`/auth/*`・`/api/*` は一般公開） |
+| **セッション** | 署名検証済みの Access JWT からのみ発行する署名付き Cookie（`SESSION_SECRET`） |
 
 **Access Policy 設計:**
 
