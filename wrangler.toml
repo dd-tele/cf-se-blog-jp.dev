@@ -37,3 +37,10 @@ binding = "AI"
 [[vectorize]]
 binding = "VECTORIZE"
 index_name = "cf-se-blog-vectors"
+
+# Live presentation rooms (presenter display <-> phone remote).
+# The class is hosted by workers/slide-sync (deploy that Worker first).
+[[durable_objects.bindings]]
+name = "PRESENT_ROOM"
+class_name = "PresentRoom"
+script_name = "cf-se-blog-slide-sync"

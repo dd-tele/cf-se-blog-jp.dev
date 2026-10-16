@@ -3,7 +3,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/cloudflare";
-import { useLoaderData, Link, Form, useSearchParams } from "@remix-run/react";
+import { useLoaderData, Link, Form, useSearchParams, useFetcher } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
 import {
   getManagedSlides,
@@ -11,8 +11,10 @@ import {
   getSlideById,
   canManageSlide,
   userCanUploadSlides,
+  updateSlide,
 } from "~/lib/slides.server";
 import { deleteBundleAssets } from "~/lib/slides-bundle.server";
+import { SLIDE_CATEGORY_LABEL, parseSlideCategory } from "~/lib/slide-categories";
 
 export const meta: MetaFunction = () => [
   { title: "スライド管理 — Cloudflare フィールドノート" },
@@ -33,6 +35,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const user = await requireUser(request, env);
   const form = await request.formData();
   const intent = form.get("intent");
+  if (intent === "presenter") {
+    const id = form.get("id") as string;
+    const slide = id ? await getSlideById(env.DB, id) : null;
+    if (!slide || !canManageSlide(user, slide)) {
+      throw new Response("権限がありません", { status: 403 });
+    }
+    await updateSlide(env.DB, id, { presenterEnabled: form.get("enabled") === "1" });
+    return { ok: true };
+  }
   if (intent === "delete") {
     const id = form.get("id") as string;
     if (id) {
@@ -46,6 +57,43 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
   }
   return null;
+}
+
+/** ON/OFF switch for presentation mode; optimistic while saving. */
+function PresenterToggle({ id, enabled }: { id: string; enabled: boolean }) {
+  const fetcher = useFetcher();
+  const pending = fetcher.formData?.get("enabled");
+  const on = pending != null ? pending === "1" : enabled;
+  return (
+    <fetcher.Form method="post">
+      <input type="hidden" name="intent" value="presenter" />
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="enabled" value={on ? "0" : "1"} />
+      <button
+        type="submit"
+        role="switch"
+        aria-checked={on}
+        aria-label="プレゼンテーション機能"
+        title={on ? "ON（クリックで OFF）" : "OFF（クリックで ON）"}
+        className="group inline-flex items-center gap-2"
+      >
+        <span
+          className={`relative inline-block h-5 w-9 rounded-full transition-colors ${
+            on ? "bg-brand-500" : "bg-gray-300"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${
+              on ? "left-[18px]" : "left-0.5"
+            }`}
+          />
+        </span>
+        <span className={`text-xs ${on ? "font-medium text-gray-800" : "text-gray-400"}`}>
+          {on ? "ON" : "OFF"}
+        </span>
+      </button>
+    </fetcher.Form>
+  );
 }
 
 export default function PortalSlides() {
@@ -116,11 +164,12 @@ export default function PortalSlides() {
         ) : (
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <table className="w-full text-sm">
-              <thead className="border-b bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="whitespace-nowrap border-b bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="px-4 py-3">タイトル</th>
                   {isAdmin && <th className="px-4 py-3">制作者</th>}
                   <th className="px-4 py-3">状態</th>
+                  <th className="px-4 py-3">発表機能</th>
                   <th className="px-4 py-3">スライド数</th>
                   <th className="px-4 py-3">表示</th>
                   <th className="px-4 py-3"></th>
@@ -133,9 +182,10 @@ export default function PortalSlides() {
                       <Link to={`/slides/${s.slug}`} className="font-medium text-gray-900 hover:text-brand-600">
                         {s.title}
                       </Link>
-                      {s.eventName && (
-                        <span className="ml-2 text-xs text-gray-400">{s.eventName}</span>
-                      )}
+                      <span className="ml-2 text-xs text-gray-400">
+                        {SLIDE_CATEGORY_LABEL[parseSlideCategory(s.category)]}
+                        {s.eventName ? ` · ${s.eventName}` : ""}
+                      </span>
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-gray-600">{s.authorName}</td>
@@ -156,10 +206,13 @@ export default function PortalSlides() {
                         </span>
                       )}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <PresenterToggle id={s.id} enabled={!!s.presenterEnabled} />
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{s.slideCount}</td>
                     <td className="px-4 py-3 text-gray-600">{s.viewCount}</td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
+                      <div className="flex items-center justify-end gap-3 whitespace-nowrap">
                         <a
                           href={`/slides/${s.slug}/view`}
                           target="_blank"
@@ -168,6 +221,20 @@ export default function PortalSlides() {
                         >
                           開く
                         </a>
+                        {s.presenterEnabled && (
+                          <a
+                            href={`/slides/${s.slug}/present`}
+                            className="text-xs font-medium text-gray-700 hover:text-brand-600"
+                          >
+                            発表
+                          </a>
+                        )}
+                        <Link
+                          to={`/portal/slides/${s.id}/notes`}
+                          className="text-xs font-medium text-gray-700 hover:text-brand-600"
+                        >
+                          ノート
+                        </Link>
                         <Link
                           to={`/portal/slides/${s.id}/edit`}
                           className="text-xs font-medium text-brand-600 hover:text-brand-700"

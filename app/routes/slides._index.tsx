@@ -2,6 +2,13 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getPublishedSlides } from "~/lib/slides.server";
 import { getSessionUser } from "~/lib/auth.server";
+import {
+  SLIDE_CATEGORIES,
+  SLIDE_CATEGORY_BADGE,
+  SLIDE_CATEGORY_LABEL,
+  parseSlideCategory,
+  type SlideCategory,
+} from "~/lib/slide-categories";
 
 export const meta: MetaFunction = () => [
   { title: "スライド一覧 — Cloudflare フィールドノート" },
@@ -15,10 +22,13 @@ export const meta: MetaFunction = () => [
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const search = url.searchParams.get("q") ?? undefined;
+  const c = url.searchParams.get("c");
+  const category: SlideCategory | undefined =
+    c && (SLIDE_CATEGORIES as readonly string[]).includes(c) ? (c as SlideCategory) : undefined;
   const db = context.cloudflare.env.DB;
 
   const [slidesList, user] = await Promise.all([
-    getPublishedSlides(db, { search, limit: 48 }),
+    getPublishedSlides(db, { search, category, limit: 96 }),
     getSessionUser(request),
   ]);
 
@@ -29,13 +39,21 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   return {
     slides: visible,
     search: search ?? null,
+    category: category ?? null,
     user,
     siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Field Notes",
   };
 }
 
 export default function SlidesIndex() {
-  const { slides, search, user, siteName } = useLoaderData<typeof loader>();
+  const { slides, search, category, user, siteName } = useLoaderData<typeof loader>();
+  const tabHref = (c: SlideCategory | null) => {
+    const p = new URLSearchParams();
+    if (c) p.set("c", c);
+    if (search) p.set("q", search);
+    const qs = p.toString();
+    return qs ? `/slides?${qs}` : "/slides";
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -74,9 +92,25 @@ export default function SlidesIndex() {
         <div className="mb-8">
           <h1 className="mb-1 text-3xl font-bold text-gray-900">スライド</h1>
           <p className="mb-4 text-sm text-gray-500">
-            イベント登壇資料やアーキテクチャ解説など、公開可能な HTML スライドのアーカイブ
+            イベント登壇資料やお客様向けの提案資料をまとめたスライドポータル。登録済みの SE はここから発表・スピーカービューを起動できます。
           </p>
+          <nav className="mb-4 flex flex-wrap gap-2" aria-label="カテゴリ">
+            {([null, ...SLIDE_CATEGORIES] as (SlideCategory | null)[]).map((c) => (
+              <Link
+                key={c ?? "all"}
+                to={tabHref(c)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  category === c
+                    ? "bg-gray-900 text-white"
+                    : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {c ? SLIDE_CATEGORY_LABEL[c] : "すべて"}
+              </Link>
+            ))}
+          </nav>
           <form method="get" className="flex gap-2">
+            {category && <input type="hidden" name="c" value={category} />}
             <input
               type="text"
               name="q"
@@ -140,6 +174,13 @@ export default function SlidesIndex() {
                 </div>
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        SLIDE_CATEGORY_BADGE[parseSlideCategory(s.category)]
+                      }`}
+                    >
+                      {SLIDE_CATEGORY_LABEL[parseSlideCategory(s.category)]}
+                    </span>
                     {s.visibility === "limited" && (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                         限定

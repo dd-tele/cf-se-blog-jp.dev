@@ -7,6 +7,7 @@ interface Env {
   PAGE_CACHE: KVNamespace;
   DRAFTS: KVNamespace;
   AI: Ai;
+  PRESENT_ROOM: DurableObjectNamespace;
   VECTORIZE: VectorizeIndex;
   ENVIRONMENT: string;
   SITE_NAME: string;

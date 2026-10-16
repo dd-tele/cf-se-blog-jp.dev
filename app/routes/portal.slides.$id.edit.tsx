@@ -3,6 +3,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/cloudflare";
+import { PresenterEnabledField, parsePresenterEnabled } from "~/components/PresenterEnabledField";
 import { redirect } from "@remix-run/cloudflare";
 import { Form, Link, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
@@ -14,6 +15,7 @@ import {
   isSlugTakenByOther,
 } from "~/lib/slides.server";
 import { slugify } from "~/lib/utils";
+import { SLIDE_CATEGORIES, SLIDE_CATEGORY_LABEL, parseSlideCategory } from "~/lib/slide-categories";
 
 export const meta: MetaFunction = () => [
   { title: "スライド編集 — Cloudflare フィールドノート" },
@@ -84,6 +86,8 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       status: (form.get("status") as string) === "draft" ? "draft" : "published",
       visibility:
         (form.get("visibility") as string) === "limited" ? "limited" : "public",
+      category: parseSlideCategory(form.get("category")),
+      presenterEnabled: parsePresenterEnabled(form.get("presenterEnabled")),
       authorId,
     });
   } catch (e: any) {
@@ -131,14 +135,22 @@ export default function EditSlide() {
               {slide.slideCount} スライド · {slide.viewCount} 回表示
             </p>
           </div>
-          <a
-            href={`/slides/${slide.slug}/view`}
-            target="_blank"
-            rel="noreferrer"
-            className="whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            プレビュー
-          </a>
+          <div className="flex shrink-0 gap-2">
+            <Link
+              to={`/portal/slides/${slide.id}/notes`}
+              className="whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              スピーカーノート
+            </Link>
+            <a
+              href={`/slides/${slide.slug}/view`}
+              target="_blank"
+              rel="noreferrer"
+              className="whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              プレビュー
+            </a>
+          </div>
         </div>
 
         {actionData && "error" in actionData && actionData.error && (
@@ -226,6 +238,29 @@ export default function EditSlide() {
               </p>
             )}
           </div>
+
+          <div>
+            <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700">
+              カテゴリ
+            </label>
+            <select
+              id="category"
+              name="category"
+              defaultValue={parseSlideCategory(slide.category)}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              {SLIDE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {SLIDE_CATEGORY_LABEL[c]}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-400">
+              お客様向けの資料は、公開範囲を「限定」にすることをおすすめします。
+            </p>
+          </div>
+
+          <PresenterEnabledField defaultChecked={!!slide.presenterEnabled} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

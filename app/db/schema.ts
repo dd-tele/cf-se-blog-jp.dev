@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 // ─── Users ─────────────────────────────────────────────────
@@ -280,6 +280,12 @@ export const slides = sqliteTable("slides", {
   visibility: text("visibility", { enum: ["public", "limited"] })
     .notNull()
     .default("public"),
+  category: text("category", { enum: ["event", "customer", "other"] })
+    .notNull()
+    .default("event"),
+  presenter_enabled: integer("presenter_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
   tags_json: text("tags_json"),
   view_count: integer("view_count").notNull().default(0),
   created_at: text("created_at")
@@ -289,6 +295,23 @@ export const slides = sqliteTable("slides", {
     .notNull()
     .default(sql`(datetime('now'))`),
 });
+
+// ─── Slide speaker notes ───────────────────────────────────
+// Keyed by linear slide index (0-based, reading order incl. vertical slides).
+export const slideNotes = sqliteTable(
+  "slide_notes",
+  {
+    slide_id: text("slide_id")
+      .notNull()
+      .references(() => slides.id, { onDelete: "cascade" }),
+    idx: integer("idx").notNull(),
+    body: text("body").notNull().default(""),
+    updated_at: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.slide_id, t.idx] }) })
+);
 
 // ─── Audit Logs ────────────────────────────────────────────
 export const auditLogs = sqliteTable("audit_logs", {

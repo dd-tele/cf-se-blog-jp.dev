@@ -1,0 +1,23 @@
+# Durable Object host for live slide presentations.
+#
+# Pages Functions cannot define Durable Object classes, so the class lives in
+# this standalone Worker and the Pages project binds to it via `script_name`
+# (see the root wrangler.toml). The Worker has no public route: all traffic
+# arrives through the Pages binding.
+#
+# Deploy: npx wrangler deploy --config workers/slide-sync/wrangler.toml
+name = "cf-se-blog-slide-sync"
+main = "src/index.ts"
+compatibility_date = "2025-12-01"
+workers_dev = false
+
+[[durable_objects.bindings]]
+name = "PRESENT_ROOM"
+class_name = "PresentRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PresentRoom"]
+
+[observability]
+enabled = true

@@ -3,6 +3,12 @@ import { json } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getSlideBySlug } from "~/lib/slides.server";
 import { getSessionUser } from "~/lib/auth.server";
+import { canPresentSlide } from "~/lib/present.server";
+import {
+  SLIDE_CATEGORY_BADGE,
+  SLIDE_CATEGORY_LABEL,
+  parseSlideCategory,
+} from "~/lib/slide-categories";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data?.slide) return [{ title: "スライドが見つかりません — Cloudflare フィールドノート" }];
@@ -24,14 +30,21 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
   const restricted = slide.status !== "published" || slide.visibility === "limited";
   if (restricted && !user) {
-    return json({ slide, locked: true as const, user: null });
+    return json({ slide, locked: true as const, user: null, canPresent: false, canEdit: false });
   }
 
-  return json({ slide, locked: false as const, user });
+  return json({
+    slide,
+    locked: false as const,
+    user,
+    canPresent: canPresentSlide(user, slide),
+    canEdit: !!user && (user.role === "admin" || user.id === slide.authorId),
+  });
 }
 
 export default function SlideDetail() {
-  const { slide, locked, user } = useLoaderData<typeof loader>();
+  const { slide, locked, user, canPresent, canEdit } = useLoaderData<typeof loader>();
+  const category = parseSlideCategory(slide.category);
   const tags: string[] = (() => {
     try {
       return slide.tagsJson ? JSON.parse(slide.tagsJson) : [];
@@ -62,6 +75,9 @@ export default function SlideDetail() {
 
       <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${SLIDE_CATEGORY_BADGE[category]}`}>
+            {SLIDE_CATEGORY_LABEL[category]}
+          </span>
           {slide.visibility === "limited" && (
             <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
               限定公開
@@ -139,10 +155,55 @@ export default function SlideDetail() {
                 </svg>
                 全画面で開く
               </a>
+              {canPresent && (
+                <>
+                  <a
+                    href={`/slides/${slide.slug}/present`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18v11H3zM8 21h8M12 16v5" />
+                    </svg>
+                    発表する
+                  </a>
+                  <a
+                    href={`/slides/${slide.slug}/speaker`}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    スピーカービュー
+                  </a>
+                </>
+              )}
+              {canEdit && slide.presenterEnabled && (
+                <a
+                  href={`/portal/slides/${slide.id}/notes`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  ノートを編集
+                </a>
+              )}
               <p className="text-xs text-gray-400">
                 矢印キーまたは画面下のコントロールでスライドを操作できます。
               </p>
             </div>
+            {canEdit && !slide.presenterEnabled && (
+              <p className="mt-4 text-xs text-gray-500">
+                プレゼンテーション機能（発表モード・スマホのリモコン・スピーカーノート）は OFF です。
+                <a href={`/portal/slides/${slide.id}/edit`} className="ml-1 font-medium text-brand-600 hover:text-brand-700">
+                  編集画面で ON にする
+                </a>
+              </p>
+            )}
+            {canPresent && (
+              <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">
+                <p className="font-semibold text-gray-900">発表の流れ</p>
+                <ol className="mt-2 list-decimal space-y-1 pl-5">
+                  <li>会場の PC で「発表する」を開き、全画面表示にします。</li>
+                  <li>画面右下の QR コードをスマホで読み取ると、ノート付きのリモコンになります（ログイン不要）。</li>
+                  <li>スマホの「次へ」またはスワイプでメイン画面のページが進みます。iPad では次のスライドも表示されます。</li>
+                </ol>
+              </div>
+            )}
           </>
         )}
       </main>

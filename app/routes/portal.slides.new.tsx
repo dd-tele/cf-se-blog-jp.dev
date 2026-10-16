@@ -3,6 +3,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/cloudflare";
+import { PresenterEnabledField, parsePresenterEnabled } from "~/components/PresenterEnabledField";
 import { redirect } from "@remix-run/cloudflare";
 import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
@@ -11,6 +12,7 @@ import { ensureUser } from "~/lib/posts.server";
 import { createSlide, validateSlideHtml, userCanUploadSlides } from "~/lib/slides.server";
 import { unpackSlideBundle, storeBundleAssets } from "~/lib/slides-bundle.server";
 import { ulid } from "~/lib/ulid";
+import { SLIDE_CATEGORIES, SLIDE_CATEGORY_LABEL, parseSlideCategory } from "~/lib/slide-categories";
 
 export const meta: MetaFunction = () => [
   { title: "スライドをアップロード — Cloudflare フィールドノート" },
@@ -45,6 +47,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const visibility = (form.get("visibility") as string) === "limited" ? "limited" : "public";
   const status = (form.get("status") as string) === "draft" ? "draft" : "published";
   const coverImageUrl = (form.get("coverImageUrl") as string) || undefined;
+  const category = parseSlideCategory(form.get("category"));
+  const presenterEnabled = parsePresenterEnabled(form.get("presenterEnabled"));
 
   if (!title) return { error: "タイトルは必須です。" };
 
@@ -95,6 +99,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
           tagsJson,
           status,
           visibility,
+          category,
+          presenterEnabled,
           assetPrefix,
           skipAssetRewrite: true,
         },
@@ -132,6 +138,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
         tagsJson,
         status,
         visibility,
+        category,
+        presenterEnabled,
       },
       user
     );
@@ -205,6 +213,29 @@ export default function NewSlide() {
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
+
+          <div>
+            <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700">
+              カテゴリ
+            </label>
+            <select
+              id="category"
+              name="category"
+              defaultValue="event"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              {SLIDE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {SLIDE_CATEGORY_LABEL[c]}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-400">
+              お客様向けの資料は、公開範囲を「限定」にすることをおすすめします。
+            </p>
+          </div>
+
+          <PresenterEnabledField />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

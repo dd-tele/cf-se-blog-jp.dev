@@ -4,7 +4,27 @@ import { createPagesFunctionHandler } from "@remix-run/cloudflare-pages";
 import * as build from "../build/server";
 import { getLoadContext } from "../load-context";
 
-export const onRequest = createPagesFunctionHandler({
+const remixHandler = createPagesFunctionHandler({
+  // @ts-ignore - generated build module typing
   build,
+  // @ts-ignore - pre-existing ExecutionContext typing mismatch between Remix and workers-types
   getLoadContext,
 });
+
+// Live presentation WebSockets: /present-ws/<roomId>?k=<key>&role=display|remote
+// Handled before Remix so the 101 Upgrade response is returned untouched.
+const PRESENT_WS = /^\/present-ws\/([A-Za-z0-9_-]{16,64})$/;
+
+export const onRequest = async (ctx: any) => {
+  const url = new URL(ctx.request.url);
+  const m = url.pathname.match(PRESENT_WS);
+  if (m) {
+    if (ctx.request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+      return new Response("Expected WebSocket", { status: 426 });
+    }
+    const ns: DurableObjectNamespace = ctx.env.PRESENT_ROOM;
+    const stub = ns.get(ns.idFromName(m[1]));
+    return stub.fetch(new Request(`https://room/ws${url.search}`, ctx.request));
+  }
+  return remixHandler(ctx);
+};

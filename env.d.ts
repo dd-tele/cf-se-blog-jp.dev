@@ -9,6 +9,7 @@ interface Env {
   PAGE_CACHE: KVNamespace;
   DRAFTS: KVNamespace;
   AI: Ai;
+  PRESENT_ROOM: DurableObjectNamespace;
   ENVIRONMENT: string;
   SITE_NAME: string;
   SITE_URL: string;
@@ -23,4 +24,5 @@ interface Env {
   ADMIN_EMAILS?: string;
   SE_EMAIL_DOMAINS?: string;
   EMAIL_WORKER_URL?: string;
+  SESSION_SECRET?: string;
 }

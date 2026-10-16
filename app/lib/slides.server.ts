@@ -4,6 +4,7 @@ import { slides, users } from "~/db/schema";
 import { ulid } from "~/lib/ulid";
 import { slugify } from "~/lib/utils";
 import type { SessionUser } from "~/lib/auth.server";
+import type { SlideCategory } from "~/lib/slide-categories";
 
 // ─── Permissions ───────────────────────────────────────────
 
@@ -132,12 +133,13 @@ export async function generateUniqueSlug(
 
 export async function getPublishedSlides(
   db: D1Database,
-  opts: { limit?: number; offset?: number; search?: string } = {}
+  opts: { limit?: number; offset?: number; search?: string; category?: SlideCategory } = {}
 ) {
-  const { limit = 24, offset = 0, search } = opts;
+  const { limit = 24, offset = 0, search, category } = opts;
   const d = getDb(db);
 
   const conditions = [eq(slides.status, "published")];
+  if (category) conditions.push(eq(slides.category, category));
   if (search) {
     conditions.push(
       or(
@@ -164,6 +166,8 @@ export async function getPublishedSlides(
       ),
       tagsJson: slides.tags_json,
       visibility: slides.visibility,
+      category: slides.category,
+      presenterEnabled: slides.presenter_enabled,
       viewCount: slides.view_count,
       createdAt: slides.created_at,
     })
@@ -194,6 +198,8 @@ export async function getSlideBySlug(db: D1Database, slug: string) {
       tagsJson: slides.tags_json,
       status: slides.status,
       visibility: slides.visibility,
+      category: slides.category,
+      presenterEnabled: slides.presenter_enabled,
       viewCount: slides.view_count,
       createdAt: slides.created_at,
       updatedAt: slides.updated_at,
@@ -222,6 +228,8 @@ export async function getSlideHtmlBySlug(
       html: slides.html,
       status: slides.status,
       visibility: slides.visibility,
+      category: slides.category,
+      presenterEnabled: slides.presenter_enabled,
       assetPrefix: slides.asset_prefix,
     })
     .from(slides)
@@ -245,6 +253,8 @@ export async function getManagedSlides(db: D1Database, user: SessionUser) {
       slideCount: slides.slide_count,
       status: slides.status,
       visibility: slides.visibility,
+      category: slides.category,
+      presenterEnabled: slides.presenter_enabled,
       viewCount: slides.view_count,
       authorId: slides.author_id,
       authorName: sql<string>`COALESCE(${users.nickname}, ${users.display_name}, ${slides.author_name_snapshot})`.as(
@@ -277,6 +287,8 @@ export async function getSlideById(db: D1Database, id: string) {
       authorNameSnapshot: slides.author_name_snapshot,
       status: slides.status,
       visibility: slides.visibility,
+      category: slides.category,
+      presenterEnabled: slides.presenter_enabled,
       tagsJson: slides.tags_json,
       assetPrefix: slides.asset_prefix,
       viewCount: slides.view_count,
@@ -299,6 +311,8 @@ export async function getUserSlides(db: D1Database, authorId: string) {
       slideCount: slides.slide_count,
       status: slides.status,
       visibility: slides.visibility,
+      category: slides.category,
+      presenterEnabled: slides.presenter_enabled,
       viewCount: slides.view_count,
       createdAt: slides.created_at,
     })
@@ -327,6 +341,8 @@ export interface CreateSlideInput {
   tagsJson?: string;
   status?: "draft" | "published";
   visibility?: "public" | "limited";
+  category?: SlideCategory;
+  presenterEnabled?: boolean;
   slug?: string;
   /** Pre-generated id (e.g. when assets are stored before insert). */
   id?: string;
@@ -366,6 +382,8 @@ export async function createSlide(
     author_name_snapshot: user.displayName,
     status: input.status ?? "published",
     visibility: input.visibility ?? "public",
+    category: input.category ?? "event",
+    presenter_enabled: input.presenterEnabled ?? false,
     tags_json: input.tagsJson || null,
     created_at: now,
     updated_at: now,
@@ -399,6 +417,8 @@ export interface UpdateSlideInput {
   tagsJson?: string | null;
   status?: "draft" | "published";
   visibility?: "public" | "limited";
+  category?: SlideCategory;
+  presenterEnabled?: boolean;
   authorId?: string;
 }
 
@@ -421,6 +441,8 @@ export async function updateSlide(
   if (input.tagsJson !== undefined) data.tags_json = input.tagsJson || null;
   if (input.status !== undefined) data.status = input.status;
   if (input.visibility !== undefined) data.visibility = input.visibility;
+  if (input.category !== undefined) data.category = input.category;
+  if (input.presenterEnabled !== undefined) data.presenter_enabled = input.presenterEnabled;
 
   if (input.authorId !== undefined) {
     data.author_id = input.authorId;

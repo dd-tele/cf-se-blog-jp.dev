@@ -5,6 +5,7 @@ import {
 } from "~/lib/slides.server";
 import { contentTypeFor } from "~/lib/slides-bundle.server";
 import { getSessionUser } from "~/lib/auth.server";
+import { hasDeckGrant } from "~/lib/present.server";
 
 // Serves a slide deck as a "directory":
 //   /slides/:slug/a/            -> the entry HTML (stored in D1)
@@ -19,10 +20,12 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
   const row = await getSlideHtmlBySlug(env.DB, slug);
   if (!row) return new Response("Not found", { status: 404 });
 
-  // Drafts and limited slides require an authenticated session (entry + assets).
-  if (row.status !== "published" || row.visibility === "limited") {
+  // Drafts and limited slides require an authenticated session (entry + assets),
+  // or a short-lived pass issued to a phone paired with a live presentation.
+  const restricted = row.status !== "published" || row.visibility === "limited";
+  if (restricted) {
     const user = await getSessionUser(request);
-    if (!user) {
+    if (!user && !(await hasDeckGrant(request, env, slug))) {
       return new Response("このスライドを表示するにはログインが必要です。", {
         status: 403,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
@@ -42,14 +45,16 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
       });
     }
 
-    if (row.status === "published") {
+    // Speaker-view thumbnails load the deck with ?embed=1; don't count those.
+    if (row.status === "published" && url.searchParams.get("embed") !== "1") {
       await incrementSlideView(env.DB, row.id);
     }
 
     return new Response(row.html, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=300",
+        // Restricted decks must not be stored by shared caches.
+        "Cache-Control": restricted ? "private, max-age=300" : "public, max-age=300",
         "Content-Security-Policy": "frame-ancestors 'self'",
       },
     });
@@ -67,7 +72,7 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
     headers: {
       "Content-Type":
         object.httpMetadata?.contentType || contentTypeFor(assetPath),
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": restricted ? "private, max-age=3600" : "public, max-age=3600",
     },
   });
 }
