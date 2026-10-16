@@ -17,7 +17,6 @@ import { redirect } from "@remix-run/cloudflare";
 import {
   getAccessJWT,
   verifyAccessJWT,
-  decodeAccessJWTUnsafe,
   resolveAccessEmail,
   resolveRole,
   buildSessionUserFromAccess,
@@ -137,20 +136,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           env.CF_ACCESS_AUD!
         );
 
-        // Resolve payload: prefer verified, fallback to decoded
-        let payload: { email: string; sub: string } | null = null;
-        let verifyReason: string | null = null;
-
-        if (result.ok) {
-          payload = result.payload;
-        } else {
-          verifyReason = result.reason;
-          // Fallback: decode without verification.
-          // Safe because Access has already verified the JWT before the
-          // request reached this Worker.
-          console.warn(`[Access Auth] JWT verify failed (${verifyReason}), falling back to decode`);
-          payload = decodeAccessJWTUnsafe(jwt);
-        }
+        // Only a verified JWT may create a session: /auth/login is not
+        // behind Access, so an unverified CF_Authorization cookie could be
+        // forged.
+        const payload = result.ok ? result.payload : null;
+        const verifyReason: string | null = result.ok ? null : result.reason;
 
         if (payload) {
           const role = resolveRole(
@@ -208,22 +198,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       } catch (err) {
         if (err instanceof Response) throw err;
         console.error("[Access Auth] Error:", err);
-        // Last-resort fallback: decode JWT without verification
-        const fallbackPayload = decodeAccessJWTUnsafe(jwt);
-        if (fallbackPayload) {
-          console.warn("[Access Auth] Using decoded JWT after catch fallback");
-          const role = resolveRole(fallbackPayload.email, env.ADMIN_EMAILS, env.SE_EMAIL_DOMAINS);
-          const sessionUser = buildSessionUserFromAccess(fallbackPayload as any, role);
-          const dbUser = await ensureUser(env.DB, sessionUser);
-          if (dbUser) {
-            if (!dbUser.is_active) {
-              return { mode: "error" as const, error: "このアカウントは無効化されています。管理者にお問い合わせください。" };
-            }
-            sessionUser.displayName = dbUser.nickname || dbUser.display_name;
-            if (dbUser.role) sessionUser.role = dbUser.role as typeof sessionUser.role;
-          }
-          return createUserSessionAndClearPreLogout(sessionUser, returnTo);
-        }
+        // No unverified fallback here: failing to verify must never log anyone in.
         return {
           mode: "error" as const,
           error: `認証エラー: ${err instanceof Error ? err.message : "Unknown error"}`,
@@ -249,11 +224,31 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     };
   }
 
-  // Dev: show mock login
+  // Dev: show mock login — local development only. A deployment that is
+  // missing its Access secrets must not turn into an open admin login.
+  if (!isLocalDevRequest(request)) {
+    return {
+      mode: "error" as const,
+      error: "認証が構成されていません（Cloudflare Access の設定が見つかりません）。管理者にお問い合わせください。",
+      autoRetry: false,
+    };
+  }
   return { mode: "dev" as const, devUsers: DEV_USERS };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+/** Mock login is only ever available on localhost without Access configured. */
+function isLocalDevRequest(request: Request): boolean {
+  const host = new URL(request.url).hostname;
+  return host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+}
+
+export async function action({ request, context }: ActionFunctionArgs) {
+  // The mock-login POST must not exist outside local dev. Previously it
+  // issued a session for any DEV_USERS entry (including admin) even when
+  // Access was configured, and /auth/login is not behind Access.
+  if (isAccessConfigured(context.cloudflare.env) || !isLocalDevRequest(request)) {
+    throw new Response("Not Found", { status: 404 });
+  }
   const formData = await request.formData();
   const selectedId = formData.get("userId") as string;
   const returnTo = (formData.get("returnTo") as string) || "/portal";

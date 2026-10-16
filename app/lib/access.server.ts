@@ -123,8 +123,11 @@ export async function verifyAccessJWT(
       new TextDecoder().decode(base64UrlDecode(payloadB64))
     ) as AccessJWTPayload;
 
-    // Verify audience
-    if (!payload.aud || !payload.aud.includes(aud)) return { ok: false, reason: "bad_aud" };
+    // Verify audience. CF_ACCESS_AUD may list several Access applications
+    // (comma-separated) that front this site, e.g. /portal and /admin.
+    const allowed = aud.split(",").map((a) => a.trim()).filter(Boolean);
+    const tokenAud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+    if (!tokenAud.some((a) => allowed.includes(a))) return { ok: false, reason: "bad_aud" };
 
     // Verify expiration
     if (payload.exp && payload.exp < Date.now() / 1000) return { ok: false, reason: "expired" };
@@ -142,10 +145,12 @@ export async function verifyAccessJWT(
 
 /**
  * Decode Access JWT payload WITHOUT signature verification.
- * Safe to use when the entire site is behind Cloudflare Access,
- * because Access has already verified the JWT before the request
- * reaches the Worker. Use as a fallback when verifyAccessJWT fails
- * (e.g. due to AUD mismatch, certs fetch failure, key rotation).
+ *
+ * NEVER use the result to authenticate or authorise anyone: not every path
+ * of this site is behind Access, so the CF_Authorization cookie can be
+ * forged. Only use it for hints that can at most log a user OUT
+ * (e.g. detecting a session/JWT email mismatch, picking the newest of
+ * several cookies). Use verifyAccessJWT for anything that grants access.
  */
 export function decodeAccessJWTUnsafe(token: string): AccessJWTPayload | null {
   try {
@@ -198,8 +203,8 @@ export function getAccessJWT(request: Request): string | null {
 }
 
 /**
- * Extract the email from an Access JWT.
- * Tries verification first, falls back to decode (safe behind Access).
+ * Extract the email from an Access JWT WITHOUT verification.
+ * Only for session/JWT mismatch detection (which can only log a user out).
  */
 export function resolveAccessEmail(
   jwt: string,

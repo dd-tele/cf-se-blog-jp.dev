@@ -18,7 +18,6 @@ import {
 import {
   getAccessJWT,
   verifyAccessJWT,
-  decodeAccessJWTUnsafe,
   resolveRole,
   buildSessionUserFromAccess,
 } from "~/lib/access.server";
@@ -62,23 +61,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   if (!jwt) return null;
 
   try {
-    let payload: { email: string; sub: string } | null = null;
-
+    // Only a verified JWT may create a session. "/" is not behind Access,
+    // so an unverified CF_Authorization cookie could be forged.
     const result = await verifyAccessJWT(
       jwt,
       env.CF_ACCESS_TEAM_DOMAIN!,
       env.CF_ACCESS_AUD!
     );
-    if (result.ok) {
-      payload = result.payload;
-    } else {
-      // Fallback: decode without verification.
-      // Safe because Access has already verified the JWT before the
-      // request reached this Worker.
-      console.warn(`[Root Auto-Login] JWT verify failed (${result.reason}), falling back to decode`);
-      payload = decodeAccessJWTUnsafe(jwt);
+    if (!result.ok) {
+      console.warn(`[Root Auto-Login] JWT rejected (${result.reason}); not creating a session`);
+      return null;
     }
-    if (!payload) return null;
+    const payload = result.payload;
 
     const role = resolveRole(
       payload.email,
