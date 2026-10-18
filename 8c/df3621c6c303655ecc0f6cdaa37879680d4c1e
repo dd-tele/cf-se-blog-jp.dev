@@ -1,0 +1,19 @@
+app/routes/portal.slides.$id.edit.tsx
+  s_7c22daea089a55::t_bb82b580681ab9 277-278
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8cdf3621c6c303655ecc0f6cdaa37879680d4c1e",
+  "prompts": {},
+  "sessions": {
+    "s_7c22daea089a55": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_eb91a298affeph3t9dyOBuCEgq",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "dd-tele <dd.telecaster@gmail.com>"
+    }
+  }
+}
