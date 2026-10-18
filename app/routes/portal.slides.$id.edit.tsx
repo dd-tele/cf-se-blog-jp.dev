@@ -4,6 +4,8 @@ import type {
   MetaFunction,
 } from "@remix-run/cloudflare";
 import { PresenterEnabledField, parsePresenterEnabled } from "~/components/PresenterEnabledField";
+import { SpeakerNotesFileField } from "~/components/SpeakerNotesFileField";
+import { getSlideNotes, readNotesUpload, saveSlideNotes, type NotesUpload } from "~/lib/slide-notes.server";
 import { redirect } from "@remix-run/cloudflare";
 import { Form, Link, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
@@ -39,7 +41,9 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
       }))
     : [];
 
-  return { user, slide, isAdmin, authors };
+  const notesCount = (await getSlideNotes(env.DB, slide.id)).filter((n) => n.trim()).length;
+
+  return { user, slide, isAdmin, authors, notesCount };
 }
 
 export async function action({ request, context, params }: ActionFunctionArgs) {
@@ -55,6 +59,13 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   const form = await request.formData();
   const title = (form.get("title") as string)?.trim();
   if (!title) return { error: "タイトルは必須です。" };
+
+  let notesUpload: NotesUpload | null;
+  try {
+    notesUpload = await readNotesUpload(form.get("notesFile"));
+  } catch (e: any) {
+    return { error: e.message };
+  }
 
   let slug = slugify((form.get("slug") as string) || "");
   if (!slug) slug = slide.slug;
@@ -90,6 +101,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       presenterEnabled: parsePresenterEnabled(form.get("presenterEnabled")),
       authorId,
     });
+    if (notesUpload) await saveSlideNotes(env.DB, id, notesUpload.notes);
   } catch (e: any) {
     return { error: e?.message || "更新に失敗しました。" };
   }
@@ -98,7 +110,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
 }
 
 export default function EditSlide() {
-  const { slide, isAdmin, authors } = useLoaderData<typeof loader>();
+  const { slide, isAdmin, authors, notesCount } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -159,7 +171,7 @@ export default function EditSlide() {
           </div>
         )}
 
-        <Form method="post" className="space-y-6">
+        <Form method="post" encType="multipart/form-data" className="space-y-6">
           <div>
             <label htmlFor="title" className="mb-1 block text-sm font-medium text-gray-700">
               タイトル *
@@ -345,6 +357,8 @@ export default function EditSlide() {
               </select>
             </div>
           </div>
+
+          <SpeakerNotesFileField mode="edit" existingCount={notesCount} />
 
           <div className="flex items-center justify-between border-t pt-6">
             <Link to="/portal/slides" className="text-sm text-gray-500 hover:text-gray-700">

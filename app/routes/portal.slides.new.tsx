@@ -4,6 +4,7 @@ import type {
   MetaFunction,
 } from "@remix-run/cloudflare";
 import { PresenterEnabledField, parsePresenterEnabled } from "~/components/PresenterEnabledField";
+import { SpeakerNotesFileField } from "~/components/SpeakerNotesFileField";
 import { redirect } from "@remix-run/cloudflare";
 import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
@@ -11,6 +12,7 @@ import { requireUser } from "~/lib/auth.server";
 import { ensureUser } from "~/lib/posts.server";
 import { createSlide, validateSlideHtml, userCanUploadSlides } from "~/lib/slides.server";
 import { unpackSlideBundle, storeBundleAssets } from "~/lib/slides-bundle.server";
+import { readNotesUpload, saveSlideNotes, takeNotesFromBundle, type NotesUpload } from "~/lib/slide-notes.server";
 import { ulid } from "~/lib/ulid";
 import { SLIDE_CATEGORIES, SLIDE_CATEGORY_LABEL, parseSlideCategory } from "~/lib/slide-categories";
 
@@ -66,6 +68,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
       file.type === "application/zip" ||
       file.type === "application/x-zip-compressed");
 
+  // Optional speaker notes (Markdown / JSON). Takes precedence over notes inside a ZIP.
+  let notesUpload: NotesUpload | null;
+  try {
+    notesUpload = await readNotesUpload(form.get("notesFile"));
+  } catch (e: any) {
+    return { error: e.message };
+  }
+
   try {
     // ─── ZIP bundle ─────────────────────────────────────────
     if (isZip) {
@@ -82,9 +92,19 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const check = validateSlideHtml(bundle.entryHtml);
       if (!check.ok) return { error: check.error };
 
+      // Speaker-note files in the ZIP are imported, never published as assets.
+      let assets = bundle.assets;
+      try {
+        const taken = takeNotesFromBundle(bundle.assets);
+        assets = taken.assets;
+        notesUpload ??= taken.notes;
+      } catch (e: any) {
+        return { error: e.message };
+      }
+
       const id = ulid();
       const assetPrefix = `slides/${id}`;
-      await storeBundleAssets(env.R2_BUCKET, id, bundle.assets);
+      await storeBundleAssets(env.R2_BUCKET, id, assets);
 
       const result = await createSlide(
         env.DB,
@@ -106,6 +126,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         },
         user
       );
+      if (notesUpload) await saveSlideNotes(env.DB, result.id, notesUpload.notes);
       return redirect(`/slides/${result.slug}`);
     }
 
@@ -143,6 +164,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       },
       user
     );
+    if (notesUpload) await saveSlideNotes(env.DB, result.id, notesUpload.notes);
     return redirect(`/slides/${result.slug}`);
   } catch (e: any) {
     return { error: e?.message || "スライドの保存に失敗しました。" };
@@ -321,6 +343,8 @@ export default function NewSlide() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
+
+          <SpeakerNotesFileField mode="new" />
 
           {/* Publish options */}
           <div className="grid gap-4 sm:grid-cols-2">
