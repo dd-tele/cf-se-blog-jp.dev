@@ -274,6 +274,8 @@ export default function EditSlide() {
 
           <PresenterEnabledField defaultChecked={!!slide.presenterEnabled} />
 
+          <SpeakerNotesFileField mode="edit" existingCount={notesCount} />
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="eventName" className="mb-1 block text-sm font-medium text-gray-700">
@@ -357,8 +359,6 @@ export default function EditSlide() {
               </select>
             </div>
           </div>
-
-          <SpeakerNotesFileField mode="edit" existingCount={notesCount} />
 
           <div className="flex items-center justify-between border-t pt-6">
             <Link to="/portal/slides" className="text-sm text-gray-500 hover:text-gray-700">
