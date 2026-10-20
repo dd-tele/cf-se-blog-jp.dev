@@ -1,0 +1,53 @@
+.github/workflows/deploy.yml
+  s_6d7f177329cb51::t_5d9e43771b8b81 56-61
+app/lib/posts.server.ts
+  s_6d7f177329cb51::t_35121cec10d883 5,10-11,20-46,58-66,68,73-76,114,157-158,194,239,264-268,277,282-284,287-288,314,338,340-342,344,383-384
+app/routes/_index.tsx
+  s_6d7f177329cb51::t_f1c68c1d952c6c 6,22-25,27-29,34,39,50,107-113,125,200-238,244,246,260,263,269
+app/routes/about.tsx
+  s_6d7f177329cb51::t_0881ad06e6cb91 4,52
+app/routes/authors.$id.tsx
+  s_6d7f177329cb51::t_0caf7701c3cb18 3,44
+app/routes/changelog.tsx
+  s_6d7f177329cb51::t_03ea00d4d2fa6c 3,217
+app/routes/portal._index.tsx
+  s_6d7f177329cb51::t_70224394e1cc65 4,20,32,42,46,120,124-137,146
+app/routes/portal.posts.tsx
+  s_6d7f177329cb51::t_c699f0bd446d46 122-124,131-135
+app/routes/posts._index.tsx
+  s_6d7f177329cb51::t_3e82556d2f2342 7,10,66,92-93,99,146-147,153
+app/routes/search.tsx
+  s_6d7f177329cb51::t_eebaae1df57ab6 3,31-32,47,51-52,61-62,73,75,85,93,122,219-225,243-246,264
+app/routes/sitemap[.]xml.tsx
+  s_6d7f177329cb51::t_c2c1d0baf1f642 9,16,28
+app/routes/slides._index.tsx
+  s_6d7f177329cb51::t_d9b6bb152a0643 3,67
+app/routes/vibe-coding.tsx
+  s_6d7f177329cb51::t_ba0b16d0e1621a 3,27
+case-guides/reference/ai-gateway-dashboard-guide.html
+  s_6d7f177329cb51::t_de758db024ea87 1-666
+case-guides/template/index.html
+  s_6d7f177329cb51::t_d4eb8e0e223109 1-340
+env.d.ts
+  s_6d7f177329cb51::t_551deeaf0db941 13
+load-context.ts
+  s_6d7f177329cb51::t_465fec17329f6e 11
+wrangler.toml
+  s_6d7f177329cb51::t_318ab8e4e1c916 37-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e7813e3479d0d6f8c2dc46c2d38581b11242e74b",
+  "prompts": {},
+  "sessions": {
+    "s_6d7f177329cb51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f09a606e9ffewARkwnGFjNskCZ",
+        "model": "gpt-5.6"
+      },
+      "human_author": "dd-tele <dd.telecaster@gmail.com>"
+    }
+  }
+}
