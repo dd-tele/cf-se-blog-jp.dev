@@ -9,6 +9,8 @@ folder as <slug>.zip. Any error aborts packaging; warnings are printed only.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import sys
 import zipfile
@@ -116,10 +118,23 @@ def main() -> int:
             errors.append(f"図番号が重複しています: 図 {c[0]}-{c[1]}")
         seen.add(c)
 
+    # ── Masking (AGENTS.md 3-4): every screenshot must come from mask.py ──
+    masks_path = work / "masks.json"
+    lock_path = assets_dir / ".masks.lock.json"
+    try:
+        mask_spec = json.loads(masks_path.read_text(encoding="utf-8")) if masks_path.is_file() else None
+        mask_lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.is_file() else {}
+    except json.JSONDecodeError as e:
+        errors.append(f"masks.json / .masks.lock.json を読み込めません: {e}")
+        mask_spec, mask_lock = {}, {}
+    if mask_spec is None and referenced:
+        errors.append("masks.json がありません。scripts/mask.py でマスクしてから assets/ に配置してください。")
+        mask_spec = {}
+
     files: list[Path] = []
     if assets_dir.is_dir():
         for f in sorted(assets_dir.rglob("*")):
-            if f.is_dir() or f.name == ".DS_Store":
+            if f.is_dir() or f.name in (".DS_Store", ".masks.lock.json"):
                 continue
             rel = f.relative_to(assets_dir).as_posix()
             if f.suffix.lower() not in ALLOWED_ASSET_EXT:
@@ -130,6 +145,14 @@ def main() -> int:
             if rel not in referenced:
                 warnings.append(f"本文から参照されていない画像（ZIP に含めません）: assets/{rel}")
                 continue
+            if f.suffix.lower() != ".svg":  # SVG = hand-made diagrams, not screenshots
+                entry = (mask_spec or {}).get(rel)
+                if entry is None:
+                    errors.append(f"masks.json に記載がありません（マスク未実施）: assets/{rel}")
+                elif entry.get("reviewed") is not True:
+                    errors.append(f"マスク後の確認が済んでいません（reviewed が true ではない）: assets/{rel}")
+                elif mask_lock.get(rel) != hashlib.sha256(f.read_bytes()).hexdigest():
+                    errors.append(f"mask.py の出力と一致しません（直接コピー・編集された可能性）: assets/{rel}")
             files.append(f)
 
     # ── Sensitive identifiers in text ────────────────────────
