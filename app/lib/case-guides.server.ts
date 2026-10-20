@@ -65,7 +65,43 @@ export async function parseGuideZip(file: File): Promise<ParsedGuide> {
   if (new TextEncoder().encode(bundle.entryHtml).byteLength > MAX_GUIDE_HTML_BYTES) {
     throw new Error("index.html が大きすぎます（最大 1.5MB）。画像は埋め込まず assets/ に分けてください。");
   }
+  const missing = findMissingAssets(bundle);
+  if (missing.length > 0) {
+    const list = missing.slice(0, 5).join("、");
+    const more = missing.length > 5 ? ` ほか ${missing.length - 5} 件` : "";
+    throw new Error(
+      `HTML が参照している画像が ZIP に含まれていません（${list}${more}）。` +
+        "index.html と同じ階層に assets/ フォルダを置いて ZIP にしてください。"
+    );
+  }
   return { bundle, title: extractGuideTitle(bundle.entryHtml) };
+}
+
+const ASSET_EXT = /\.(png|jpe?g|gif|webp|svg|avif|ico|css|js|woff2?|ttf|otf)$/i;
+
+/** Relative image/CSS/JS references in the entry HTML that are not in the ZIP. */
+export function findMissingAssets(bundle: UnpackedBundle): string[] {
+  const have = new Set(bundle.assets.map((a) => a.path));
+  const refs = new Set<string>();
+  const add = (raw: string) => {
+    const v = raw.trim().replace(/[?#].*$/, "");
+    if (!v || /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(v)) return; // absolute, data:, root-relative, anchor
+    if (!ASSET_EXT.test(v)) return;
+    let path: string;
+    try {
+      path = decodeURIComponent(v);
+    } catch {
+      path = v;
+    }
+    refs.add(path.replace(/^(?:\.\/)+/, ""));
+  };
+  const html = bundle.entryHtml;
+  for (const m of html.matchAll(/\b(?:src|href)\s*=\s*["']([^"']+)["']/gi)) add(m[1]);
+  for (const m of html.matchAll(/\bsrcset\s*=\s*["']([^"']+)["']/gi)) {
+    for (const part of m[1].split(",")) add(part.trim().split(/\s+/)[0] ?? "");
+  }
+  for (const m of html.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi)) add(m[1]);
+  return [...refs].filter((p) => !p.includes("..") && !have.has(p)).sort();
 }
 
 /**
