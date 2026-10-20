@@ -131,13 +131,16 @@ export function unpackSlideBundle(buffer: ArrayBuffer): UnpackedBundle {
   return { entryPath, entryHtml, assets, fileCount: entries.length };
 }
 
-/** Store bundle assets in R2 under `slides/<slideId>/<relpath>`. */
+/**
+ * Store bundle assets in R2 under `<prefix>/<relpath>`.
+ * The prefix defaults to `slides/<slideId>`; other content types pass their own.
+ */
 export async function storeBundleAssets(
   r2: R2Bucket,
   slideId: string,
-  assets: { path: string; data: Uint8Array }[]
+  assets: { path: string; data: Uint8Array }[],
+  prefix = `slides/${slideId}`
 ): Promise<void> {
-  const prefix = `slides/${slideId}`;
   await Promise.all(
     assets.map((a) =>
       r2.put(`${prefix}/${a.path}`, a.data as unknown as ArrayBuffer, {

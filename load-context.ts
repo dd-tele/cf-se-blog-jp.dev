@@ -8,6 +8,7 @@ interface Env {
   DRAFTS: KVNamespace;
   AI: Ai;
   PRESENT_ROOM: DurableObjectNamespace;
+  CASE_DRAFT_QUEUE: Queue<{ requestId: string }>;
   VECTORIZE: VectorizeIndex;
   ENVIRONMENT: string;
   SITE_NAME: string;

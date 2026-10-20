@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
+import { userCanUploadGuides } from "~/lib/case-guides.server";
 import { getUserBadges } from "~/lib/badges.server";
 import { getDb } from "~/lib/db.server";
 import { posts } from "~/db/schema";
@@ -16,7 +17,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const db = env.DB;
   const d = getDb(db);
 
-  const [badges, statsRow] = await Promise.all([
+  const [badges, statsRow, canUploadGuides] = await Promise.all([
     getUserBadges(db, user.id),
     d
       .select({
@@ -28,6 +29,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       .from(posts)
       .where(eq(posts.author_id, user.id))
       .get(),
+    userCanUploadGuides(db, user),
   ]);
 
   const stats = {
@@ -37,11 +39,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     totalViews: statsRow?.totalViews ?? 0,
   };
 
-  return { user, badges, stats };
+  return { user, badges, stats, canUploadGuides };
 }
 
 export default function PortalIndex() {
-  const { user, badges, stats } = useLoaderData<typeof loader>();
+  const { user, badges, stats, canUploadGuides } = useLoaderData<typeof loader>();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,9 +117,23 @@ export default function PortalIndex() {
               白紙から書く
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              テンプレートを使わず自由に事例を執筆。Markdown の貼り付けインポートにも対応
+              テンプレートを使わず自由に記事を執筆。Markdown の貼り付けインポートにも対応
             </p>
           </Link>
+
+          {canUploadGuides && (
+            <Link
+              to="/portal/cases/new"
+              className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-brand-600">
+                事例 - 設計ガイドをアップロード
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                手元の OpenCode で作成した HTML とスクリーンショットの ZIP を下書きとして登録
+              </p>
+            </Link>
+          )}
 
           <Link
             to="/portal/posts"
@@ -127,7 +143,7 @@ export default function PortalIndex() {
               マイ記事
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              下書き・審査中・公開済みの記事を管理
+              下書き・審査中・公開済みの記事と設計ガイドを管理
             </p>
           </Link>
 

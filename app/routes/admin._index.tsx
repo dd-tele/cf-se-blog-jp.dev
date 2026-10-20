@@ -7,6 +7,8 @@ import type {
 import { useLoaderData, useActionData, Link, Form, useNavigation } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
 import { getAllPostsForAdmin, deletePost } from "~/lib/posts.server";
+import { deleteGuideAssets } from "~/lib/case-guides.server";
+import { invalidatePostListCaches } from "~/lib/cache.server";
 
 export const meta: MetaFunction = () => [
   { title: "投稿管理 — Cloudflare フィールドノート" },
@@ -32,7 +34,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const postId = formData.get("postId") as string;
     if (!postId) return { error: "投稿IDが指定されていません" };
     try {
-      await deletePost(db, postId, user);
+      const deleted = await deletePost(db, postId, user);
+      if (deleted.assetPrefix) {
+        await deleteGuideAssets(env.R2_BUCKET, deleted.assetPrefix).catch(() => {});
+        await invalidatePostListCaches(env.PAGE_CACHE).catch(() => {});
+      }
       return { success: true, deletedId: postId };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "削除に失敗しました" };
@@ -90,6 +96,11 @@ export default function AdminIndex() {
               {user.role === "admin" && (
                 <Link to="/admin/template-api" className="text-gray-500 hover:text-gray-700">
                   Template API
+                </Link>
+              )}
+              {user.role === "admin" && (
+                <Link to="/admin/zero-trust-case" className="text-gray-500 hover:text-gray-700">
+                  事例生成
                 </Link>
               )}
               <Link to="/portal" className="text-gray-500 hover:text-gray-700">

@@ -34,6 +34,10 @@ id = "da6f80df5213422a97ee6972e2f7f772"
 [ai]
 binding = "AI"
 
+[[queues.producers]]
+binding = "CASE_DRAFT_QUEUE"
+queue = "cf-se-blog-case-drafts"
+
 [[vectorize]]
 binding = "VECTORIZE"
 index_name = "cf-se-blog-vectors"

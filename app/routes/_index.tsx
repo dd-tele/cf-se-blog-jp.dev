@@ -3,6 +3,7 @@ import { useLoaderData, Link } from "@remix-run/react";
 import { getSessionUser } from "~/lib/auth.server";
 import { getPublishedPosts } from "~/lib/posts.server";
 import { stripMarkdown } from "~/lib/utils";
+import { SiteNav } from "~/components/SiteNav";
 
 export const meta: MetaFunction = () => {
   return [
@@ -18,20 +19,24 @@ export const meta: MetaFunction = () => {
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const user = await getSessionUser(request);
   const db = context.cloudflare.env.DB;
-  const allLatest = await getPublishedPosts(db, { limit: 6 });
+  const [allLatest, allGuides] = await Promise.all([
+    getPublishedPosts(db, { limit: 6 }),
+    getPublishedPosts(db, { limit: 4, contentType: "case_guide" }),
+  ]);
   // Hide limited posts from non-logged-in users
-  const latestPosts = user
-    ? allLatest
-    : allLatest.filter((p: { visibility?: string | null }) => (p.visibility ?? "public") === "public");
+  const isVisible = (p: { visibility?: string | null }) => !!user || (p.visibility ?? "public") === "public";
+  const latestPosts = allLatest.filter(isVisible);
+  const latestGuides = allGuides.filter(isVisible);
   return {
     siteName: context.cloudflare.env.SITE_NAME ?? "Cloudflare Field Notes",
     user,
     latestPosts,
+    latestGuides,
   };
 }
 
 export default function Index() {
-  const { siteName, user, latestPosts } = useLoaderData<typeof loader>();
+  const { siteName, user, latestPosts, latestGuides } = useLoaderData<typeof loader>();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -42,18 +47,7 @@ export default function Index() {
             Cloudflare Field Notes
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
-            <Link
-              to="/slides"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              スライド
-            </Link>
-            <Link
-              to="/search"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              検索
-            </Link>
+            <SiteNav includeSearch />
             {user ? (
               <div className="flex items-center gap-3">
                 <Link
@@ -110,7 +104,13 @@ export default function Index() {
               to="/posts"
               className="whitespace-nowrap rounded-lg bg-gray-900 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gray-800"
             >
-              事例を読む
+              記事を読む
+            </Link>
+            <Link
+              to="/cases"
+              className="whitespace-nowrap rounded-lg border border-gray-900 bg-white px-7 py-3 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50"
+            >
+              事例 - 設計ガイド
             </Link>
             <Link
               to="/slides"
@@ -122,7 +122,7 @@ export default function Index() {
               to={user ? "/portal/templates" : "/apply"}
               className="whitespace-nowrap rounded-lg border border-gray-300 bg-white px-7 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
             >
-              事例を投稿する
+              記事を投稿する
             </Link>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-500">
@@ -197,14 +197,53 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Latest Design Guides */}
+      {latestGuides.length > 0 && (
+        <section className="border-b bg-gray-50 py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 flex items-end justify-between">
+              <div>
+                <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">CASE STUDY · DESIGN GUIDE</p>
+                <h2 className="mt-1 text-2xl font-bold text-gray-900">事例 - 設計ガイド</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  導入事例のアーキテクチャと、ダッシュボードの各画面・設定項目を詳しく解説するガイド
+                </p>
+              </div>
+              <Link to="/cases" className="text-sm font-medium text-gray-500 hover:text-gray-900">
+                すべて見る →
+              </Link>
+            </div>
+            <div className="grid gap-x-8 lg:grid-cols-2">
+              {latestGuides.map((g) => (
+                <article key={g.id} className="group relative border-t-2 border-gray-900 py-5">
+                  <div className="mb-2 flex items-center gap-2 text-xs">
+                    <span className="font-extrabold tracking-[0.12em] text-brand-500">DESIGN GUIDE</span>
+                    {g.categoryName && <span className="text-gray-500">{g.categoryName}</span>}
+                    {g.visibility === "limited" && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-700">限定</span>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-bold leading-snug text-gray-900 group-hover:text-brand-600">
+                    <Link to={`/cases/${g.slug}`} className="after:absolute after:inset-0">
+                      {g.title}
+                    </Link>
+                  </h3>
+                  {g.excerpt && <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">{g.excerpt}</p>}
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Latest Posts */}
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8 flex items-end justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">最新の事例</h2>
+              <h2 className="text-2xl font-bold text-gray-900">最新の記事</h2>
               <p className="mt-1 text-sm text-gray-500">
-                SE とユーザーの最新エンジニアリング事例
+                SE とユーザーによる検証・実装・運用の記事
               </p>
             </div>
             <Link
@@ -218,16 +257,16 @@ export default function Index() {
           {latestPosts.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-16 text-center">
               <p className="text-base text-gray-400">
-                まだ事例が投稿されていません
+                まだ記事が投稿されていません
               </p>
               <p className="mt-2 text-sm text-gray-400">
-                最初のエンジニアリング事例を投稿して、知見を共有しましょう。
+                最初の記事を投稿して、知見を共有しましょう。
               </p>
               <Link
                 to="/portal/templates"
                 className="mt-6 inline-block rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
               >
-                事例を投稿する
+                記事を投稿する
               </Link>
             </div>
           ) : (

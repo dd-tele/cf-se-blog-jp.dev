@@ -2,11 +2,13 @@ import { eq, desc, and, like, or, sql, inArray } from "drizzle-orm";
 import { getDb } from "~/lib/db.server";
 import { posts, users, categories, aiSummaries, aiDraftRequests, qaThreads, qaMessages } from "~/db/schema";
 import { ulid } from "~/lib/ulid";
-import { slugify, estimateReadingTime, generateExcerpt } from "~/lib/utils";
+import { slugify, estimateReadingTime, generateExcerpt, htmlToText, generateGuideExcerpt } from "~/lib/utils";
 import type { SessionUser } from "~/lib/auth.server";
 
 // ─── Types ─────────────────────────────────────────────────
 export interface CreatePostInput {
+  /** Optional pre-generated ULID (used when R2 assets are stored before the row). */
+  id?: string;
   title: string;
   content: string;
   excerpt?: string;
@@ -15,6 +17,33 @@ export interface CreatePostInput {
   coverImageUrl?: string;
   metaTitle?: string;
   metaDescription?: string;
+  visibility?: "public" | "limited";
+  contentType?: PostContentType;
+  assetPrefix?: string | null;
+}
+
+export type PostContentType = "article" | "case_guide";
+
+/** Public URL of a post, depending on its content type. */
+export function postPath(post: { slug: string; contentType?: string | null }): string {
+  return post.contentType === "case_guide" ? `/cases/${post.slug}` : `/posts/${post.slug}`;
+}
+
+/** Excerpt / reading time derived from content, aware of the content type. */
+function deriveFromContent(content: string, contentType: PostContentType) {
+  if (contentType === "case_guide") {
+    const text = htmlToText(content);
+    return {
+      excerpt: generateGuideExcerpt(content),
+      metaDescription: generateGuideExcerpt(content, 120),
+      readingTime: estimateReadingTime(text),
+    };
+  }
+  return {
+    excerpt: generateExcerpt(content),
+    metaDescription: generateExcerpt(content, 120),
+    readingTime: estimateReadingTime(content),
+  };
 }
 
 export interface UpdatePostInput extends Partial<CreatePostInput> {
@@ -26,12 +55,24 @@ export interface UpdatePostInput extends Partial<CreatePostInput> {
 
 export async function getPublishedPosts(
   db: D1Database,
-  opts: { limit?: number; offset?: number; categorySlug?: string; search?: string; visibility?: "public" | "all" } = {}
+  opts: {
+    limit?: number;
+    offset?: number;
+    categorySlug?: string;
+    search?: string;
+    visibility?: "public" | "all";
+    /** Defaults to "article" so existing article listings never include guides. */
+    contentType?: PostContentType | "all";
+  } = {}
 ) {
-  const { limit = 20, offset = 0, categorySlug, search, visibility = "all" } = opts;
+  const { limit = 20, offset = 0, categorySlug, search, visibility = "all", contentType = "article" } = opts;
   const d = getDb(db);
 
   const conditions = [eq(posts.status, "published")];
+
+  if (contentType !== "all") {
+    conditions.push(eq(posts.content_type, contentType));
+  }
 
   if (visibility === "public") {
     conditions.push(eq(posts.visibility, "public"));
@@ -70,6 +111,7 @@ export async function getPublishedPosts(
       readingTimeMinutes: posts.reading_time_minutes,
       viewCount: posts.view_count,
       visibility: posts.visibility,
+      contentType: posts.content_type,
       publishedAt: posts.published_at,
     })
     .from(posts)
@@ -112,6 +154,8 @@ export async function getPostBySlug(db: D1Database, slug: string) {
       updatedAt: posts.updated_at,
       visibility: posts.visibility,
       status: posts.status,
+      contentType: posts.content_type,
+      assetPrefix: posts.asset_prefix,
     })
     .from(posts)
     .leftJoin(users, eq(posts.author_id, users.id))
@@ -147,6 +191,7 @@ export async function getUserPosts(
       excerpt: posts.excerpt,
       visibility: posts.visibility,
       status: posts.status,
+      contentType: posts.content_type,
       categoryName: categories.name,
       viewCount: posts.view_count,
       publishedAt: posts.published_at,
@@ -191,6 +236,7 @@ export async function getAuthorPublicProfile(db: D1Database, authorId: string) {
       tagsJson: posts.tags_json,
       readingTimeMinutes: posts.reading_time_minutes,
       visibility: posts.visibility,
+      contentType: posts.content_type,
       viewCount: posts.view_count,
       publishedAt: posts.published_at,
     })
@@ -215,9 +261,11 @@ export async function createPost(
   user: SessionUser
 ) {
   const d = getDb(db);
-  const id = ulid();
-  const slug = slugify(input.title) + "-" + id.slice(-6).toLowerCase();
-  const readingTime = estimateReadingTime(input.content);
+  const id = input.id ?? ulid();
+  const contentType = input.contentType ?? "article";
+  const base = slugify(input.title) || (contentType === "case_guide" ? "guide" : "post");
+  const slug = base + "-" + id.slice(-6).toLowerCase();
+  const derived = deriveFromContent(input.content, contentType);
 
   const now = new Date().toISOString().replace("T", " ").slice(0, 19);
 
@@ -226,15 +274,18 @@ export async function createPost(
     title: input.title,
     slug,
     content: input.content,
-    excerpt: input.excerpt || generateExcerpt(input.content),
+    excerpt: input.excerpt || derived.excerpt,
     cover_image_url: input.coverImageUrl,
     author_id: user.id,
     category_id: input.categoryId || null,
     status: "draft",
+    visibility: input.visibility ?? "public",
+    content_type: contentType,
+    asset_prefix: input.assetPrefix ?? null,
     tags_json: input.tagsJson,
     meta_title: input.metaTitle || input.title,
-    meta_description: input.metaDescription || generateExcerpt(input.content, 120),
-    reading_time_minutes: readingTime,
+    meta_description: input.metaDescription || derived.metaDescription,
+    reading_time_minutes: derived.readingTime,
     created_at: now,
     updated_at: now,
   });
@@ -260,7 +311,7 @@ export async function publishPost(db: D1Database, postId: string, user: SessionU
     })
     .where(eq(posts.id, postId));
 
-  return { id: postId, slug: existing.slug };
+  return { id: postId, slug: existing.slug, contentType: existing.content_type };
 }
 
 export async function updatePost(
@@ -284,10 +335,13 @@ export async function updatePost(
     updateData.meta_title = input.metaTitle || input.title;
   }
   if (input.content !== undefined) {
+    const derived = deriveFromContent(input.content, existing.content_type ?? "article");
     updateData.content = input.content;
-    updateData.reading_time_minutes = estimateReadingTime(input.content);
-    updateData.excerpt = input.excerpt || input.content.slice(0, 200);
+    updateData.reading_time_minutes = derived.readingTime;
+    updateData.excerpt =
+      input.excerpt || (existing.content_type === "case_guide" ? derived.excerpt : input.content.slice(0, 200));
   }
+  if (input.assetPrefix !== undefined) updateData.asset_prefix = input.assetPrefix;
   if (input.categoryId !== undefined) updateData.category_id = input.categoryId;
   if (input.tagsJson !== undefined) updateData.tags_json = input.tagsJson;
   if (input.coverImageUrl !== undefined) updateData.cover_image_url = input.coverImageUrl;
@@ -326,7 +380,8 @@ export async function deletePost(db: D1Database, postId: string, user: SessionUs
   // 5. Finally delete the post
   await d.delete(posts).where(eq(posts.id, postId));
 
-  return { success: true };
+  // Callers remove R2 assets of case guides using the returned prefix.
+  return { success: true, assetPrefix: existing.asset_prefix ?? null };
 }
 
 // ─── Admin ────────────────────────────────────────────────

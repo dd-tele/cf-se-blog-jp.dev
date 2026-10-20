@@ -9,6 +9,8 @@ import {
   useActionData,
   useNavigation,
   useFetcher,
+  useRevalidator,
+  useSearchParams,
   Link,
 } from "@remix-run/react";
 import { redirect } from "@remix-run/cloudflare";
@@ -41,6 +43,15 @@ import { invalidatePostListCaches } from "~/lib/cache.server";
 import { ImageUploader } from "~/components/ImageUploader";
 import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
+import {
+  deleteGuideAssets,
+  isZipFile,
+  MAX_GUIDE_HTML_BYTES,
+  newGuidePrefix,
+  parseGuideZip,
+  storeGuideAssets,
+  userCanUploadGuides,
+} from "~/lib/case-guides.server";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: `${data?.post?.title ?? "記事"} を編集 — Cloudflare フィールドノート` },
@@ -60,7 +71,39 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
   }
 
   const categories = await getAllCategories(db);
-  return { post, categories, user };
+  let aiDraft = await db.prepare(
+    "SELECT id, status, created_at FROM ai_draft_requests WHERE post_id = ? ORDER BY created_at DESC LIMIT 1"
+  )
+    .bind(postId)
+    .first<{ id: string; status: "pending" | "completed" | "failed"; created_at: string }>();
+
+  if (aiDraft?.status === "pending") {
+    const createdAt = Date.parse(`${aiDraft.created_at.replace(" ", "T")}Z`);
+    if (Number.isFinite(createdAt) && Date.now() - createdAt > 20 * 60_000) {
+      const generated = post.title !== "Cloudflare Zero Trust導入事例（AI生成中）";
+      const terminalStatus = generated ? "completed" : "failed";
+      const statements = [
+        db.prepare("UPDATE ai_draft_requests SET status = ? WHERE id = ? AND status = 'pending'")
+          .bind(terminalStatus, aiDraft.id),
+      ];
+      if (!generated) {
+        statements.push(
+          db.prepare(
+            "UPDATE posts SET title = ?, meta_title = ?, updated_at = datetime('now') WHERE id = ? AND title = ?"
+          ).bind(
+            "Cloudflare Zero Trust導入事例（要編集）",
+            "Cloudflare Zero Trust導入事例（要編集）",
+            postId,
+            "Cloudflare Zero Trust導入事例（AI生成中）"
+          )
+        );
+        post.title = "Cloudflare Zero Trust導入事例（要編集）";
+      }
+      await db.batch(statements);
+      aiDraft = { ...aiDraft, status: terminalStatus };
+    }
+  }
+  return { post, categories, user, aiStatus: aiDraft?.status ?? null };
 }
 
 export async function action({ params, request, context }: ActionFunctionArgs) {
@@ -70,12 +113,53 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
   const postId = params.id;
   if (!postId) throw new Response("Not Found", { status: 404 });
 
+  const existingPost = await getPostById(db, postId);
+  if (!existingPost) throw new Response("Not Found", { status: 404 });
+  if (existingPost.author_id !== user.id && user.role !== "admin") {
+    throw new Response("Forbidden", { status: 403 });
+  }
+
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
+  const pendingGeneration = await db.prepare(
+    "SELECT 1 FROM ai_draft_requests WHERE post_id = ? AND status = 'pending' LIMIT 1"
+  )
+    .bind(postId)
+    .first();
+  if (pendingGeneration) {
+    return { error: "AI下書きの生成中です。完了後に編集してください。" };
+  }
 
   if (intent === "delete") {
-    await deletePost(db, postId, user);
+    const deleted = await deletePost(db, postId, user);
+    await deleteGuideAssets(env.R2_BUCKET, deleted.assetPrefix).catch(() => {});
+    if (existingPost.content_type === "case_guide") {
+      await invalidatePostListCaches(env.PAGE_CACHE).catch(() => {});
+    }
     return redirect("/portal/posts");
+  }
+
+  // Replace a design guide's HTML and screenshots with a newly uploaded ZIP.
+  if (intent === "replace-bundle") {
+    if (existingPost.content_type !== "case_guide") return { error: "設計ガイドではありません。" };
+    if (!(await userCanUploadGuides(db, user))) {
+      return { error: "設計ガイドをアップロードする権限がありません。管理者に許可を依頼してください。" };
+    }
+    const file = formData.get("zipFile");
+    if (!(file instanceof File) || !isZipFile(file)) {
+      return { error: "差し替える ZIP ファイルを選択してください。" };
+    }
+    const newPrefix = newGuidePrefix(postId);
+    try {
+      const parsed = await parseGuideZip(file);
+      await storeGuideAssets(env.R2_BUCKET, postId, parsed.bundle, newPrefix);
+      await updatePost(db, postId, { content: parsed.bundle.entryHtml, assetPrefix: newPrefix }, user);
+    } catch (e: any) {
+      await deleteGuideAssets(env.R2_BUCKET, newPrefix).catch(() => {});
+      return { error: e?.message || "ZIP の差し替えに失敗しました。" };
+    }
+    await deleteGuideAssets(env.R2_BUCKET, existingPost.asset_prefix).catch(() => {});
+    return { success: true, message: "ZIP を差し替えました。本文とスクリーンショットを更新しました。" };
   }
 
   if (intent === "ai-refine") {
@@ -112,6 +196,12 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
   if (!title || !content) {
     return { error: "タイトルと本文は必須です" };
   }
+  if (
+    existingPost.content_type === "case_guide" &&
+    new TextEncoder().encode(content).byteLength > MAX_GUIDE_HTML_BYTES
+  ) {
+    return { error: "HTML が大きすぎます（最大 1.5MB）。画像は埋め込まず assets/ に分けてください。" };
+  }
 
   try {
     await updatePost(
@@ -128,11 +218,14 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
     );
 
     if (intent === "publish") {
-      // Import external images to R2 before publishing
-      const siteUrl = env.SITE_URL || "https://cf-se-blog-jp.dev";
-      const imgResult = await importExternalImages(content, env.R2_BUCKET, siteUrl);
-      if (imgResult.imported > 0) {
-        await updatePost(db, postId, { content: imgResult.markdown }, user);
+      // Import external images to R2 before publishing (Markdown articles only;
+      // design guides reference their own bundled assets).
+      if (existingPost.content_type !== "case_guide") {
+        const siteUrl = env.SITE_URL || "https://cf-se-blog-jp.dev";
+        const imgResult = await importExternalImages(content, env.R2_BUCKET, siteUrl);
+        if (imgResult.imported > 0) {
+          await updatePost(db, postId, { content: imgResult.markdown }, user);
+        }
       }
       const published = await publishPost(db, postId, user);
       // Invalidate post-list KV cache so new post appears immediately
@@ -141,7 +234,9 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
         ? (await getAllCategories(db)).find((c) => c.id === categoryId)?.slug
         : undefined;
       await invalidatePostListCaches(kv, catSlug);
-      return redirect(`/posts/${published.slug}`);
+      return redirect(
+        published.contentType === "case_guide" ? `/cases/${published.slug}` : `/posts/${published.slug}`
+      );
     }
     return { success: true, message: "下書きを保存しました" };
   } catch (e: any) {
@@ -150,12 +245,40 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
 }
 
 export default function EditPost() {
-  const { post, categories, user } = useLoaderData<typeof loader>();
+  const { post, categories, user, aiStatus } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
+  const revalidator = useRevalidator();
+  const [searchParams] = useSearchParams();
   const isSubmitting = navigation.state === "submitting";
+  const isCaseDraftGenerating = searchParams.get("ai") === "generating";
+
+  useEffect(() => {
+    if (!isCaseDraftGenerating) return;
+    if (aiStatus === "completed") {
+      window.location.replace(`/portal/edit/${post.id}`);
+      return;
+    }
+    if (aiStatus === "failed") {
+      window.location.replace(`/portal/edit/${post.id}?ai=failed`);
+      return;
+    }
+    if (revalidator.state !== "idle") return;
+    const timer = window.setTimeout(() => revalidator.revalidate(), 2_000);
+    return () => window.clearTimeout(timer);
+  }, [aiStatus, isCaseDraftGenerating, post.id, revalidator]);
 
   const tags: string[] = post.tags_json ? JSON.parse(post.tags_json) : [];
+  const isGuide = post.content_type === "case_guide";
+  const viewPath = isGuide ? `/cases/${post.slug}` : `/posts/${post.slug}`;
+  const kindLabel = isGuide ? "設計ガイド" : "記事";
+  const replaceFetcher = useFetcher<{ success?: boolean; message?: string; error?: string }>();
+  // The body textarea is uncontrolled; reload so a later save cannot overwrite the new HTML.
+  useEffect(() => {
+    if (replaceFetcher.state === "idle" && replaceFetcher.data?.success) {
+      window.location.replace(`/portal/edit/${post.id}?replaced=1`);
+    }
+  }, [replaceFetcher.state, replaceFetcher.data, post.id]);
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [essence, setEssence] = useState("");
@@ -292,7 +415,7 @@ export default function EditPost() {
               </span>
             )}
             <a
-              href={`/posts/${post.slug}`}
+              href={viewPath}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
@@ -315,8 +438,30 @@ export default function EditPost() {
             {actionData.message}
           </div>
         )}
+        {aiStatus === "pending" && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            AI下書きを生成しています。この画面は完了後に自動更新されます。
+          </div>
+        )}
+        {isGuide && searchParams.get("uploaded") === "1" && (
+          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            設計ガイドを下書きとしてアップロードしました。「プレビュー」で表示を確認してから公開してください。
+          </div>
+        )}
+        {isGuide && (
+          <div className="mb-6 flex items-center gap-2 text-xs">
+            <span className="rounded-full bg-gray-900 px-2.5 py-0.5 font-semibold text-white">事例 - 設計ガイド</span>
+            <span className="text-gray-500">公開先: {viewPath}</span>
+          </div>
+        )}
+        {searchParams.get("ai") === "failed" && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            AI生成が完了しなかったため、収集内容を編集可能な下書きとして保存しました。
+          </div>
+        )}
 
         <Form method="post" className="space-y-6">
+          <fieldset disabled={aiStatus === "pending"} className="contents disabled:opacity-60">
           {/* Title */}
           <div>
             <label
@@ -407,31 +552,41 @@ export default function EditPost() {
                 htmlFor="content"
                 className="block text-sm font-medium text-gray-700"
               >
-                本文 *
+                {isGuide ? "本文（HTML） *" : "本文 *"}
               </label>
-              <div className="flex items-center gap-2">
-                <ContentToolbar onInsert={handleImageInsert} />
-                <ImageUploader onInsert={handleImageInsert} />
-              </div>
+              {!isGuide && (
+                <div className="flex items-center gap-2">
+                  <ContentToolbar onInsert={handleImageInsert} />
+                  <ImageUploader onInsert={handleImageInsert} />
+                </div>
+              )}
             </div>
             <textarea
               ref={contentRef}
               id="content"
               name="content"
               required
-              rows={20}
+              rows={isGuide ? 14 : 20}
               defaultValue={post.content}
               className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
-            <div className="mt-2 flex items-start justify-between gap-4">
-              <p className="text-xs text-gray-400">
-                Markdown 形式で記述できます。画像は上の「画像を挿入」ボタンからアップロードできます。
+            {isGuide ? (
+              <p className="mt-2 text-xs text-gray-400">
+                アップロードした index.html です。軽微な文言修正はここで編集できます。スクリーンショットの追加や構成変更は、
+                手元で更新した ZIP を下の「ZIP を差し替え」からアップロードしてください。
               </p>
-              <MarkdownGuide />
-            </div>
+            ) : (
+              <div className="mt-2 flex items-start justify-between gap-4">
+                <p className="text-xs text-gray-400">
+                  Markdown 形式で記述できます。画像は上の「画像を挿入」ボタンからアップロードできます。
+                </p>
+                <MarkdownGuide />
+              </div>
+            )}
           </div>
 
-          {/* AI Assist Refinement Panel */}
+          {/* AI Assist Refinement Panel (Markdown articles only) */}
+          {!isGuide && (
           <div className="rounded-xl border border-purple-200 bg-purple-50/50">
             <button
               type="button"
@@ -552,6 +707,7 @@ export default function EditPost() {
               </div>
             )}
           </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-between border-t pt-6">
@@ -560,7 +716,7 @@ export default function EditPost() {
               <button
                 type="submit"
                 onClick={(e) => {
-                  if (!confirm("この記事を削除しますか？")) e.preventDefault();
+                  if (!confirm(`この${kindLabel}を削除しますか？`)) e.preventDefault();
                 }}
                 className="text-sm text-red-500 hover:text-red-700"
               >
@@ -579,7 +735,7 @@ export default function EditPost() {
                 キャンセル
               </Link>
               <a
-                href={`/posts/${post.slug}`}
+                href={viewPath}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-5 py-2.5 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
@@ -603,7 +759,7 @@ export default function EditPost() {
                   value="publish"
                   disabled={isSubmitting}
                   onClick={(e) => {
-                    if (!confirm("この記事を公開しますか？")) e.preventDefault();
+                    if (!confirm(`この${kindLabel}を公開しますか？`)) e.preventDefault();
                   }}
                   className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
                 >
@@ -623,7 +779,46 @@ export default function EditPost() {
               )}
             </div>
           </div>
+          </fieldset>
         </Form>
+
+        {isGuide && (
+          <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5">
+            <h2 className="text-sm font-semibold text-gray-900">ZIP を差し替え</h2>
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">
+              index.html と assets/ を更新した ZIP をアップロードすると、本文とスクリーンショットをまとめて置き換えます。
+              タイトル・タグ・公開範囲・公開状態は変わりません。未保存の本文編集は失われます。
+            </p>
+            {replaceFetcher.data?.error && (
+              <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{replaceFetcher.data.error}</p>
+            )}
+            {searchParams.get("replaced") === "1" && (
+              <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-700">
+                ZIP を差し替えました。本文とスクリーンショットを更新しました。
+              </p>
+            )}
+            <replaceFetcher.Form method="post" encType="multipart/form-data" className="mt-4 flex flex-wrap items-center gap-3">
+              <input type="hidden" name="intent" value="replace-bundle" />
+              <input
+                type="file"
+                name="zipFile"
+                required
+                accept=".zip,application/zip"
+                className="flex-1 text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+              />
+              <button
+                type="submit"
+                disabled={replaceFetcher.state !== "idle"}
+                onClick={(e) => {
+                  if (!confirm("本文とスクリーンショットを ZIP の内容で置き換えますか？")) e.preventDefault();
+                }}
+                className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {replaceFetcher.state !== "idle" ? "差し替え中..." : "ZIP を差し替え"}
+              </button>
+            </replaceFetcher.Form>
+          </section>
+        )}
       </main>
     </div>
   );

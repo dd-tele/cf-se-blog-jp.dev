@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
+import { redirect } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getPostBySlug, getPostSummary, incrementViewCount } from "~/lib/posts.server";
 import { getSessionUser } from "~/lib/auth.server";
 import { renderMarkdown } from "~/lib/markdown.server";
 import { findRelatedPosts } from "~/lib/vectorize.server";
 import { ChatWidget } from "~/components/ChatWidget";
+import { SiteNav } from "~/components/SiteNav";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data || data.gated || !data.post) return [{ title: "記事が見つかりません" }];
@@ -42,7 +44,6 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
 
   const db = context.cloudflare.env.DB;
   const post = await getPostBySlug(db, slug);
-
   if (!post || (post.status !== "published")) {
     // Allow author/admin to preview
     const user = await getSessionUser(request);
@@ -50,6 +51,10 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
       throw new Response("Not Found", { status: 404 });
     }
   }
+
+  // Design guides live under /cases with their own viewer (checked after the
+  // draft gate so unpublished guide slugs are not revealed via the redirect).
+  if (post.contentType === "case_guide") throw redirect(`/cases/${post.slug}`);
 
   // Gate limited posts for non-logged-in users
   if (post.visibility === "limited") {
@@ -119,7 +124,7 @@ export default function PostDetail() {
               {data.siteName}
             </Link>
             <nav className="flex items-center gap-4">
-              <Link to="/posts" className="text-sm text-gray-600 hover:text-gray-900">記事一覧</Link>
+              <SiteNav active="posts" />
               <a href="/portal" className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors">ログイン</a>
             </nav>
           </div>
@@ -201,12 +206,7 @@ export default function PostDetail() {
             {siteName}
           </Link>
           <nav className="flex items-center gap-4">
-            <Link
-              to="/posts"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              記事一覧
-            </Link>
+            <SiteNav active="posts" />
             <Link
               to="/about"
               className="text-sm text-gray-600 hover:text-gray-900"
@@ -234,7 +234,7 @@ export default function PostDetail() {
 
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <Link to="/posts" className="mb-6 inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
-          ← 事例一覧に戻る
+          ← 記事一覧に戻る
         </Link>
 
         {/* Status banner for non-published */}

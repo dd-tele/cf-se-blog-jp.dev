@@ -1,5 +1,6 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
+import { SiteNav } from "~/components/SiteNav";
 import { getSessionUser } from "~/lib/auth.server";
 
 export const meta: MetaFunction = () => [
@@ -213,9 +214,7 @@ export default function ChangeLogPage() {
             <Link to="/about" className="text-sm text-gray-500 hover:text-gray-700">
               ← このブログについて
             </Link>
-            <Link to="/posts" className="text-sm text-gray-600 hover:text-gray-900">
-              事例一覧
-            </Link>
+            <SiteNav />
             {user && (
               <Link to="/portal" className="text-sm font-medium text-gray-600 hover:text-gray-900">
                 ダッシュボード

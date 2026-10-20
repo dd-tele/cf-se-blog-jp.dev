@@ -10,6 +10,7 @@ interface Env {
   DRAFTS: KVNamespace;
   AI: Ai;
   PRESENT_ROOM: DurableObjectNamespace;
+  CASE_DRAFT_QUEUE: Queue<{ requestId: string }>;
   ENVIRONMENT: string;
   SITE_NAME: string;
   SITE_URL: string;

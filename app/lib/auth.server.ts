@@ -46,6 +46,17 @@ function resolveSessionSecret(): SecretState {
   return { secret: DEV_SESSION_SECRET, canIssue: true };
 }
 
+let signingSecret: string | null = null;
+/**
+ * Server-side HMAC key for short-lived capability tokens (e.g. design guide
+ * asset URLs). Same source and fail-closed behaviour as the session secret;
+ * callers must domain-separate their messages.
+ */
+export function getServerSigningSecret(): string {
+  signingSecret ??= resolveSessionSecret().secret;
+  return signingSecret;
+}
+
 type CookieSessionStorage = SessionStorage;
 let storage: { store: CookieSessionStorage; canIssue: boolean } | null = null;
 function getStorage() {

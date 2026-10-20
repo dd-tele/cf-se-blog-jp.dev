@@ -1,0 +1,4 @@
+# Local guide work folders (screenshots may contain customer data) and upload ZIPs
+work/*
+!work/.gitkeep
+*.zip

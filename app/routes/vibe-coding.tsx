@@ -1,5 +1,6 @@
 import type { MetaFunction } from "@remix-run/cloudflare";
 import { Link } from "@remix-run/react";
+import { SiteNav } from "~/components/SiteNav";
 
 export const meta: MetaFunction = () => [
   { title: "Vibe Coding × Cloudflare — AI エージェントで実現する新しい開発体験" },
@@ -23,9 +24,7 @@ export default function VibeCoding() {
             <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
               このブログについて
             </Link>
-            <Link to="/posts" className="text-sm text-gray-600 hover:text-gray-900">
-              記事一覧
-            </Link>
+            <SiteNav />
           </div>
         </div>
       </header>

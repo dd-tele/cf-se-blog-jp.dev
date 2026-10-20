@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>【導入アーキテクチャ】{{製品名}}：{{顧客エイリアス}}</title>
+<style>
+:root{
+  --ink:#1f1f1f; --ink2:#444; --muted:#7a7a7a; --rule:#e3e3e3;
+  --orange:#f6821f; --orange-deep:#d9601a; --orange-soft:#fff4eb;
+  --blue:#2c5cc5; --green:#1e8e5a; --red:#c62828; --gray:#f6f6f6;
+  --side:300px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;font-family:Inter,"Hiragino Sans","Noto Sans JP",Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.75;font-size:15px}
+a{color:var(--blue)}
+code{font-family:"SF Mono",Menlo,monospace;font-size:.88em;background:#f3f3f3;border:1px solid #e6e6e6;border-radius:4px;padding:1px 5px;word-break:break-all}
+
+/* progress + top bar */
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--orange);width:0;z-index:30}
+#topbar{position:fixed;top:0;left:var(--side);right:0;height:52px;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule);display:flex;align-items:center;padding:0 32px;z-index:20;font-size:13px;color:var(--muted);gap:8px}
+#topbar .here{font-weight:700;color:var(--ink)}
+#topbar .sep{color:#ccc}
+#topbar .chap{color:var(--orange-deep);font-weight:700}
+#menuBtn{display:none;border:1px solid var(--rule);background:#fff;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
+
+/* sidebar */
+#toc{position:fixed;top:0;left:0;bottom:0;width:var(--side);background:#fafafa;border-right:1px solid var(--rule);overflow-y:auto;padding:22px 0 40px;z-index:25}
+#toc .brand{padding:0 22px 16px;border-bottom:1px solid var(--rule);margin-bottom:10px}
+#toc .brand b{display:block;font-size:15px;line-height:1.4}
+#toc .brand span{display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--muted)}
+#toc ol{list-style:none;margin:0;padding:0}
+#toc > nav > ol > li > a{display:flex;gap:8px;padding:7px 22px;font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:none;border-left:3px solid transparent}
+#toc > nav > ol > li > a .n{color:var(--orange);min-width:22px}
+#toc ol ol a{display:block;padding:4px 22px 4px 52px;font-size:12.5px;color:var(--ink2);text-decoration:none;border-left:3px solid transparent;line-height:1.5}
+#toc a:hover{background:#f0f0f0}
+#toc li.open > a{color:var(--orange-deep)}
+#toc a.active{background:var(--orange-soft);border-left-color:var(--orange);color:var(--orange-deep)!important;font-weight:700}
+#toc ol ol{display:none}
+#toc li.open > ol{display:block}
+
+/* main */
+main{margin-left:var(--side);padding:84px 56px 120px;max-width:calc(var(--side) + 1060px)}
+.chapter{padding-top:28px;margin-top:56px;border-top:3px solid var(--ink)}
+.chapter:first-of-type{margin-top:0}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--orange)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 10px}
+h2{font-size:24px;line-height:1.35;margin:4px 0 14px}
+h3{font-size:19px;line-height:1.4;margin:44px 0 10px;padding-top:6px;border-top:1px solid var(--rule)}
+h4{font-size:15.5px;margin:26px 0 8px}
+p{margin:.5em 0 .9em}
+.lead{font-size:16px;color:var(--ink2)}
+ul,ol.list{padding-left:1.3em;margin:.4em 0 1em}
+li{margin:.2em 0}
+
+figure{margin:18px 0 22px}
+figure img{max-width:100%;border:1px solid var(--rule);border-radius:8px;cursor:zoom-in;display:block}
+figcaption{font-size:12.5px;color:var(--muted);margin-top:6px}
+
+table{border-collapse:collapse;width:100%;margin:10px 0 20px;font-size:14px}
+th,td{border-top:1px solid var(--rule);padding:9px 12px 9px 0;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;border-top:none;padding-bottom:6px}
+tr:last-child td{border-bottom:1px solid var(--rule)}
+td:first-child{font-weight:600;min-width:150px;max-width:300px}
+td.wrap{white-space:normal}
+td:first-child code{white-space:nowrap;word-break:normal}
+table.n td:first-child{min-width:0;width:40px}
+
+.note,.tip,.warn{border-left:3px solid;padding:10px 16px;margin:14px 0 18px;font-size:14px;background:#fafafa}
+.note{border-color:#9aa5b1}
+.tip{border-color:var(--orange);background:var(--orange-soft)}
+.warn{border-color:var(--red);background:#fdf2f2}
+.note b:first-child,.tip b:first-child,.warn b:first-child{display:block;font-size:12px;letter-spacing:.06em;margin-bottom:2px}
+
+.badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:0 9px;line-height:20px;margin:0 2px;white-space:nowrap}
+.b-log{background:#e8eefc;color:var(--blue)}
+.b-block{background:#fdecec;color:var(--red)}
+.b-run{background:#eee;color:#444}
+.b-on{background:#e6f5ec;color:var(--green)}
+.b-off{background:#eee;color:#666}
+.b-risk{background:#fff4e0;color:#8a4b00;border:1px solid #f0c27a}
+.b-lbl{background:#f1f1f1;color:#333;border:1px solid #ddd}
+
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:16px 0 22px}
+.flow .st{flex:1;min-width:130px;border-top:3px solid var(--orange);padding:10px 14px 4px 0}
+.flow .st b{display:block;font-size:14px}
+.flow .st span{font-size:12.5px;color:var(--muted);line-height:1.5;display:block}
+.flow .st code{font-size:11px}
+.flow .ar{align-self:center;color:var(--orange);font-weight:800;padding:0 10px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.kpis{display:flex;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:14px 0 20px}
+.kpis div{flex:1;padding:12px 18px;border-left:1px solid var(--rule)}
+.kpis div:first-child{border-left:none;padding-left:0}
+.kpis b{display:block;font-size:24px;line-height:1.1}
+.kpis span{font-size:12px;color:var(--muted)}
+
+/* lightbox */
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out;padding:24px}
+#lb img{max-width:96vw;max-height:94vh;border-radius:6px;background:#fff}
+#lb.show{display:flex}
+
+@media (max-width:1000px){
+  :root{--side:0px}
+  #toc{width:300px;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 30px rgba(0,0,0,.15)}
+  #toc.show{transform:none}
+  #topbar{left:0;padding:0 16px}
+  #menuBtn{display:inline-block}
+  main{padding:76px 20px 80px}
+  .grid2{grid-template-columns:1fr}
+}
+@media print{#toc,#topbar,#progress{display:none}main{margin:0;padding:0}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<header id="topbar"><button id="menuBtn">目次</button><span>現在地</span><span class="sep">›</span><span class="chap" id="hereChap">—</span><span class="sep">›</span><span class="here" id="hereSec">—</span></header>
+
+<!--
+  事例 - 設計ガイド テンプレート
+  - CSS / JS は変更しない（case-guides/AGENTS.md「HTML の規約」参照）。
+  - {{...}} をすべて置き換え、不要な節は目次と本文の両方から削除する。
+  - 目次（#toc）と本文の章・節は、id・番号・見出しを完全に一致させる。
+-->
+
+<aside id="toc">
+ <div class="brand"><b>{{製品名}}<br>設計ガイド：{{顧客エイリアス}}</b><span>対象: {{アカウント / 構成の呼称（匿名化）}}<br>画面取得: {{YYYY-MM-DD}}</span></div>
+ <nav><ol>
+  <li><a href="#ch0"><span class="n">00</span>はじめに</a>
+   <ol><li><a href="#s0-1">本資料の読み方</a></li><li><a href="#s0-2">導入の背景と要件</a></li><li><a href="#s0-3">{{製品}} の役割</a></li><li><a href="#s0-4">メニュー構成の全体像</a></li><li><a href="#s0-5">{{通信 / リクエスト}}の流れ</a></li><li><a href="#s0-6">接続方法</a></li></ol></li>
+  <li><a href="#ch1"><span class="n">01</span>左ナビゲーションと共通要素</a>
+   <ol><li><a href="#s1-1">{{製品}} 配下のメニュー</a></li><li><a href="#s1-2">画面上部の共通要素</a></li></ol></li>
+  <li><a href="#ch2"><span class="n">02</span>{{機能領域 1}}</a>
+   <ol><li><a href="#s2-1">{{画面 1}}</a></li><li><a href="#s2-2">{{画面 2}}</a></li></ol></li>
+  <!-- 機能章（02〜）はダッシュボードの左ナビの順に必要な数だけ追加する -->
+  <li><a href="#ch3"><span class="n">03</span>早見表</a>
+   <ol><li><a href="#s3-1">{{早見表 1}}</a></li><li><a href="#s3-2">制御機能の使い分け</a></li><li><a href="#s3-3">UI 表記の注意点</a></li></ol></li>
+  <li><a href="#ch4"><span class="n">04</span>この環境の所見</a>
+   <ol><li><a href="#s4-1">設定状況のまとめ</a></li><li><a href="#s4-2">PoC・オンボーディングでの課題と対応</a></li><li><a href="#s4-3">説明時に押さえる論点</a></li></ol></li>
+  <li><a href="#ch5"><span class="n">05</span>参考ドキュメント</a></li>
+ </ol></nav>
+</aside>
+
+<main>
+
+<!-- ============ 00 ============ -->
+<section class="chapter" id="ch0" data-title="はじめに">
+ <p class="kicker">00</p>
+ <h1>はじめに</h1>
+ <p class="lead">{{Cloudflare ダッシュボードの「… ＞ …」で取得したスクリーンショットをもとに、{{顧客エイリアス}} の構成と、各画面に表示される項目の意味・仕組み・確認すべき点を解説します。}}</p>
+
+ <h3 id="s0-1" data-title="本資料の読み方">本資料の読み方</h3>
+ <ul>
+  <li>各節は「スクリーンショット → 画面の役割 → 項目の詳細 → 仕組み → この環境での読み取り」の順で構成しています。</li>
+  <li>スクリーンショットはクリックすると拡大表示できます。</li>
+  <li>機能名は「ダッシュボードの表記（英語の正式名称）」の形で併記しています。ドキュメントを検索するときは英語名を使うと確実です。</li>
+  <li>仕様は Cloudflare Docs（{{YYYY 年 M 月}}時点）に基づきます。{{ベータ表示の機能があれば列挙}}</li>
+  <li>{{取得していない画面があれば「解説の対象外」と明記}}</li>
+ </ul>
+
+ <h3 id="s0-2" data-title="導入の背景と要件">導入の背景と要件</h3>
+ <p>{{導入背景（匿名化済み）}}</p>
+ <table>
+  <tr><th>項目</th><th>内容</th></tr>
+  <tr><td>契約シート数</td><td class="wrap">{{入力がない行は削除}}</td></tr>
+  <tr><td>契約帯域</td><td class="wrap">{{…}}</td></tr>
+  <tr><td>ライセンス種類</td><td class="wrap">{{…}}</td></tr>
+  <tr><td>導入前の課題</td><td class="wrap">{{…}}</td></tr>
+ </table>
+
+ <h3 id="s0-3" data-title="{{製品}} の役割">{{製品}} の役割</h3>
+ <p>{{製品の位置づけを 2〜3 文で}}</p>
+ <div class="flow">
+  <div class="st"><b>{{観点 1}}</b><span>{{機能}}<br>{{何ができるか}}</span></div><div class="ar">→</div>
+  <div class="st"><b>{{観点 2}}</b><span>{{機能}}<br>{{何ができるか}}</span></div><div class="ar">→</div>
+  <div class="st"><b>{{観点 3}}</b><span>{{機能}}<br>{{何ができるか}}</span></div>
+ </div>
+
+ <h3 id="s0-4" data-title="メニュー構成の全体像">メニュー構成の全体像</h3>
+ <table>
+  <tr><th>メニュー / タブ</th><th>役割</th><th>本資料</th></tr>
+  <tr><td>{{名称}}</td><td class="wrap">{{役割}}</td><td><a href="#s2-1">2-1</a></td></tr>
+ </table>
+
+ <h3 id="s0-5" data-title="{{通信 / リクエスト}}の流れ">{{通信 / リクエスト}}の流れ</h3>
+ <p>各機能がどの段階で働くかを、概念的な流れで示します（厳密な処理順序を示すものではありません）。</p>
+ <div class="flow">
+  <div class="st"><b>1. {{段階}}</b><span>{{機能}}</span></div><div class="ar">→</div>
+  <div class="st"><b>2. {{段階}}</b><span>{{機能}}</span></div><div class="ar">→</div>
+  <div class="st"><b>3. {{段階}}</b><span>{{機能}}</span></div>
+ </div>
+
+ <h3 id="s0-6" data-title="接続方法">接続方法</h3>
+ <table>
+  <tr><th>方式</th><th>概要</th><th>特徴</th></tr>
+  <tr><td>{{方式}}</td><td class="wrap">{{…}}</td><td class="wrap">{{…}}</td></tr>
+ </table>
+</section>
+
+<!-- ============ 01 ============ -->
+<section class="chapter" id="ch1" data-title="左ナビゲーションと共通要素">
+ <p class="kicker">01</p>
+ <h1>左ナビゲーションと共通要素</h1>
+ <figure><img src="./assets/01-navigation.png" alt="{{alt}}"><figcaption>図 1-1　{{キャプション}}</figcaption></figure>
+
+ <h3 id="s1-1" data-title="{{製品}} 配下のメニュー">{{製品}} 配下のメニュー</h3>
+ <table>
+  <tr><th>メニュー</th><th>内容</th></tr>
+  <tr><td>{{メニュー}}</td><td class="wrap">{{内容}}</td></tr>
+ </table>
+
+ <h3 id="s1-2" data-title="画面上部の共通要素">画面上部の共通要素</h3>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>{{要素}}</td><td class="wrap">{{意味}}</td></tr>
+ </table>
+</section>
+
+<!-- ============ 02（機能章の書き方の見本） ============ -->
+<section class="chapter" id="ch2" data-title="{{機能領域 1}}">
+ <p class="kicker">02</p>
+ <h1>{{機能領域 1}}</h1>
+ <p class="lead">{{この章で扱う画面群の役割を 1〜2 文で}}</p>
+
+ <h3 id="s2-1" data-title="{{画面 1}}">{{画面 1}}</h3>
+ <figure><img src="./assets/02-{{screen-1}}.png" alt="{{alt}}"><figcaption>図 2-1　{{キャプション}}</figcaption></figure>
+ <p><b>{{機能の英語正式名称}}</b> は、{{画面の役割}}</p>
+ <table>
+  <tr><th>要素</th><th>意味</th><th>本環境</th></tr>
+  <tr><td>{{要素}}</td><td class="wrap">{{意味と仕組み}}</td><td><span class="badge b-on">有効</span></td></tr>
+ </table>
+ <div class="tip"><b>この環境での読み取り</b>{{設定値から読み取れる設計意図・注意点}}</div>
+
+ <h3 id="s2-2" data-title="{{画面 2}}">{{画面 2}}</h3>
+ <figure><img src="./assets/03-{{screen-2}}.png" alt="{{alt}}"><figcaption>図 2-2　{{キャプション}}</figcaption></figure>
+ <table>
+  <tr><th>項目</th><th>意味</th></tr>
+  <tr><td>{{項目}}</td><td class="wrap">{{意味}}</td></tr>
+ </table>
+ <div class="note"><b>補足</b>{{仕様上の補足}}</div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="chapter" id="ch3" data-title="早見表">
+ <p class="kicker">03</p>
+ <h1>早見表</h1>
+
+ <h3 id="s3-1" data-title="{{早見表 1}}">{{早見表 1}}</h3>
+ <table>
+  <tr><th>{{列}}</th><th>{{列}}</th></tr>
+  <tr><td>{{…}}</td><td class="wrap">{{…}}</td></tr>
+ </table>
+
+ <h3 id="s3-2" data-title="制御機能の使い分け">制御機能の使い分け</h3>
+ <table>
+  <tr><th>目的</th><th>使う機能</th><th>単位</th></tr>
+  <tr><td>{{目的}}</td><td class="wrap">{{機能}}</td><td class="wrap">{{単位}}</td></tr>
+ </table>
+
+ <h3 id="s3-3" data-title="UI 表記の注意点">UI 表記の注意点</h3>
+ <table>
+  <tr><th>日本語 UI の表記</th><th>本来の意味</th></tr>
+  <tr><td>{{表記}}</td><td class="wrap">{{意味}}</td></tr>
+ </table>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="chapter" id="ch4" data-title="この環境の所見">
+ <p class="kicker">04</p>
+ <h1>この環境の所見</h1>
+
+ <h3 id="s4-1" data-title="設定状況のまとめ">設定状況のまとめ</h3>
+ <table>
+  <tr><th>領域</th><th>状態</th><th>読み取り</th></tr>
+  <tr><td>{{領域}}</td><td class="wrap">{{状態}}</td><td class="wrap">{{読み取り}}</td></tr>
+ </table>
+
+ <h3 id="s4-2" data-title="PoC・オンボーディングでの課題と対応">PoC・オンボーディングでの課題と対応</h3>
+ <table>
+  <tr><th>課題</th><th>対応</th><th>学び</th></tr>
+  <tr><td>{{課題}}</td><td class="wrap">{{対応}}</td><td class="wrap">{{学び}}</td></tr>
+ </table>
+
+ <h3 id="s4-3" data-title="説明時に押さえる論点">説明時に押さえる論点</h3>
+ <ol class="list">
+  <li><b>{{論点}}</b>：{{説明}}</li>
+ </ol>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="chapter" id="ch5" data-title="参考ドキュメント">
+ <p class="kicker">05</p>
+ <h1>参考ドキュメント</h1>
+ <table>
+  <tr><th>テーマ</th><th>URL</th></tr>
+  <tr><td>{{テーマ}}</td><td class="wrap"><a href="https://developers.cloudflare.com/{{path}}/" target="_blank">{{path}}</a></td></tr>
+ </table>
+ <p class="note"><b>補足</b>URL はドキュメントの構成変更により移動することがあります。リンク切れの場合は、テーマ名で Cloudflare Docs を検索してください。</p>
+</section>
+
+</main>
+
+
+<div id="lb"><img alt=""></div>
+
+<script>
+(function(){
+  const links=[...document.querySelectorAll('#toc a')];
+  const byId=Object.fromEntries(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const targets=[...document.querySelectorAll('section.chapter, main h3[id]')];
+  const hereChap=document.getElementById('hereChap'), hereSec=document.getElementById('hereSec');
+  function update(){
+    const y=window.scrollY+90;
+    let cur=targets[0];
+    for(const t of targets){ if(t.offsetTop<=y) cur=t; else break; }
+    const chap=cur.closest('section.chapter');
+    links.forEach(a=>a.classList.remove('active'));
+    document.querySelectorAll('#toc li.open').forEach(li=>li.classList.remove('open'));
+    const ca=byId[chap.id]; if(ca) ca.parentElement.classList.add('open');
+    const a=byId[cur.id]; if(a){a.classList.add('active'); a.scrollIntoView({block:'nearest'});}
+    hereChap.textContent=chap.querySelector('.kicker').textContent+'　'+chap.dataset.title;
+    hereSec.textContent=cur.tagName==='H3'?cur.dataset.title:'概要';
+    const h=document.documentElement.scrollHeight-innerHeight;
+    document.getElementById('progress').style.width=(h>0?scrollY/h*100:0)+'%';
+  }
+  addEventListener('scroll',update,{passive:true}); addEventListener('resize',update); update();
+  // mobile toc
+  const toc=document.getElementById('toc');
+  document.getElementById('menuBtn').onclick=()=>toc.classList.toggle('show');
+  links.forEach(a=>a.addEventListener('click',()=>toc.classList.remove('show')));
+  // lightbox
+  const lb=document.getElementById('lb'), lbi=lb.querySelector('img');
+  document.querySelectorAll('figure img').forEach(i=>i.onclick=()=>{lbi.src=i.src;lb.classList.add('show')});
+  lb.onclick=()=>lb.classList.remove('show');
+  addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove('show')});
+})();
+</script>
+</body>
+</html>

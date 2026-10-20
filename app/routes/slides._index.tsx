@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
+import { SiteNav } from "~/components/SiteNav";
 import { getPublishedSlides } from "~/lib/slides.server";
 import { getSessionUser } from "~/lib/auth.server";
 import {
@@ -63,12 +64,7 @@ export default function SlidesIndex() {
             {siteName}
           </Link>
           <nav className="flex items-center gap-4">
-            <Link to="/posts" className="text-sm text-gray-600 hover:text-gray-900">
-              事例
-            </Link>
-            <Link to="/slides" className="text-sm font-medium text-brand-600">
-              スライド
-            </Link>
+            <SiteNav active="slides" />
             <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
               このブログについて
             </Link>

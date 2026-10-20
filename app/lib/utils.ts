@@ -64,6 +64,47 @@ export function stripMarkdown(md: string): string {
     .trim();
 }
 
+/** Decode the handful of HTML entities that commonly appear in guide text. */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+/**
+ * Plain text of an HTML document (head, style, script, nav and aside removed).
+ * Used for excerpts and reading time of ZIP-uploaded design guides.
+ */
+export function htmlToText(html: string): string {
+  return decodeEntities(
+    html
+      .replace(/<head[\s\S]*?<\/head>/gi, " ")
+      .replace(/<(script|style|nav|aside|noscript|template)[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/<\/(p|div|section|h[1-6]|li|tr|table|figure|figcaption)>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+  )
+    .replace(/[ \t]+/g, " ")
+    .replace(/\s*\n\s*/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+}
+
+/**
+ * Summary for a design guide: the first `.lead` paragraph if present,
+ * otherwise the first meaningful lines of body text.
+ */
+export function generateGuideExcerpt(html: string, maxLength = 240): string {
+  const lead = html.match(/<p[^>]*class="[^"]*\blead\b[^"]*"[^>]*>([\s\S]*?)<\/p>/i)?.[1];
+  const text = lead ? htmlToText(lead).replace(/\n/g, " ") : generateExcerpt(htmlToText(html), maxLength);
+  return text.length <= maxLength ? text : text.slice(0, maxLength - 1) + "…";
+}
+
 /**
  * Generate a clean, reader-friendly excerpt from Markdown content.
  * Skips the title heading and picks the first meaningful paragraph.

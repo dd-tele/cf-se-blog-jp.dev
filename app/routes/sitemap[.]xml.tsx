@@ -6,13 +6,14 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const siteUrl = context.cloudflare.env.SITE_URL ?? "https://cf-se-blog-jp.dev";
 
   const [posts, categories] = await Promise.all([
-    getPublishedPosts(db, { limit: 500, offset: 0, visibility: "public" }),
+    getPublishedPosts(db, { limit: 500, offset: 0, visibility: "public", contentType: "all" }),
     getAllCategories(db),
   ]);
 
   const staticPages = [
     { loc: siteUrl, changefreq: "daily", priority: "1.0" },
     { loc: `${siteUrl}/posts`, changefreq: "daily", priority: "0.9" },
+    { loc: `${siteUrl}/cases`, changefreq: "weekly", priority: "0.9" },
     { loc: `${siteUrl}/search`, changefreq: "weekly", priority: "0.6" },
     { loc: `${siteUrl}/auth/login`, changefreq: "monthly", priority: "0.3" },
   ];
@@ -24,7 +25,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   }));
 
   const postPages = posts.map((p) => ({
-    loc: `${siteUrl}/posts/${p.slug}`,
+    loc: `${siteUrl}${p.contentType === "case_guide" ? "/cases/" : "/posts/"}${p.slug}`,
     lastmod: p.publishedAt ?? undefined,
     changefreq: "monthly" as const,
     priority: "0.8",

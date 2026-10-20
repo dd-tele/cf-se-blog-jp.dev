@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
+import { SiteNav } from "~/components/SiteNav";
 import { getAuthorPublicProfile } from "~/lib/posts.server";
 import { getSessionUser } from "~/lib/auth.server";
 
@@ -40,7 +41,7 @@ export default function AuthorProfile() {
           <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
             Cloudflare Field Notes
           </Link>
-          <Link to="/posts" className="text-sm text-gray-500 hover:text-gray-700">記事一覧</Link>
+          <nav className="flex items-center gap-4"><SiteNav /></nav>
         </div>
       </header>
 

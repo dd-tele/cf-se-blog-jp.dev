@@ -1,0 +1,23 @@
+name = "cf-se-blog-case-draft-worker"
+main = "src/index.ts"
+compatibility_date = "2025-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cf-se-blog-db"
+database_id = "aa01eaf8-f9c9-47e5-9665-f64f7daa43ae"
+
+[ai]
+binding = "AI"
+
+[[queues.consumers]]
+queue = "cf-se-blog-case-drafts"
+max_batch_size = 1
+max_batch_timeout = 1
+max_retries = 3
+dead_letter_queue = "cf-se-blog-case-drafts-dlq"

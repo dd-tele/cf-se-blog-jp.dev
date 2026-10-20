@@ -4,9 +4,10 @@ import { getPublishedPosts, getAllCategories } from "~/lib/posts.server";
 import { getSessionUser } from "~/lib/auth.server";
 import { getCached, CacheKeys } from "~/lib/cache.server";
 import { stripMarkdown } from "~/lib/utils";
+import { SiteNav } from "~/components/SiteNav";
 
 export const meta: MetaFunction = () => [
-  { title: "事例一覧 — Cloudflare フィールドノート" },
+  { title: "記事一覧 — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
@@ -62,9 +63,7 @@ export default function PostsIndex() {
             {siteName}
           </Link>
           <nav className="flex items-center gap-4">
-            <Link to="/slides" className="text-sm text-gray-600 hover:text-gray-900">
-              スライド
-            </Link>
+            <SiteNav active="posts" />
             <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
               このブログについて
             </Link>
@@ -90,14 +89,14 @@ export default function PostsIndex() {
       <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Search + Filter */}
         <div className="mb-8">
-          <h1 className="mb-1 text-3xl font-bold text-gray-900">事例一覧</h1>
-          <p className="mb-4 text-sm text-gray-500">Cloudflare SE とユーザーのエンジニアリング事例</p>
+          <h1 className="mb-1 text-3xl font-bold text-gray-900">記事一覧</h1>
+          <p className="mb-4 text-sm text-gray-500">Cloudflare SE とユーザーによる検証・実装・運用の記事</p>
           <form method="get" className="flex gap-2">
             <input
               type="text"
               name="q"
               defaultValue={search ?? ""}
-              placeholder="事例を検索..."
+              placeholder="記事を検索..."
               className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             {currentCategory && (
@@ -144,14 +143,14 @@ export default function PostsIndex() {
           <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-16 text-center">
             <p className="text-lg text-gray-500">
               {search
-                ? `「${search}」に一致する事例が見つかりませんでした`
-                : "まだ事例が投稿されていません"}
+                ? `「${search}」に一致する記事が見つかりませんでした`
+                : "まだ記事が投稿されていません"}
             </p>
             <Link
               to="/portal/new"
               className="mt-4 inline-block rounded-lg bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
             >
-              最初の事例を投稿する
+              最初の記事を投稿する
             </Link>
           </div>
         ) : (

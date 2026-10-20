@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cloudflare AI Gateway ダッシュボード 詳細解説</title>
+<style>
+:root{
+  --ink:#1f1f1f; --ink2:#444; --muted:#7a7a7a; --rule:#e3e3e3;
+  --orange:#f6821f; --orange-deep:#d9601a; --orange-soft:#fff4eb;
+  --blue:#2c5cc5; --green:#1e8e5a; --red:#c62828; --gray:#f6f6f6;
+  --side:300px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;font-family:Inter,"Hiragino Sans","Noto Sans JP",Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.75;font-size:15px}
+a{color:var(--blue)}
+code{font-family:"SF Mono",Menlo,monospace;font-size:.88em;background:#f3f3f3;border:1px solid #e6e6e6;border-radius:4px;padding:1px 5px;word-break:break-all}
+
+/* progress + top bar */
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--orange);width:0;z-index:30}
+#topbar{position:fixed;top:0;left:var(--side);right:0;height:52px;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule);display:flex;align-items:center;padding:0 32px;z-index:20;font-size:13px;color:var(--muted);gap:8px}
+#topbar .here{font-weight:700;color:var(--ink)}
+#topbar .sep{color:#ccc}
+#topbar .chap{color:var(--orange-deep);font-weight:700}
+#menuBtn{display:none;border:1px solid var(--rule);background:#fff;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
+
+/* sidebar */
+#toc{position:fixed;top:0;left:0;bottom:0;width:var(--side);background:#fafafa;border-right:1px solid var(--rule);overflow-y:auto;padding:22px 0 40px;z-index:25}
+#toc .brand{padding:0 22px 16px;border-bottom:1px solid var(--rule);margin-bottom:10px}
+#toc .brand b{display:block;font-size:15px;line-height:1.4}
+#toc .brand span{display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--muted)}
+#toc ol{list-style:none;margin:0;padding:0}
+#toc > nav > ol > li > a{display:flex;gap:8px;padding:7px 22px;font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:none;border-left:3px solid transparent}
+#toc > nav > ol > li > a .n{color:var(--orange);min-width:22px}
+#toc ol ol a{display:block;padding:4px 22px 4px 52px;font-size:12.5px;color:var(--ink2);text-decoration:none;border-left:3px solid transparent;line-height:1.5}
+#toc a:hover{background:#f0f0f0}
+#toc li.open > a{color:var(--orange-deep)}
+#toc a.active{background:var(--orange-soft);border-left-color:var(--orange);color:var(--orange-deep)!important;font-weight:700}
+#toc ol ol{display:none}
+#toc li.open > ol{display:block}
+
+/* main */
+main{margin-left:var(--side);padding:84px 56px 120px;max-width:calc(var(--side) + 1060px)}
+.chapter{padding-top:28px;margin-top:56px;border-top:3px solid var(--ink)}
+.chapter:first-of-type{margin-top:0}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--orange)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 10px}
+h2{font-size:24px;line-height:1.35;margin:4px 0 14px}
+h3{font-size:19px;line-height:1.4;margin:44px 0 10px;padding-top:6px;border-top:1px solid var(--rule)}
+h4{font-size:15.5px;margin:26px 0 8px}
+p{margin:.5em 0 .9em}
+.lead{font-size:16px;color:var(--ink2)}
+ul,ol.list{padding-left:1.3em;margin:.4em 0 1em}
+li{margin:.2em 0}
+
+figure{margin:18px 0 22px}
+figure img{max-width:100%;border:1px solid var(--rule);border-radius:8px;cursor:zoom-in;display:block}
+figcaption{font-size:12.5px;color:var(--muted);margin-top:6px}
+
+table{border-collapse:collapse;width:100%;margin:10px 0 20px;font-size:14px}
+th,td{border-top:1px solid var(--rule);padding:9px 12px 9px 0;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;border-top:none;padding-bottom:6px}
+tr:last-child td{border-bottom:1px solid var(--rule)}
+td:first-child{font-weight:600;min-width:150px;max-width:300px}
+td.wrap{white-space:normal}
+td:first-child code{white-space:nowrap;word-break:normal}
+table.n td:first-child{min-width:0;width:40px}
+
+.note,.tip,.warn{border-left:3px solid;padding:10px 16px;margin:14px 0 18px;font-size:14px;background:#fafafa}
+.note{border-color:#9aa5b1}
+.tip{border-color:var(--orange);background:var(--orange-soft)}
+.warn{border-color:var(--red);background:#fdf2f2}
+.note b:first-child,.tip b:first-child,.warn b:first-child{display:block;font-size:12px;letter-spacing:.06em;margin-bottom:2px}
+
+.badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:0 9px;line-height:20px;margin:0 2px;white-space:nowrap}
+.b-log{background:#e8eefc;color:var(--blue)}
+.b-block{background:#fdecec;color:var(--red)}
+.b-run{background:#eee;color:#444}
+.b-on{background:#e6f5ec;color:var(--green)}
+.b-off{background:#eee;color:#666}
+.b-risk{background:#fff4e0;color:#8a4b00;border:1px solid #f0c27a}
+.b-lbl{background:#f1f1f1;color:#333;border:1px solid #ddd}
+
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:16px 0 22px}
+.flow .st{flex:1;min-width:130px;border-top:3px solid var(--orange);padding:10px 14px 4px 0}
+.flow .st b{display:block;font-size:14px}
+.flow .st span{font-size:12.5px;color:var(--muted);line-height:1.5;display:block}
+.flow .st code{font-size:11px}
+.flow .ar{align-self:center;color:var(--orange);font-weight:800;padding:0 10px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.kpis{display:flex;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:14px 0 20px}
+.kpis div{flex:1;padding:12px 18px;border-left:1px solid var(--rule)}
+.kpis div:first-child{border-left:none;padding-left:0}
+.kpis b{display:block;font-size:24px;line-height:1.1}
+.kpis span{font-size:12px;color:var(--muted)}
+
+/* lightbox */
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out;padding:24px}
+#lb img{max-width:96vw;max-height:94vh;border-radius:6px;background:#fff}
+#lb.show{display:flex}
+
+@media (max-width:1000px){
+  :root{--side:0px}
+  #toc{width:300px;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 30px rgba(0,0,0,.15)}
+  #toc.show{transform:none}
+  #topbar{left:0;padding:0 16px}
+  #menuBtn{display:inline-block}
+  main{padding:76px 20px 80px}
+  .grid2{grid-template-columns:1fr}
+}
+@media print{#toc,#topbar,#progress{display:none}main{margin:0;padding:0}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<header id="topbar"><button id="menuBtn">目次</button><span>現在地</span><span class="sep">›</span><span class="chap" id="hereChap">—</span><span class="sep">›</span><span class="here" id="hereSec">—</span></header>
+
+<aside id="toc">
+ <div class="brand"><b>Cloudflare AI Gateway<br>ダッシュボード 詳細解説</b><span>ゲートウェイ: ai-gateway-for-se<br>画面取得: 2026-10-20</span></div>
+ <nav><ol>
+  <li><a href="#ch0"><span class="n">00</span>はじめに</a>
+   <ol><li><a href="#s0-1">本資料の読み方</a></li><li><a href="#s0-2">AI Gateway の役割</a></li><li><a href="#s0-3">タブ構成の全体像</a></li><li><a href="#s0-4">リクエストの流れ</a></li><li><a href="#s0-5">接続方法（エンドポイント）</a></li></ol></li>
+  <li><a href="#ch1"><span class="n">01</span>左ナビゲーションと共通要素</a>
+   <ol><li><a href="#s1-1">AI 配下のメニュー</a></li><li><a href="#s1-2">画面上部の共通要素</a></li></ol></li>
+  <li><a href="#ch2"><span class="n">02</span>可視化</a>
+   <ol><li><a href="#s2-1">ログ</a></li><li><a href="#s2-2">Analytics</a></li><li><a href="#s2-3">ユーザーインサイト（主要指標）</a></li><li><a href="#s2-4">ユーザーインサイト（内訳とグラフ）</a></li></ol></li>
+  <li><a href="#ch3"><span class="n">03</span>ファイアウォール</a>
+   <ol><li><a href="#s3-1">Guardrails</a></li><li><a href="#s3-2">データ損失防止（DLP）</a></li></ol></li>
+  <li><a href="#ch4"><span class="n">04</span>接続と制御</a>
+   <ol><li><a href="#s4-1">プロバイダーキー（BYOK）</a></li><li><a href="#s4-2">動的ルート</a></li><li><a href="#s4-3">ドメイン</a></li><li><a href="#s4-4">Access</a></li><li><a href="#s4-5">Policies</a></li></ol></li>
+  <li><a href="#ch5"><span class="n">05</span>設定</a>
+   <ol><li><a href="#s5-1">全般・ログ</a></li><li><a href="#s5-2">パフォーマンス</a></li><li><a href="#s5-3">支出</a></li><li><a href="#s5-4">セキュリティ</a></li><li><a href="#s5-5">統合・危険ゾーン</a></li></ol></li>
+  <li><a href="#ch6"><span class="n">06</span>早見表</a>
+   <ol><li><a href="#s6-1">リクエストヘッダー</a></li><li><a href="#s6-2">制御機能の使い分け</a></li><li><a href="#s6-3">UI 表記の注意点</a></li></ol></li>
+  <li><a href="#ch7"><span class="n">07</span>この環境の所見</a>
+   <ol><li><a href="#s7-1">設定状況のまとめ</a></li><li><a href="#s7-2">説明時に押さえる論点</a></li></ol></li>
+  <li><a href="#ch8"><span class="n">08</span>参考ドキュメント</a></li>
+ </ol></nav>
+</aside>
+
+<main>
+
+<!-- ============ 00 ============ -->
+<section class="chapter" id="ch0" data-title="はじめに">
+ <p class="kicker">00</p>
+ <h1>はじめに</h1>
+ <p class="lead">Cloudflare ダッシュボードの「AI ＞ AI Gateway」で取得したスクリーンショットをもとに、ゲートウェイの各タブに表示されるすべての項目について、意味と仕組み、確認すべき点を解説します。</p>
+
+ <h3 id="s0-1" data-title="本資料の読み方">本資料の読み方</h3>
+ <ul>
+  <li>各節は「スクリーンショット → 画面の役割 → 項目の詳細 → 仕組み → この環境での読み取り」の順で構成しています。</li>
+  <li>スクリーンショットはクリックすると拡大表示できます。</li>
+  <li>機能名は「ダッシュボードの表記（英語の正式名称）」の形で併記しています。ドキュメントを検索するときは英語名を使うと確実です。</li>
+  <li>仕様は Cloudflare Docs（2026 年 10 月時点）に基づきます。ベータ表示の機能（プロバイダーキー、動的ルート、支出上限）は、今後仕様や表記が変わる可能性があります。</li>
+  <li>「概要」タブのスクリーンショットは今回取得していないため、解説の対象外です。</li>
+ </ul>
+ <div class="warn"><b>共有時の注意</b>図 4-4（Access）には利用者のメールアドレス、図 5-3（支出・セキュリティ）にはアカウント ID が写っています。社外に共有する場合は、該当箇所をマスクしてください。</div>
+
+ <h3 id="s0-2" data-title="AI Gateway の役割">AI Gateway の役割</h3>
+ <p>AI Gateway は、アプリケーションやエージェントと AI プロバイダー（OpenAI、Anthropic、Workers AI など）の間に入る<b>プロキシ</b>です。接続先の URL を AI Gateway のエンドポイントに変えるだけで、既存の SDK とコードをほぼそのまま使えます。経由したすべてのリクエストに対して、次の 4 つの機能を一か所で提供します。</p>
+ <div class="flow">
+  <div class="st"><b>可視化</b><span>ログ・Analytics・ユーザーインサイト<br>誰が、どのモデルを、いくら使ったか</span></div><div class="ar">→</div>
+  <div class="st"><b>保護</b><span>ファイアウォール・Access・認証<br>危険な内容と機密データの送受信を検査</span></div><div class="ar">→</div>
+  <div class="st"><b>統制</b><span>Policies・支出上限・レート制限<br>利用者や予算ごとに利用を制限</span></div><div class="ar">→</div>
+  <div class="st"><b>可用性</b><span>キャッシュ・リトライ・動的ルート<br>障害時の再試行と別モデルへの切り替え</span></div>
+ </div>
+ <div class="note"><b>補足</b>アプリケーションセキュリティの「AI Security for Apps」は、<b>外部の利用者から自社の AI アプリへの入力</b>を WAF で検査する機能です。AI Gateway は、<b>自社のアプリやエージェントから AI プロバイダーへの通信</b>を制御します。守る方向が異なるため、両方を組み合わせて使えます。</div>
+
+ <h3 id="s0-3" data-title="タブ構成の全体像">タブ構成の全体像</h3>
+ <table>
+  <tr><th>タブ</th><th>役割</th><th>本資料</th></tr>
+  <tr><td>概要</td><td class="wrap">ゲートウェイの概要と接続方法</td><td>対象外</td></tr>
+  <tr><td>ログ</td><td class="wrap">リクエスト単位の記録（プロンプト、レスポンス、トークン、料金、所要時間）</td><td><a href="#s2-1">2-1</a></td></tr>
+  <tr><td>Analytics</td><td class="wrap">リクエスト、トークン、料金、エラー、キャッシュの集計</td><td><a href="#s2-2">2-2</a></td></tr>
+  <tr><td>ユーザーインサイト</td><td class="wrap">利用者（ID）ごとの支出と利用状況</td><td><a href="#s2-3">2-3</a>・<a href="#s2-4">2-4</a></td></tr>
+  <tr><td>ファイアウォール</td><td class="wrap">Guardrails（有害コンテンツ・プロンプトインジェクション）と DLP</td><td><a href="#ch3">03 章</a></td></tr>
+  <tr><td>プロバイダー キー <span class="badge b-off">ベータ</span></td><td class="wrap">プロバイダーの API キーを Cloudflare に保管（BYOK）</td><td><a href="#s4-1">4-1</a></td></tr>
+  <tr><td>動的ルート <span class="badge b-off">ベータ</span></td><td class="wrap">条件・割合・予算に応じたモデルの振り分けとフェイルオーバー</td><td><a href="#s4-2">4-2</a></td></tr>
+  <tr><td>ドメイン</td><td class="wrap">独自ホスト名（カスタムドメイン）でゲートウェイを公開</td><td><a href="#s4-3">4-3</a></td></tr>
+  <tr><td>Access</td><td class="wrap">Cloudflare Access による利用者の認証</td><td><a href="#s4-4">4-4</a></td></tr>
+  <tr><td>Policies</td><td class="wrap">利用者ごとの許可、ブロック、支出上限</td><td><a href="#s4-5">4-5</a></td></tr>
+  <tr><td>設定</td><td class="wrap">ログ、キャッシュ、レート制限、リトライ、課金、認証などの動作設定</td><td><a href="#ch5">05 章</a></td></tr>
+ </table>
+
+ <h3 id="s0-4" data-title="リクエストの流れ">リクエストの流れ</h3>
+ <p>各機能がどの段階で働くかを、概念的な流れで示します（厳密な処理順序を示すものではありません）。</p>
+ <div class="flow">
+  <div class="st"><b>1. 入口</b><span>認証済みゲートウェイ<br>Access（カスタムドメイン）</span></div><div class="ar">→</div>
+  <div class="st"><b>2. 統制</b><span>Policies・支出上限<br>レート制限</span></div><div class="ar">→</div>
+  <div class="st"><b>3. 入力の検査</b><span>Guardrails・DLP<br>（プロンプト）</span></div><div class="ar">→</div>
+  <div class="st"><b>4. 応答の取得</b><span>キャッシュ → 動的ルート<br>BYOK のキー注入・リトライ</span></div><div class="ar">→</div>
+  <div class="st"><b>5. 出力の検査</b><span>Guardrails・DLP<br>（レスポンス）</span></div><div class="ar">→</div>
+  <div class="st"><b>6. 記録</b><span>ログ・Analytics<br>ユーザーインサイト</span></div>
+ </div>
+ <div class="tip"><b>説明時のポイント</b>Guardrails は検査のために<b>追加の Workers AI 推論</b>を実行します。プロンプトとレスポンスの両方を検査すると、1 回の呼び出しにつき 2 回の検査が走り、その分の料金とレイテンシーが加わります（<a href="#s2-2">2-2</a> で実例を示します）。</div>
+
+ <h3 id="s0-5" data-title="接続方法（エンドポイント）">接続方法（エンドポイント）</h3>
+ <table>
+  <tr><th>方式</th><th>URL の例</th><th>特徴</th></tr>
+  <tr><td>プロバイダー固有</td><td class="wrap"><code>https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/openai/…</code></td><td class="wrap">各プロバイダーの API 形式のまま、URL だけを差し替えます。</td></tr>
+  <tr><td>OpenAI 互換（compat）</td><td class="wrap"><code>…/compat/chat/completions</code></td><td class="wrap"><code>"model": "{provider}/{model}"</code> の形式で指定し、1 つの API 形式で複数のプロバイダーを切り替えます。</td></tr>
+  <tr><td>カスタムドメイン</td><td class="wrap"><code>https://ai-gateway.cf-se-blog-jp.dev/compat/chat/completions</code></td><td class="wrap">独自のホスト名で公開します。Access で保護すると、利用者の ID をログや Policies で使えます（<a href="#s4-3">4-3</a>）。</td></tr>
+ </table>
+</section>
+
+<!-- ============ 01 ============ -->
+<section class="chapter" id="ch1" data-title="左ナビゲーションと共通要素">
+ <p class="kicker">01</p>
+ <h1>左ナビゲーションと共通要素</h1>
+ <figure><img src="./assets/ai-gateway/01-logs.png" alt="左ナビゲーションとログタブ"><figcaption>図 1-1　AI ＞ AI Gateway を選択した状態（右側はログタブ。02 章で解説します）</figcaption></figure>
+
+ <h3 id="s1-1" data-title="AI 配下のメニュー">AI 配下のメニュー</h3>
+ <table>
+  <tr><th>メニュー</th><th>内容</th></tr>
+  <tr><td>モデル</td><td class="wrap">利用できる AI モデルのカタログです。</td></tr>
+  <tr><td>Workers AI</td><td class="wrap">Cloudflare のネットワーク上でオープンモデルを実行するサーバーレス推論です。本環境のリクエストはすべて Workers AI 向けです。</td></tr>
+  <tr><td>AI Gateway</td><td class="wrap">本資料の対象です。ゲートウェイを複数作成でき、用途や環境（本番・検証）ごとに分けられます。</td></tr>
+  <tr><td>MCP ポータル</td><td class="wrap">複数の MCP サーバーを一つの入口にまとめ、Access で認証して公開します。エージェントが使うツールの統制に使います。</td></tr>
+  <tr><td>Vectorize</td><td class="wrap">ベクトルデータベースです。RAG の検索基盤に使います。</td></tr>
+  <tr><td>AI Search</td><td class="wrap">データソースを指定するだけで RAG のパイプライン（取り込み、ベクトル化、検索）を構築するマネージドサービスです。</td></tr>
+  <tr><td>エージェントトレース</td><td class="wrap">エージェントの処理の流れ（モデル呼び出しやツール実行）をトレースとして確認します。</td></tr>
+ </table>
+
+ <h3 id="s1-2" data-title="画面上部の共通要素">画面上部の共通要素</h3>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>タブ</td><td class="wrap">概要からの 11 タブです（<a href="#s0-3">0-3</a>）。</td></tr>
+  <tr><td>$0.00 クレジット</td><td class="wrap"><b>統合課金（Unified Billing）</b>のクレジット残高です。Cloudflare にクレジットをチャージすると、各プロバイダーと個別に契約しなくても、Cloudflare の請求にまとめて主要モデルを利用できます。本環境は 0 ドルで、統合課金は使っていません。</td></tr>
+  <tr><td>Playground</td><td class="wrap">ブラウザから、このゲートウェイ経由でモデルを試せます。設定したファイアウォールやキャッシュの動作確認に使えます。</td></tr>
+  <tr><td>ドキュメントを表示</td><td class="wrap">各タブの右上にあり、該当する機能の公式ドキュメントを開きます。</td></tr>
+ </table>
+</section>
+
+<!-- ============ 02 ============ -->
+<section class="chapter" id="ch2" data-title="可視化">
+ <p class="kicker">02</p>
+ <h1>可視化</h1>
+ <p class="lead">AI の利用状況を「把握する」ための 3 つのタブです。ログでリクエストを 1 件ずつ確認し、Analytics で全体の傾向を、ユーザーインサイトで利用者ごとの支出を確認します。</p>
+
+ <h3 id="s2-1" data-title="ログ">ログ</h3>
+ <figure><img src="./assets/ai-gateway/01-logs.png" alt="ログタブ"><figcaption>図 2-1　ログ（最後の 30 日）</figcaption></figure>
+ <h4>画面上部の要素</h4>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>情報バナー</td><td class="wrap">ログの保存上限が、ゲートウェイごとに最大 1,000 万件に拡大されたことの告知です。実際の上限は設定タブの「ログ制限」で決まります（<a href="#s5-1">5-1</a>）。</td></tr>
+  <tr><td>Filters ＋ Add</td><td class="wrap">ステータス、プロバイダー、モデル、コスト、トークン数、キャッシュの有無、メタデータなどでログを絞り込みます。</td></tr>
+  <tr><td>最後の 30 日</td><td class="wrap">表示期間（Last 30 days）の選択です。</td></tr>
+  <tr><td>ライブ</td><td class="wrap">新しいログを自動で追加表示します。設定変更の直後に動作を確かめるときに便利です。</td></tr>
+ </table>
+ <h4>一覧の列</h4>
+ <table>
+  <tr><th>列</th><th>意味</th></tr>
+  <tr><td>時間</td><td class="wrap">リクエストの受信時刻（表示はブラウザのタイムゾーン。ここでは GMT+9）。</td></tr>
+  <tr><td>ステータス</td><td class="wrap">緑のチェックは成功です。エラー、キャッシュヒット、ブロックなどはアイコンで区別されます。</td></tr>
+  <tr><td>モデル</td><td class="wrap">呼び出したモデルです。オレンジの雲は Workers AI、盾のアイコンの <b>Guardrails scan</b> は、Guardrails が検査のために実行した推論（<code>@cf/meta/llama-guard-3-8b</code>）です。</td></tr>
+  <tr><td>トークン</td><td class="wrap">入力（イン）と出力（アウト）のトークン数です。Guardrails scan の出力は判定結果だけなので、常に 3 トークン程度です。</td></tr>
+  <tr><td>料金</td><td class="wrap">トークン数とモデルの単価から計算した<b>推定コスト</b>です（先頭の <code>~</code> は概算を示す）。プロバイダーの請求額と一致するとは限りません。</td></tr>
+  <tr><td>期間</td><td class="wrap">リクエストの所要時間（Duration、ミリ秒）です。</td></tr>
+  <tr><td>ユーザー</td><td class="wrap">リクエストを送った利用者の ID です。Access の背後に置くか、メタデータを付けると表示されます。本環境はすべて「—」（識別なし）です。</td></tr>
+ </table>
+ <p>行をクリックすると、プロンプトとレスポンスの本文、リクエストとレスポンスのヘッダー、Guardrails や DLP の判定結果などの詳細を確認できます。</p>
+ <div class="tip"><b>この環境での読み取り</b>LLM の呼び出し（<code>llama-3.3-70b-instruct-fp8-fast</code>）1 件ごとに、Guardrails scan が 2 件ずつ記録されています。プロンプトとレスポンスの両方を検査しているためです。scan の所要時間はおおむね 1〜2 秒ですが、26,000 ms かかった例もあり、応答時間に影響しうることがわかります。</div>
+
+ <h3 id="s2-2" data-title="Analytics">Analytics</h3>
+ <figure><img src="./assets/ai-gateway/02-analytics.png" alt="Analytics タブ"><figcaption>図 2-2　Analytics（最後の 30 日）</figcaption></figure>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>フィルタを追加</td><td class="wrap">プロバイダー、モデル、ステータスなどで集計対象を絞り込みます。</td></tr>
+  <tr><td>リクエスト</td><td class="wrap">期間中のリクエスト数です。カードをクリックすると、下のグラフの指標が切り替わります。グラフはプロバイダー別（ここでは <code>workers-ai</code>）に色分けされます。</td></tr>
+  <tr><td>トークン</td><td class="wrap">入力と出力の合計トークン数です。下段のグラフではモデル別に表示されます。</td></tr>
+  <tr><td>料金</td><td class="wrap">推定コストの合計です。</td></tr>
+  <tr><td>エラー</td><td class="wrap">プロバイダーやゲートウェイがエラーを返したリクエストの数です。</td></tr>
+  <tr><td>キャッシュ</td><td class="wrap">キャッシュから応答したリクエストの数です。</td></tr>
+ </table>
+ <div class="kpis">
+  <div><b>18</b><span>リクエスト（LLM 6・scan 12）</span></div>
+  <div><b>51.53k</b><span>トークン</span></div>
+  <div><b>$0.02</b><span>推定コスト</span></div>
+  <div><b>0</b><span>エラー</span></div>
+  <div><b>0</b><span>キャッシュ</span></div>
+ </div>
+ <div class="tip"><b>この環境での読み取り</b>リクエストは 9/25、10/6、10/14 の 3 日に 6 件ずつで、内訳は LLM の呼び出し 2 件と Guardrails scan 4 件です。モデル別では <b>Guardrails（llama-guard-3-8b）のトークンが 28.84k、料金が $0.0139</b> で、本体の LLM（22.7k、$0.0089）を上回っています。Guardrails はプロンプト全体を毎回読み込むため、会話履歴が長いアプリでは検査のコストが本体と同程度以上になることがあります。導入時は、検査する方向（プロンプトのみか、両方か）とカテゴリを用途に合わせて選びます。</div>
+
+ <h3 id="s2-3" data-title="ユーザーインサイト（主要指標）">ユーザーインサイト（主要指標）</h3>
+ <figure><img src="./assets/ai-gateway/03-user-insights.png" alt="ユーザーインサイト"><figcaption>図 2-3　ユーザーインサイト（上部、主要指標、支出の内訳）</figcaption></figure>
+ <p><b>User Insights</b> は、AI Gateway の支出と利用を<b>利用者（ID）別</b>に集計する画面です。追加料金や設定は不要ですが、利用者を識別するには次のいずれかが必要です。識別できないリクエストは「未確認」の 1 つの ID にまとめられます。</p>
+ <ul>
+  <li>ゲートウェイを <b>Access で保護したカスタムドメイン</b>の背後に置く（IdP のユーザー ID を自動で付与）</li>
+  <li>リクエストに<b>カスタムメタデータ</b>（<code>cf-aig-metadata</code> ヘッダー）でユーザー ID を付ける</li>
+ </ul>
+ <h4>画面上部の要素</h4>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>自動 — Cloudflare ユーザー ID</td><td class="wrap">利用者を識別するキーの選択です。「自動」は Access の ID を使います。メタデータのキーを選ぶこともできます。</td></tr>
+  <tr><td>支出を牽引しているユーザーを確認（バナー）</td><td class="wrap">「このゲートウェイは Cloudflare Access で保護されていない」ため、利用者を特定できないという案内です。「Access を有効化」から設定できます。</td></tr>
+ </table>
+ <h4>主要指標（前期間との比較）</h4>
+ <table>
+  <tr><th>指標</th><th>意味</th></tr>
+  <tr><td>アクティブユーザー</td><td class="wrap">期間中にゲートウェイを使った ID の数です。</td></tr>
+  <tr><td>総リクエスト数</td><td class="wrap">期間中のリクエスト数と、前期間との増減です（本環境は 18 件、90% 減）。</td></tr>
+  <tr><td>導入率</td><td class="wrap">IdP に登録された ID のうち、1 回以上リクエストした ID の割合です（Adoption rate）。全社展開の浸透度を測る指標です。</td></tr>
+  <tr><td>アクティブユーザーあたりのトークン数</td><td class="wrap">1 人あたりのトークン数の中央値です。</td></tr>
+  <tr><td>アクティブユーザーあたりの中央値支出</td><td class="wrap">1 人あたりの支出の中央値です。</td></tr>
+  <tr><td>最もアクティブなアイデンティティのシェア</td><td class="wrap">上位の利用者が全リクエストに占める割合です。一部の利用者に偏っているかを確認します。</td></tr>
+  <tr><td>使用量が最も多いユーザー</td><td class="wrap">コストとトークンの上位に入る利用者の数です。</td></tr>
+  <tr><td>ID カバレッジ</td><td class="wrap">利用者を特定できたリクエストの割合です。100% に近いほど、他の指標が信頼できます。</td></tr>
+ </table>
+ <h4>タスクとモデルの分析</h4>
+ <p>リクエストの内容をタスク（デバッグ、コードの設計、文章の作成など）に分類し、使ったモデルがタスクに見合っているかを <b>Overkill</b>（過剰）、<b>Appropriate</b>（適切）、<b>Underpowered</b>（不足）、<b>Could not assess</b>（判定不能）で評価します。設定タブの<b>ログ分類</b>を有効にすると利用できます（<a href="#s5-1">5-1</a>）。高価なモデルを簡単なタスクに使っている箇所を見つけ、コストを下げる手がかりになります。</p>
+
+ <h3 id="s2-4" data-title="ユーザーインサイト（内訳とグラフ）">ユーザーインサイト（内訳とグラフ）</h3>
+ <figure><img src="./assets/ai-gateway/04-user-insights-charts.png" alt="ユーザーインサイトのグラフ"><figcaption>図 2-4　ユーザーインサイト（下部のグラフ）</figcaption></figure>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>支出の内訳</td><td class="wrap">4 つのタブで利用者を並べます。<b>上位支出者</b>（支出順）、<b>最もコストが高い使用量</b>（高額なリクエスト）、<b>最大コンテキスト</b>（大きなコンテキストを送っている利用）、<b>外れ値フィード</b>（通常と異なる利用）。表の列は ID、支出、支出の変化、トークン、リクエスト、キャッシュヒット率、セッション、上位モデル、上位プロバイダーです。</td></tr>
+  <tr><td>モデル別コスト</td><td class="wrap">上位支出者がどのモデルに支出しているかを示します。</td></tr>
+  <tr><td>Request volume over time</td><td class="wrap">日ごとのリクエスト数です。</td></tr>
+  <tr><td>Active-user adoption over time</td><td class="wrap">日ごとのアクティブな ID の数です。展開の進み具合を確認します。</td></tr>
+  <tr><td>セッションコスト分布</td><td class="wrap">セッション（一連の会話）ごとのコストの分布です。高コストの上位 1 万セッションまでが対象です。</td></tr>
+  <tr><td>最初のメッセージコンテキストの時間推移</td><td class="wrap">セッション開始時に読み込まれたコンテキストの量（中央値と 90 パーセンタイル）を、モデルのコンテキストウィンドウに対する割合で示します。システムプロンプトやツール定義が大きすぎないかの確認に使います。</td></tr>
+ </table>
+ <div class="tip"><b>この環境での読み取り</b>ID カバレッジは 0% で、すべてのリクエストが「未確認」にまとめられています。ドメインタブでは Access で保護したカスタムドメインが設定済みです（<a href="#s4-3">4-3</a>）。期間中のリクエストは、カスタムドメインではなく既定のエンドポイント（<code>gateway.ai.cloudflare.com</code>）から送られたと考えられます。利用者別の分析を行うには、アプリの接続先をカスタムドメインに揃えるか、メタデータでユーザー ID を付けます。</div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="chapter" id="ch3" data-title="ファイアウォール">
+ <p class="kicker">03</p>
+ <h1>ファイアウォール</h1>
+ <p class="lead">プロバイダーに届く前にプロンプトを、利用者に返す前にレスポンスを検査します。有害な内容とプロンプトインジェクションを Guardrails が、機密データを DLP が検出します。</p>
+
+ <h3 id="s3-1" data-title="Guardrails">Guardrails</h3>
+ <figure><img src="./assets/ai-gateway/05-firewall-guardrails.png" alt="Guardrails"><figcaption>図 3-1　ファイアウォール ＞ Guardrails</figcaption></figure>
+ <p><b>Guardrails</b> は、Workers AI 上の安全性判定モデル（Llama Guard）でプロンプトとレスポンスを分類し、危険なカテゴリに該当した場合にフラグを付けるかブロックします。プロバイダーやモデルを問わず、同じ基準を適用できます。</p>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>トグル（右上）</td><td class="wrap">Guardrails 全体の有効・無効です。本環境は有効です。</td></tr>
+  <tr><td>NOTE</td><td class="wrap">すべてのリクエストで<b>追加の Workers AI 推論</b>が実行され、標準の Workers AI 料金がかかります。ログの「Guardrails scan」がこの推論です。</td></tr>
+  <tr><td>プロンプトのモデレーション</td><td class="wrap">利用者の入力を、プロバイダーに送る前に検査します。ブロックした場合、プロバイダーへのリクエストは行われません。</td></tr>
+  <tr><td>レスポンスのモデレーション</td><td class="wrap">モデルの出力を、利用者に返す前に検査します。</td></tr>
+  <tr><td>アクション</td><td class="wrap">カテゴリごと・方向ごとに選びます。<b>無視</b>（検査しない）、<span class="badge b-log">フラグ</span>（通過させてログに記録）、<span class="badge b-block">ブロック</span>（拒否してエラーを返す）。</td></tr>
+ </table>
+ <h4>危険カテゴリ</h4>
+ <table>
+  <tr><th>カテゴリ</th><th>対象</th></tr>
+  <tr><td>暴力犯罪／非暴力犯罪</td><td class="wrap">テロ、殺人などの暴力犯罪、詐欺、サイバー犯罪、薬物などの犯罪を助長する内容</td></tr>
+  <tr><td>性犯罪／児童搾取</td><td class="wrap">性犯罪や児童の性的搾取に関する内容</td></tr>
+  <tr><td>名誉毀損</td><td class="wrap">実在の人物についての虚偽で、名誉を傷つける内容</td></tr>
+  <tr><td>専門的なアドバイス</td><td class="wrap">医療、法律、金融などの専門的な助言</td></tr>
+  <tr><td>プライバシー</td><td class="wrap">個人の機微な情報を含む、または特定につながる内容</td></tr>
+  <tr><td>知的財産</td><td class="wrap">著作権や商標などを侵害する内容</td></tr>
+  <tr><td>無差別武器</td><td class="wrap">化学、生物、核、爆発物などの大量破壊兵器に関する内容</td></tr>
+  <tr><td>ヘイト／自傷行為</td><td class="wrap">差別的な内容、自殺や自傷を助長する内容</td></tr>
+  <tr><td>性的コンテンツ</td><td class="wrap">性的な描写を含む内容</td></tr>
+  <tr><td>選挙</td><td class="wrap">選挙や投票について誤った情報を含む内容</td></tr>
+  <tr><td>プロンプト インジェクション／ジェイルブレイク</td><td class="wrap">システムの指示を上書きしたり、安全対策を回避したりしようとする入力</td></tr>
+ </table>
+ <div class="tip"><b>この環境での読み取り</b>すべてのカテゴリを、プロンプトとレスポンスの両方でブロックに設定しています。検証環境としてはわかりやすい設定です。本番では「専門的なアドバイス」のように業務によっては正当な利用がありうるカテゴリから誤検知が出やすいため、まず<b>フラグ</b>で傾向を確認してからブロックに切り替える進め方をお勧めします。</div>
+
+ <h3 id="s3-2" data-title="データ損失防止（DLP）">データ損失防止（DLP）</h3>
+ <figure><img src="./assets/ai-gateway/06-firewall-dlp.png" alt="DLP"><figcaption>図 3-2　ファイアウォール ＞ データ損失防止（DLP）</figcaption></figure>
+ <p><b>AI Gateway DLP</b> は、Cloudflare One の DLP と<b>同じ DLP プロファイル</b>を使い、プロンプトとレスポンスに含まれる機密データを検出します。社内の Web 通信向けに定義したルールを、AI の通信にもそのまま適用できます。</p>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>トグル（右上）</td><td class="wrap">DLP 全体の有効・無効です。</td></tr>
+  <tr><td>Policies ＞ Add Policy</td><td class="wrap">検出の単位となるポリシーを追加します。ポリシーは複数作成でき、それぞれ個別に有効・無効を切り替えられます（右上のトグルとごみ箱）。</td></tr>
+  <tr><td>Policy ID</td><td class="wrap">ポリシーの名前です（鉛筆アイコンで変更）。ログの判定結果に表示されます。</td></tr>
+  <tr><td>DLP プロファイル</td><td class="wrap">検査に使うプロファイルです（複数選択）。「Manage profiles」から Cloudflare One の DLP 設定に移動します。</td></tr>
+  <tr><td>Action</td><td class="wrap">いずれかのプロファイルに一致したときの動作です。<span class="badge b-log">Flag</span>（記録のみ）または <span class="badge b-block">Block</span>（拒否）。</td></tr>
+  <tr><td>Check</td><td class="wrap">検査の対象です。Request（プロンプト）、Response（レスポンス）、または両方。</td></tr>
+ </table>
+ <h4>本環境で選択されているプロファイル</h4>
+ <table>
+  <tr><th>プロファイル</th><th>検出する内容</th></tr>
+  <tr><td>AI Prompt: AI Security</td><td class="wrap">AI プロンプト向けの事前定義プロファイル。セキュリティに関わる内容を検出します（具体的な検出項目は Cloudflare One の DLP プロファイル画面で確認できます）</td></tr>
+  <tr><td>AI Prompt: Financial Information</td><td class="wrap">プロンプト内の金融情報</td></tr>
+  <tr><td>AI Prompt: PII</td><td class="wrap">プロンプト内の個人情報</td></tr>
+  <tr><td>Credentials and Secrets</td><td class="wrap">API キー、アクセストークン、秘密鍵などの認証情報</td></tr>
+  <tr><td>Japan DLP</td><td class="wrap">マイナンバーなど、日本固有の個人情報（カスタムプロファイルと考えられます）</td></tr>
+  <tr><td>Social Security, Insurance, Tax, and Identifier Numbers</td><td class="wrap">各国の社会保障番号、保険番号、税番号などの識別番号</td></tr>
+ </table>
+ <p>表示が途中で省略されているため、ほかにもプロファイルが選択されている可能性があります。</p>
+ <div class="tip"><b>この環境での読み取り</b>Policy 1 が、リクエストとレスポンスの両方をブロックで検査しています。プロンプトに認証情報や個人情報を貼り付けて外部モデルに送信する事故を、ゲートウェイの時点で止められる構成です。</div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="chapter" id="ch4" data-title="接続と制御">
+ <p class="kicker">04</p>
+ <h1>接続と制御</h1>
+ <p class="lead">プロバイダーとの接続（キー、ルート）と、ゲートウェイの入口（ドメイン、認証、ポリシー）を設定するタブです。</p>
+
+ <h3 id="s4-1" data-title="プロバイダーキー（BYOK）">プロバイダーキー（BYOK）</h3>
+ <figure><img src="./assets/ai-gateway/07-provider-keys.png" alt="プロバイダーキー"><figcaption>図 4-1　プロバイダー キー（ベータ）</figcaption></figure>
+ <p><b>BYOK（Bring Your Own Keys、保存されたキー）</b>は、各プロバイダーの API キーを Cloudflare の Secrets Store に保管し、リクエストの実行時にゲートウェイが注入する仕組みです。アプリのコードや環境変数にプロバイダーのキーを置かずに済み、キーのローテーションもダッシュボードで完結します。</p>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>利用可能（プロバイダー一覧）</td><td class="wrap">キーを登録できるプロバイダーです。Adobe Firefly、Amazon Bedrock、Anthropic、Azure、Google AI Studio、Google Vertex AI、OpenAI、Mistral、Groq、DeepSeek、Perplexity AI、OpenRouter など。「追加」からキーを登録します。</td></tr>
+  <tr><td>リクエスト例</td><td class="wrap">保存されたキーを使う場合、プロバイダーの <code>Authorization</code> ヘッダーは不要です。ゲートウェイの認証トークン（<code>cf-aig-authorization</code>）だけを送ると、"default" エイリアスのキーが自動的に使われます。</td></tr>
+  <tr><td>キーエイリアスの使用</td><td class="wrap">同じプロバイダーに複数のキーを登録した場合、<code>cf-aig-byok-alias: production</code> のようにヘッダーでキーを選びます。本番と検証、部署ごとにキーを分けると、プロバイダー側の請求も分けられます。</td></tr>
+  <tr><td>キーのテスト</td><td class="wrap">登録したキーで小さなリクエストを送り、有効か確認します。プロバイダー側で課金が発生する場合があります。</td></tr>
+  <tr><td>カスタムプロバイダー</td><td class="wrap">一覧にないプロバイダー（社内の推論基盤など）をアカウント設定で定義すると、ここでキーを登録できます。</td></tr>
+ </table>
+ <div class="tip"><b>この環境での読み取り</b>スクリーンショットの範囲には、登録済みのキーは表示されていません。現在の利用は Workers AI のみで、Workers AI は Cloudflare のアカウントで認証されるため、プロバイダーのキーは不要です。</div>
+
+ <h3 id="s4-2" data-title="動的ルート">動的ルート</h3>
+ <figure><img src="./assets/ai-gateway/08-dynamic-routes.png" alt="動的ルート"><figcaption>図 4-2　動的ルーティング（ベータ）の作成画面</figcaption></figure>
+ <p><b>Dynamic Routing</b> は、リクエストをどのモデルに送るかを、コードではなくゲートウェイ側のフローで決める機能です。アプリはモデル名の代わりに <code>"model": "dynamic/my_route"</code> とルート名を指定します。</p>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>サンプルから開始（推奨）</td><td class="wrap">「gpt-4o（OpenAI）に送り、エラー時は Workers AI の Llama に自動で切り替える」テンプレートです。図のオレンジの点がフォールバックの分岐です。</td></tr>
+  <tr><td>ゼロから開始</td><td class="wrap">空のフローから独自のルールを組み立てます。</td></tr>
+  <tr><td>ルート名</td><td class="wrap">アプリから指定する名前です。<b>作成後は変更できません</b>。</td></tr>
+  <tr><td>使用例</td><td class="wrap">OpenAI 互換の SDK から呼び出すコードの例です。</td></tr>
+ </table>
+ <h4>フローで使える主な要素</h4>
+ <table>
+  <tr><th>要素</th><th>用途の例</th></tr>
+  <tr><td>条件</td><td class="wrap">メタデータ（部署、プラン、ユーザー ID など）に応じてモデルを分けます。</td></tr>
+  <tr><td>割合</td><td class="wrap">トラフィックの一部だけを新しいモデルに送り、品質を比較します（A/B テスト、段階的な切り替え）。</td></tr>
+  <tr><td>レート制限・支出上限</td><td class="wrap">上限に達したら、安価なモデルに切り替えるか拒否します。</td></tr>
+  <tr><td>フォールバック</td><td class="wrap">プロバイダーの障害やエラー時に、別のプロバイダーのモデルで応答します。</td></tr>
+ </table>
+ <div class="tip"><b>説明時のポイント</b>モデルの変更や切り替えのルールをアプリから切り離せるため、新しいモデルへの移行やプロバイダー障害への備えを、アプリを改修・デプロイせずに行えます。本環境ではまだルートは作成されていません。</div>
+
+ <h3 id="s4-3" data-title="ドメイン">ドメイン</h3>
+ <figure><img src="./assets/ai-gateway/09-domains.png" alt="ドメイン"><figcaption>図 4-3　ドメイン</figcaption></figure>
+ <table>
+  <tr><th>要素</th><th>意味</th></tr>
+  <tr><td>Make a request to your AI Gateway</td><td class="wrap">選択したホスト名に送るリクエストの例です。Access で保護されているため、<code>cloudflared access curl</code> でログインしてから送る例になっています。<code>/compat/chat/completions</code> は OpenAI 互換のエンドポイントで、<code>"model": "workers-ai/@cf/meta/llama-3.1-8b-instruct-fast"</code> のようにプロバイダーとモデルを指定します。</td></tr>
+  <tr><td>Protected by Access</td><td class="wrap">このホスト名へのリクエストは、Access にサインインしてポリシーを満たさないとゲートウェイに届かない、という説明です。</td></tr>
+  <tr><td>カスタムドメイン</td><td class="wrap">登録済みのホスト名の一覧です。Name（ホスト名と状態）、Environment（本番など）、Zone（所属するゾーン）を表示します。「Add Domain」で追加します。</td></tr>
+ </table>
+ <p>カスタムドメインを使うと、アプリの接続先を <code>gateway.ai.cloudflare.com/v1/{account_id}/…</code> ではなく自社のホスト名にでき、アカウント ID を URL に含めずに済みます。さらに Access で保護すると、認証済みの利用者の ID がログ、ユーザーインサイト、Policies に引き継がれます。</p>
+ <div class="tip"><b>この環境での読み取り</b><code>ai-gateway.cf-se-blog-jp.dev</code>（ゾーン <code>cf-se-blog-jp.dev</code>、本番、有効）が登録され、Access で保護されています。</div>
+
+ <h3 id="s4-4" data-title="Access">Access</h3>
+ <figure><img src="./assets/ai-gateway/10-access.png" alt="Access"><figcaption>図 4-4　Access</figcaption></figure>
+ <table>
+  <tr><th>列</th><th>意味</th></tr>
+  <tr><td>URL</td><td class="wrap">Access で保護しているゲートウェイのホスト名です。</td></tr>
+  <tr><td>認証</td><td class="wrap">適用している Access ポリシーです。本環境は「Allow Cloudflare &amp; Invited」で、Cloudflare の社員と招待した 3 名を許可しています。</td></tr>
+  <tr><td>ステータス</td><td class="wrap">保護が有効かどうかです。</td></tr>
+  <tr><td>コード例を開く</td><td class="wrap">Access 経由でゲートウェイを呼び出すコードの例を表示します。</td></tr>
+ </table>
+ <p>Access のポリシーでは、IdP のグループ、メールドメイン、デバイスの状態（WARP の接続、ポスチャ）などを条件にできます。人がブラウザや CLI から使う場合はログイン、アプリやエージェントから使う場合は<b>サービストークン</b>で認証します。</p>
+
+ <h3 id="s4-5" data-title="Policies">Policies</h3>
+ <figure><img src="./assets/ai-gateway/11-policies.png" alt="Policies の作成"><figcaption>図 4-5　Policies ＞ Create a policy</figcaption></figure>
+ <p>Policies は、<b>誰が・どのモデルやプロバイダーを・どこまで使えるか</b>を定義するタブです。スクリーンショットはポリシーの作成画面です。</p>
+ <div class="warn"><b>重要：最初のポリシーで既定の動作が変わります</b>ポリシーが 1 件もないときは、すべてのリクエストが許可されます。<b>1 件でもポリシーを追加すると、どのポリシーにも一致しないリクエストは拒否されます</b>（既定の拒否）。本番環境では、全員を対象にした許可のポリシーを先に用意してから、個別の制限を追加します。</div>
+ <table>
+  <tr><th>項目</th><th>意味</th></tr>
+  <tr><td>Who</td><td class="wrap">ポリシーの対象者です。<b>Everyone</b>（全員）、<b>User</b>（特定の利用者）、<b>Email domain ending in</b>（メールドメイン）、<b>Actor bucket</b>（利用者のグループ）から選びます。利用者の識別には Access またはメタデータが必要です。</td></tr>
+  <tr><td>What（対象のモデル・プロバイダー）</td><td class="wrap">ポリシーを適用するモデルやプロバイダーです（スクリーンショットではドロップダウンに隠れています）。</td></tr>
+  <tr><td>アクション</td><td class="wrap"><b>Allow until capped</b>（上限まで許可）、<b>Allow without a cap</b>（上限なしで許可）、<b>Block</b>（拒否）。</td></tr>
+  <tr><td>Amount（USD）／Time window</td><td class="wrap">上限の金額と期間です。Monthly の場合、毎月 1 日 00:00 UTC にリセットされます（日本時間では 1 日の 9:00）。</td></tr>
+  <tr><td>Under what conditions?（任意）</td><td class="wrap">対象者の選択だけでは表せない条件を <b>CEL</b> で追加します。Builder（画面操作）と Raw CEL（式を直接記述）を切り替えられます。</td></tr>
+  <tr><td>Preview</td><td class="wrap">作成されるポリシーの要約です（例：Everyone spend cap ／ Limit to $100 / Monthly）。</td></tr>
+ </table>
+ <div class="note"><b>補足</b>Policies の詳細な仕様は、2026 年 10 月時点の Cloudflare Docs では確認できませんでした。本節は画面の表示から読み取った内容です。設定タブの「支出上限」（<a href="#s5-3">5-3</a>）はゲートウェイ全体やメタデータ単位の予算、Policies は利用者単位の許可と上限、という使い分けと考えられます。</div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="chapter" id="ch5" data-title="設定">
+ <p class="kicker">05</p>
+ <h1>設定</h1>
+ <p class="lead">ログ、キャッシュ、レート制限、認証など、ゲートウェイ全体の動作を設定します。</p>
+
+ <h3 id="s5-1" data-title="全般・ログ">全般・ログ</h3>
+ <figure><img src="./assets/ai-gateway/12-settings-general-logs.png" alt="設定 全般とログ"><figcaption>図 5-1　設定 ＞ 全般・ログ</figcaption></figure>
+ <table>
+  <tr><th>項目</th><th>意味</th><th>本環境</th></tr>
+  <tr><td>タグ</td><td class="wrap">ゲートウェイを分類するラベルです（部署、環境など）。</td><td>なし</td></tr>
+  <tr><td>ログを収集</td><td class="wrap">プロンプト、レスポンス、プロバイダー、タイムスタンプ、ステータスなどを保存します。無効にしても Analytics の集計は残りますが、本文は確認できなくなります。機密性の高い用途では、リクエストごとに <code>cf-aig-collect-log: false</code> で記録を止めることもできます。</td><td><span class="badge b-on">有効</span></td></tr>
+  <tr><td>ログ分類</td><td class="wrap">Cloudflare が保存済みのプロンプトとレスポンスを分析し、タスクとモデルの適合度を判定することを許可します。ユーザーインサイトの「タスクとモデルの分析」に必要です。既定は無効で、ゲートウェイごとに有効にします。「ログを収集」も有効である必要があり、両方が有効な間の記録だけが分類の対象です。</td><td><span class="badge b-off">無効</span></td></tr>
+  <tr><td>ログ制限を設定する</td><td class="wrap">保存するログの件数の上限です。ゲートウェイごとに最大 10,000,000 件まで設定できます。</td><td>100,000 件</td></tr>
+  <tr><td>自動削除</td><td class="wrap">上限に達したときに、最も古いログから削除して新しいログを保存し続けます。</td><td>最も古いログを削除</td></tr>
+  <tr><td>AI Gateway ログをエクスポートする</td><td class="wrap"><b>Logpush</b> で R2、S3、SIEM などの外部ストレージにログを送ります。長期保管や監査に使います。</td><td>未設定</td></tr>
+ </table>
+
+ <h3 id="s5-2" data-title="パフォーマンス">パフォーマンス</h3>
+ <figure><img src="./assets/ai-gateway/13-settings-performance.png" alt="設定 パフォーマンス"><figcaption>図 5-2　設定 ＞ パフォーマンス</figcaption></figure>
+ <table>
+  <tr><th>項目</th><th>意味</th><th>本環境</th></tr>
+  <tr><td>キャッシュ レスポンス</td><td class="wrap"><b>完全に同一のリクエスト</b>に対して、プロバイダーに送らずキャッシュから応答します。コストを抑え、応答を速くします。意味が近いだけの質問はヒットしません。</td><td><span class="badge b-on">有効</span></td></tr>
+  <tr><td>キャッシュの保持期間</td><td class="wrap">キャッシュを自動で削除するまでの時間です。リクエストごとに <code>cf-aig-cache-ttl</code> で上書き、<code>cf-aig-skip-cache</code> で回避できます。</td><td>5 分</td></tr>
+  <tr><td>レート制限リクエスト</td><td class="wrap">ゲートウェイが受け付けるリクエスト数を制限します。上限を超えると 429 を返します。</td><td><span class="badge b-on">有効</span></td></tr>
+  <tr><td>リクエスト上限／時間ウィンドウ</td><td class="wrap">時間ウィンドウ（秒）あたりの最大リクエスト数です。</td><td>60 秒あたり 50 件</td></tr>
+  <tr><td>ウィンドウタイプ</td><td class="wrap"><b>fixed</b>（区切られた期間ごとにカウントをリセット）または <b>sliding</b>（直近の期間で常にカウント。境界での集中を防ぐ）。</td><td>fixed</td></tr>
+  <tr><td>リクエストのリトライ</td><td class="wrap">プロバイダーがエラーを返したときに、ゲートウェイが自動で再試行します。リクエストごとのヘッダーで既定値を上書きできます。</td><td><span class="badge b-on">有効</span></td></tr>
+  <tr><td>再試行回数</td><td class="wrap">1 件あたりの最大リトライ回数です。</td><td>3 回</td></tr>
+  <tr><td>Retry delay</td><td class="wrap">リトライまでの待ち時間です。</td><td>1 秒</td></tr>
+  <tr><td>バックオフ戦略</td><td class="wrap">リトライごとの待ち時間の増やし方です。定数、線形、指数から選びます。指数では 1 秒、2 秒、4 秒と倍になり、プロバイダーの負荷が高いときに有効です。</td><td>指数</td></tr>
+ </table>
+ <div class="note"><b>補足</b>レート制限はゲートウェイ全体に対する上限です。利用者ごとの制限は、Policies、動的ルートのレート制限、またはアプリケーションセキュリティのレート制限ルール（カスタムドメインの前段）で設計します。</div>
+
+ <h3 id="s5-3" data-title="支出">支出</h3>
+ <figure><img src="./assets/ai-gateway/14-settings-spend-security.png" alt="設定 支出とセキュリティ"><figcaption>図 5-3　設定 ＞ 支出・セキュリティ</figcaption></figure>
+ <table>
+  <tr><th>項目</th><th>意味</th><th>本環境</th></tr>
+  <tr><td>Workers AI 課金</td><td class="wrap">このゲートウェイ経由の Workers AI 利用をどのように課金するかの選択です。</td><td>標準課金</td></tr>
+  <tr><td>支出上限 <span class="badge b-off">ベータ</span></td><td class="wrap"><b>Spend limits</b>。トークン数とモデルの単価から累計の支出を計算し、予算に達すると期間がリセットされるまで 429 を返します。予算はモデル、プロバイダー、メタデータ（ユーザー ID、チーム、アプリなど）の組み合わせで分けられ、期間は fixed と sliding から選べます（例：利用者ごとに 1 日 200 ドル）。単価が分かっているモデルであれば、統合課金と BYOK のどちらのリクエストにも適用されます。</td><td>有効（ルールなし）</td></tr>
+  <tr><td>Require Provider Credentials</td><td class="wrap">サードパーティのプロバイダーへのリクエストに、プロバイダーの資格情報を必須にします。有効にすると、キーを持たないリクエストが BYOK や統合課金で処理されるのを防げます。</td><td><span class="badge b-off">無効</span></td></tr>
+ </table>
+ <div class="tip"><b>この環境での読み取り</b>支出上限は有効ですが、ルールが 1 件もないため、実際には何も制限していません。</div>
+
+ <h3 id="s5-4" data-title="セキュリティ">セキュリティ</h3>
+ <table>
+  <tr><th>項目</th><th>意味</th><th>本環境</th></tr>
+  <tr><td>認証済みゲートウェイ</td><td class="wrap"><b>Authenticated Gateway</b>。すべてのリクエストに、AI Gateway の認証トークン（<code>cf-aig-authorization: Bearer &lt;token&gt;</code>）を必須にします。ゲートウェイの URL を知られても、第三者に使われることを防ぎます。</td><td><span class="badge b-on">有効</span></td></tr>
+  <tr><td>アカウント ID／Gateway ID</td><td class="wrap">エンドポイントの URL に含まれる識別子です。</td><td>ai-gateway-for-se</td></tr>
+  <tr><td>AI Gateway 認証トークンを作成する</td><td class="wrap">AI Gateway の Run 権限を持つ API トークンを作成します。</td><td>—</td></tr>
+  <tr><td>Webhook 署名キー</td><td class="wrap">非同期の処理が完了したときに送る Webhook に署名し、受け取ったアプリが AI Gateway からの通知であることを検証できるようにします。</td><td><span class="badge b-off">無効</span></td></tr>
+  <tr><td>ゼロデータ保持</td><td class="wrap">統合課金で処理するリクエストについて、AI プロバイダーにリクエストとレスポンスのデータを保持させないモードです。</td><td><span class="badge b-off">無効</span></td></tr>
+ </table>
+
+ <h3 id="s5-5" data-title="統合・危険ゾーン">統合・危険ゾーン</h3>
+ <figure><img src="./assets/ai-gateway/15-settings-integrations.png" alt="設定 統合と危険ゾーン"><figcaption>図 5-4　設定 ＞ 統合・危険ゾーン</figcaption></figure>
+ <table>
+  <tr><th>項目</th><th>意味</th><th>本環境</th></tr>
+  <tr><td>Otel 統合</td><td class="wrap">トレースデータを OpenTelemetry のエンドポイントに送ります。既存の監視基盤（Datadog、Honeycomb など）で AI の呼び出しを確認できます。</td><td><span class="badge b-off">無効</span></td></tr>
+  <tr><td>ゲートウェイを削除</td><td class="wrap">ゲートウェイを完全に削除します。元に戻せません。このゲートウェイを指しているアプリはエラーになります。</td><td>—</td></tr>
+ </table>
+</section>
+
+<!-- ============ 06 ============ -->
+<section class="chapter" id="ch6" data-title="早見表">
+ <p class="kicker">06</p>
+ <h1>早見表</h1>
+
+ <h3 id="s6-1" data-title="リクエストヘッダー">リクエストヘッダー</h3>
+ <p>アプリからリクエストごとにゲートウェイの動作を指定するヘッダーです。</p>
+ <table>
+  <tr><th>ヘッダー</th><th>用途</th></tr>
+  <tr><td><code>cf-aig-authorization</code></td><td class="wrap">認証済みゲートウェイのトークン（<code>Bearer &lt;token&gt;</code>）</td></tr>
+  <tr><td><code>cf-aig-metadata</code></td><td class="wrap">ユーザー ID、部署などのメタデータ（JSON）。ログ、ユーザーインサイト、支出上限、動的ルートで利用</td></tr>
+  <tr><td><code>cf-aig-byok-alias</code></td><td class="wrap">保存されたキーのうち、使うキーのエイリアス</td></tr>
+  <tr><td><code>cf-aig-cache-ttl</code></td><td class="wrap">このリクエストのキャッシュ保持期間（秒）</td></tr>
+  <tr><td><code>cf-aig-skip-cache</code></td><td class="wrap">キャッシュを使わずにプロバイダーへ送る</td></tr>
+  <tr><td><code>cf-aig-cache-key</code></td><td class="wrap">キャッシュのキーを独自に指定する</td></tr>
+  <tr><td><code>cf-aig-collect-log</code></td><td class="wrap"><code>false</code> でこのリクエストのログを保存しない</td></tr>
+ </table>
+
+ <h3 id="s6-2" data-title="制御機能の使い分け">制御機能の使い分け</h3>
+ <table>
+  <tr><th>目的</th><th>使う機能</th><th>単位</th></tr>
+  <tr><td>ゲートウェイの無断利用を防ぐ</td><td class="wrap">認証済みゲートウェイ</td><td class="wrap">トークン</td></tr>
+  <tr><td>利用者を認証・識別する</td><td class="wrap">Access（カスタムドメイン）、メタデータ</td><td class="wrap">利用者</td></tr>
+  <tr><td>利用者ごとに許可・上限を設ける</td><td class="wrap">Policies</td><td class="wrap">利用者・グループ</td></tr>
+  <tr><td>部署やモデルごとの予算を守る</td><td class="wrap">支出上限（設定）、動的ルートの予算</td><td class="wrap">メタデータ・プロバイダー・モデル</td></tr>
+  <tr><td>過剰な呼び出しを止める</td><td class="wrap">レート制限（設定）</td><td class="wrap">ゲートウェイ全体</td></tr>
+  <tr><td>有害な内容・インジェクションを止める</td><td class="wrap">Guardrails</td><td class="wrap">カテゴリ・方向</td></tr>
+  <tr><td>機密データの送受信を止める</td><td class="wrap">DLP</td><td class="wrap">DLP プロファイル</td></tr>
+  <tr><td>障害時も応答を続ける</td><td class="wrap">リトライ、動的ルートのフォールバック</td><td class="wrap">リクエスト</td></tr>
+ </table>
+
+ <h3 id="s6-3" data-title="UI 表記の注意点">UI 表記の注意点</h3>
+ <table>
+  <tr><th>日本語 UI の表記</th><th>本来の意味</th></tr>
+  <tr><td>最後の 30 日</td><td class="wrap">過去 30 日間（Last 30 days）</td></tr>
+  <tr><td>期間（ログの列）</td><td class="wrap">リクエストの所要時間（Duration）</td></tr>
+  <tr><td>料金</td><td class="wrap">推定コスト（Cost）。請求額ではありません</td></tr>
+  <tr><td>導入率</td><td class="wrap">IdP の ID のうち実際に利用した割合（Adoption rate）</td></tr>
+  <tr><td>Cloudflare が生成された対象ログを分析できるように許可します（ログ分類）</td><td class="wrap">Cloudflare がログを分析し、タスクとモデルの分類を生成することを許可します</td></tr>
+  <tr><td>キャッシュされたリクエストは次の後に自動的に削除されます</td><td class="wrap">キャッシュの保持期間（TTL）</td></tr>
+  <tr><td>標準課金（Workers AI 課金）</td><td class="wrap">Workers AI の通常の従量課金</td></tr>
+ </table>
+</section>
+
+<!-- ============ 07 ============ -->
+<section class="chapter" id="ch7" data-title="この環境の所見">
+ <p class="kicker">07</p>
+ <h1>この環境の所見</h1>
+
+ <h3 id="s7-1" data-title="設定状況のまとめ">設定状況のまとめ</h3>
+ <table>
+  <tr><th>領域</th><th>状態</th><th>読み取り</th></tr>
+  <tr><td>利用状況</td><td class="wrap">30 日で 18 件（LLM 6・scan 12）、$0.02、エラー 0</td><td class="wrap">デモ・検証の利用です。すべて Workers AI 向けです。</td></tr>
+  <tr><td>Guardrails</td><td class="wrap">全カテゴリをプロンプト・レスポンスともにブロック</td><td class="wrap">検査のコスト（$0.0139）が本体の LLM（$0.0089）を上回っています。本番では対象とアクションの絞り込みを検討します。</td></tr>
+  <tr><td>DLP</td><td class="wrap">Policy 1：AI 向け・認証情報・日本の個人情報などをブロック（両方向）</td><td class="wrap">機密データの外部送信を止める構成ができています。</td></tr>
+  <tr><td>利用者の識別</td><td class="wrap">カスタムドメインを Access で保護済み、ID カバレッジ 0%</td><td class="wrap">実際の利用は既定のエンドポイント経由と考えられます。接続先をカスタムドメインに揃えると、利用者別の分析と Policies が使えます。</td></tr>
+  <tr><td>コスト統制</td><td class="wrap">支出上限：有効だがルールなし／Policies：未作成</td><td class="wrap">実際の制限はかかっていません。Policies は最初の 1 件で既定の拒否になる点に注意します。</td></tr>
+  <tr><td>可用性</td><td class="wrap">リトライ 3 回・指数バックオフ、動的ルートなし</td><td class="wrap">複数プロバイダーを使う段階で、フォールバックのルートを追加します。</td></tr>
+  <tr><td>キャッシュ・レート制限</td><td class="wrap">キャッシュ 5 分（ヒット 0）、60 秒 50 件（fixed）</td><td class="wrap">同一の質問が少ない用途では、キャッシュの効果は限定的です。</td></tr>
+  <tr><td>認証</td><td class="wrap">認証済みゲートウェイ：有効</td><td class="wrap">URL が漏れても第三者に使われない状態です。</td></tr>
+  <tr><td>ログ</td><td class="wrap">収集：有効、上限 10 万件、分類：無効、Logpush：未設定</td><td class="wrap">長期保管が必要な場合は Logpush を設定します。タスク分析にはログ分類を有効にします。</td></tr>
+ </table>
+
+ <h3 id="s7-2" data-title="説明時に押さえる論点">説明時に押さえる論点</h3>
+ <ol class="list">
+  <li><b>URL を変えるだけで始められる</b>：既存の SDK とコードのまま接続先を切り替えるだけで、ログとコストの可視化がすぐに始まります。</li>
+  <li><b>利用者の識別が統制の前提になる</b>：Access またはメタデータで利用者を識別すると、ユーザーインサイト、Policies、利用者単位の予算が使えるようになります。</li>
+  <li><b>プロバイダーを問わず同じ基準で守れる</b>：Guardrails と DLP は、OpenAI、Anthropic、Workers AI など、どのプロバイダーにも同じルールで適用されます。DLP は Cloudflare One のプロファイルを共有します。</li>
+  <li><b>フラグで傾向を確認してからブロックする</b>：Guardrails と DLP はどちらもフラグ（記録のみ）を選べるため、誤検知を確認してから段階的に強化できます。</li>
+  <li><b>モデルの切り替えをアプリから切り離せる</b>：動的ルートとリトライにより、プロバイダー障害やモデルの移行に、アプリを改修せずに対応できます。</li>
+ </ol>
+</section>
+
+<!-- ============ 08 ============ -->
+<section class="chapter" id="ch8" data-title="参考ドキュメント">
+ <p class="kicker">08</p>
+ <h1>参考ドキュメント</h1>
+ <table>
+  <tr><th>テーマ</th><th>URL</th></tr>
+  <tr><td>AI Gateway 概要</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/" target="_blank">ai-gateway</a></td></tr>
+  <tr><td>ログ</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/observability/logging/" target="_blank">ai-gateway/observability/logging</a></td></tr>
+  <tr><td>Analytics</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/observability/analytics/" target="_blank">ai-gateway/observability/analytics</a></td></tr>
+  <tr><td>カスタムメタデータ</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/observability/custom-metadata/" target="_blank">ai-gateway/observability/custom-metadata</a></td></tr>
+  <tr><td>Guardrails</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/features/guardrails/" target="_blank">ai-gateway/features/guardrails</a></td></tr>
+  <tr><td>DLP</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/features/dlp/set-up-dlp/" target="_blank">ai-gateway/features/dlp/set-up-dlp</a></td></tr>
+  <tr><td>BYOK（保存されたキー）</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/configuration/bring-your-own-keys/" target="_blank">ai-gateway/configuration/bring-your-own-keys</a></td></tr>
+  <tr><td>Dynamic Routing</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/features/dynamic-routing/" target="_blank">ai-gateway/features/dynamic-routing</a></td></tr>
+  <tr><td>Authenticated Gateway</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/configuration/authentication/" target="_blank">ai-gateway/configuration/authentication</a></td></tr>
+  <tr><td>キャッシュ</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/features/caching/" target="_blank">ai-gateway/features/caching</a></td></tr>
+  <tr><td>レート制限</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/features/rate-limiting/" target="_blank">ai-gateway/features/rate-limiting</a></td></tr>
+  <tr><td>Unified Billing</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/features/unified-billing/" target="_blank">ai-gateway/features/unified-billing</a></td></tr>
+  <tr><td>Spend limits</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/features/spend-limits/" target="_blank">ai-gateway/features/spend-limits</a></td></tr>
+  <tr><td>ログ分類</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/observability/log-classification/" target="_blank">ai-gateway/observability/log-classification</a></td></tr>
+  <tr><td>Access との連携</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/configuration/cloudflare-access/" target="_blank">ai-gateway/configuration/cloudflare-access</a></td></tr>
+  <tr><td>Logpush</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/observability/logging/logpush/" target="_blank">ai-gateway/observability/logging/logpush</a></td></tr>
+  <tr><td>OpenAI 互換エンドポイント</td><td class="wrap"><a href="https://developers.cloudflare.com/ai-gateway/usage/chat-completion/" target="_blank">ai-gateway/usage/chat-completion</a></td></tr>
+ </table>
+ <p class="note"><b>補足</b>URL はドキュメントの構成変更により移動することがあります。リンク切れの場合は、テーマ名で Cloudflare Docs を検索してください。</p>
+</section>
+
+</main>
+
+
+<div id="lb"><img alt=""></div>
+
+<script>
+(function(){
+  const links=[...document.querySelectorAll('#toc a')];
+  const byId=Object.fromEntries(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const targets=[...document.querySelectorAll('section.chapter, main h3[id]')];
+  const hereChap=document.getElementById('hereChap'), hereSec=document.getElementById('hereSec');
+  function update(){
+    const y=window.scrollY+90;
+    let cur=targets[0];
+    for(const t of targets){ if(t.offsetTop<=y) cur=t; else break; }
+    const chap=cur.closest('section.chapter');
+    links.forEach(a=>a.classList.remove('active'));
+    document.querySelectorAll('#toc li.open').forEach(li=>li.classList.remove('open'));
+    const ca=byId[chap.id]; if(ca) ca.parentElement.classList.add('open');
+    const a=byId[cur.id]; if(a){a.classList.add('active'); a.scrollIntoView({block:'nearest'});}
+    hereChap.textContent=chap.querySelector('.kicker').textContent+'　'+chap.dataset.title;
+    hereSec.textContent=cur.tagName==='H3'?cur.dataset.title:'概要';
+    const h=document.documentElement.scrollHeight-innerHeight;
+    document.getElementById('progress').style.width=(h>0?scrollY/h*100:0)+'%';
+  }
+  addEventListener('scroll',update,{passive:true}); addEventListener('resize',update); update();
+  // mobile toc
+  const toc=document.getElementById('toc');
+  document.getElementById('menuBtn').onclick=()=>toc.classList.toggle('show');
+  links.forEach(a=>a.addEventListener('click',()=>toc.classList.remove('show')));
+  // lightbox
+  const lb=document.getElementById('lb'), lbi=lb.querySelector('img');
+  document.querySelectorAll('figure img').forEach(i=>i.onclick=()=>{lbi.src=i.src;lb.classList.add('show')});
+  lb.onclick=()=>lb.classList.remove('show');
+  addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove('show')});
+})();
+</script>
+</body>
+</html>

@@ -90,6 +90,11 @@ export const posts = sqliteTable("posts", {
   visibility: text("visibility", { enum: ["public", "limited"] })
     .notNull()
     .default("public"),
+  // article = Markdown article, case_guide = ZIP-uploaded HTML design guide
+  content_type: text("content_type", { enum: ["article", "case_guide"] })
+    .notNull()
+    .default("article"),
+  asset_prefix: text("asset_prefix"), // R2 prefix for case_guide assets
   auto_approved: integer("auto_approved", { mode: "boolean" })
     .notNull()
     .default(false),
@@ -148,6 +153,9 @@ export const aiDraftRequests = sqliteTable("ai_draft_requests", {
   model_used: text("model_used"),
   tokens_used: integer("tokens_used"),
   latency_ms: integer("latency_ms"),
+  attempt_count: integer("attempt_count").notNull().default(0),
+  last_error: text("last_error"),
+  last_attempt_at: text("last_attempt_at"),
   status: text("status", { enum: ["pending", "completed", "failed"] })
     .notNull()
     .default("pending"),

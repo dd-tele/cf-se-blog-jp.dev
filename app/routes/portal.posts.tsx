@@ -119,13 +119,20 @@ export default function PortalPosts() {
                         <Link
                           to={
                             post.status === "published"
-                              ? `/posts/${post.slug}`
+                              ? post.contentType === "case_guide"
+                                ? `/cases/${post.slug}`
+                                : `/posts/${post.slug}`
                               : `/portal/edit/${post.id}`
                           }
                           className="font-medium text-gray-900 hover:text-brand-600"
                         >
                           {post.title}
                         </Link>
+                        {post.contentType === "case_guide" && (
+                          <span className="ml-2 inline-block rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold text-white">
+                            設計ガイド
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">
                         {post.categoryName ?? "—"}

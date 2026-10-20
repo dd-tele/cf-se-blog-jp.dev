@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link, Form, useSearchParams } from "@remix-run/react";
+import { SiteNav } from "~/components/SiteNav";
 import { getSessionUser } from "~/lib/auth.server";
 import { semanticSearch } from "~/lib/vectorize.server";
 import { getPublishedPosts } from "~/lib/posts.server";
@@ -27,6 +28,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     authorName: string;
     categoryName: string | null;
     publishedAt: string | null;
+    visibility: string;
+    contentType: string;
     score?: number;
   }[] = [];
 
@@ -41,11 +44,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         const allPosts = await getPublishedPosts(db, {
           limit: 200,
           offset: 0,
+          contentType: "all",
         });
         const matchMap = new Map(results.map((r) => [r.id, r.score]));
         posts = allPosts
-          .filter((p: { id: string }) => matchMap.has(p.id))
-          .map((p: { id: string; title: string; slug: string; excerpt: string | null; authorId: string; authorName: string | null; categoryName: string | null; publishedAt: string | null }) => ({
+          .filter((p) => matchMap.has(p.id))
+          .map((p) => ({
             id: p.id,
             title: p.title,
             slug: p.slug,
@@ -54,6 +58,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
             authorName: p.authorName ?? "",
             categoryName: p.categoryName,
             publishedAt: p.publishedAt,
+            visibility: p.visibility ?? "public",
+            contentType: p.contentType ?? "article",
             score: matchMap.get(p.id),
           }))
           .sort((a: { score?: number }, b: { score?: number }) => (b.score ?? 0) - (a.score ?? 0));
@@ -64,8 +70,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         search: query,
         limit: 20,
         offset: 0,
+        contentType: "all",
       });
-      posts = keywordPosts.map((p: any) => ({
+      posts = keywordPosts.map((p) => ({
         id: p.id,
         title: p.title,
         slug: p.slug,
@@ -75,6 +82,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         categoryName: p.categoryName,
         publishedAt: p.publishedAt,
         visibility: p.visibility ?? "public",
+        contentType: p.contentType ?? "article",
       }));
     }
   }
@@ -82,7 +90,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // Hide limited posts from non-logged-in users
   const visiblePosts = user
     ? posts
-    : posts.filter((p) => (p as any).visibility !== "limited");
+    : posts.filter((p) => p.visibility !== "limited");
 
   return {
     query,
@@ -111,9 +119,7 @@ export default function SearchPage() {
             {siteName}
           </Link>
           <nav className="flex items-center gap-4">
-            <Link to="/posts" className="text-sm text-gray-600 hover:text-gray-900">
-              記事一覧
-            </Link>
+            <SiteNav active="search" includeSearch />
             <Link to="/about" className="text-sm text-gray-600 hover:text-gray-900">
               このブログについて
             </Link>
@@ -210,6 +216,13 @@ export default function SearchPage() {
                     className="group relative block rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-sm"
                   >
                     <div className="mb-1 flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          post.contentType === "case_guide" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {post.contentType === "case_guide" ? "事例 - 設計ガイド" : "記事"}
+                      </span>
                       {post.categoryName && (
                         <span className="text-xs font-medium text-brand-600">
                           {post.categoryName}
@@ -227,7 +240,10 @@ export default function SearchPage() {
                       )}
                     </div>
                     <h3 className="text-base font-semibold text-gray-900 group-hover:text-brand-600">
-                      <Link to={`/posts/${post.slug}`} className="after:absolute after:inset-0">
+                      <Link
+                        to={post.contentType === "case_guide" ? `/cases/${post.slug}` : `/posts/${post.slug}`}
+                        className="after:absolute after:inset-0"
+                      >
                         {post.title}
                       </Link>
                     </h3>
@@ -245,7 +261,7 @@ export default function SearchPage() {
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-12 text-center">
                 <p className="text-sm text-gray-400">
-                  該当する記事が見つかりませんでした
+                  該当する記事・設計ガイドが見つかりませんでした
                 </p>
               </div>
             )}
