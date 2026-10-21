@@ -1,0 +1,23 @@
+case-guides/scripts/package.py
+  s_6d7f177329cb51::t_b7a1a53ebd5b8b 2,9-10,25-54,63-96,129-141,147-150,153-158,235-237,247-250,275
+case-guides/template/architecture.html
+  s_6d7f177329cb51::t_ae99f62b968c67 1-409
+case-guides/template/index.html
+  s_6d7f177329cb51::t_5069e021ed2a52 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "532882ad084b77c017c0efb4cd5dbe1861521ffa",
+  "prompts": {},
+  "sessions": {
+    "s_6d7f177329cb51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f09a606e9ffewARkwnGFjNskCZ",
+        "model": "gpt-5.6"
+      },
+      "human_author": "dd-tele <dd.telecaster@gmail.com>"
+    }
+  }
+}
