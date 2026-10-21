@@ -1,0 +1,37 @@
+app/components/SiteNav.tsx
+  s_6d7f177329cb51::t_01ea0c9500380a 7,13
+app/lib/posts.server.ts
+  s_6d7f177329cb51::t_178357ccb65215 1,7,67-68,71,84-88
+app/routes/_index.tsx
+  s_6d7f177329cb51::t_4fe666cb194692 7,114,207-208,210,221-223,231
+app/routes/cases.$slug_.a.$.tsx
+  s_6d7f177329cb51::t_e4d7cd3c9ed545 8,47-48
+app/routes/cases._index.tsx
+  s_6d7f177329cb51::t_cea26885e1489b 7,10,14,25,35,52,69,71-88,114-131,138,141,157-167,169,177,190,194-196,199,207,222-223,245
+app/routes/portal._index.tsx
+  s_6d7f177329cb51::t_8557ffd418daf1 130,133,146
+app/routes/portal.cases.new.tsx
+  s_6d7f177329cb51::t_8f7b4d78a16f8e 12,25,42,78,88,119,121-123,134
+app/routes/portal.edit.$id.tsx
+  s_6d7f177329cb51::t_23a3342df3e002 46,145,147,275,449,454
+app/routes/portal.posts.tsx
+  s_6d7f177329cb51::t_5af0880b264bb6 5,134
+app/routes/search.tsx
+  s_6d7f177329cb51::t_3740143ce436de 8,225,265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "51d016cd433a4885935b36eabe0d6ecc2f5a48ea",
+  "prompts": {},
+  "sessions": {
+    "s_6d7f177329cb51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f09a606e9ffewARkwnGFjNskCZ",
+        "model": "gpt-5.6"
+      },
+      "human_author": "dd-tele <dd.telecaster@gmail.com>"
+    }
+  }
+}
