@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Validate a 事例 - 設計ガイド work folder and package it as an upload ZIP.
+"""Validate a 事例 work folder (設計ガイド / 導入アーキテクチャ) and package it as an upload ZIP.
 
 Usage:
     cd case-guides && python3 scripts/package.py work/<slug>
 
 The ZIP contains only index.html and assets/ and is written next to the work
 folder as <slug>.zip. Any error aborts packaging; warnings are printed only.
+The content type is taken from the <title> prefix (【設計ガイド】 / 【導入アーキテクチャ】)
+and decides the required chapter layout (AGENTS.md 4-1 / 4-2).
 """
 from __future__ import annotations
 
@@ -20,13 +22,76 @@ MAX_HTML_BYTES = 1_500_000
 MAX_ZIP_BYTES = 30 * 1024 * 1024
 ALLOWED_ASSET_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
 ASSET_NAME = re.compile(r"^\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.(png|jpe?g|webp|gif|svg)$")
-REQUIRED_CHAPTERS = ["はじめに", "左ナビゲーションと共通要素", "早見表", "この環境の所見", "参考ドキュメント"]
+MAX_SVG_BYTES = 2 * 1024 * 1024
+MIN_SVG_FONT = 16
+# Per content type (AGENTS.md 4-1 / 4-2): title prefix, brand label, fixed leading
+# chapters (must be ch0.. in this order), other required chapters, and the label
+# of the per-section .tip box.
+KINDS = {
+    "guide": {
+        "label": "設計ガイド",
+        "prefix": "【設計ガイド】",
+        "leading": ["はじめに", "左ナビゲーションと共通要素"],
+        "required": ["早見表", "この環境の所見", "参考ドキュメント"],
+        "tip": "この環境での読み取り",
+    },
+    "architecture": {
+        "label": "導入アーキテクチャ",
+        "prefix": "【導入アーキテクチャ】",
+        "leading": ["はじめに", "導入前の構成と課題", "導入アーキテクチャ", "設計方針と設定の意図", "左ナビゲーションと共通要素"],
+        "required": ["早見表", "導入効果と今後の取り組み", "参考ドキュメント"],
+        "tip": "設定の意図",
+    },
+}
+# Hand-made diagrams are displayed via <img>, so scripts would not run, but the
+# file is also downloadable directly; keep them inert and self-contained.
+SVG_FORBIDDEN = [
+    (re.compile(r"<script\b", re.I), "<script>"),
+    (re.compile(r"<foreignObject\b", re.I), "<foreignObject>"),
+    (re.compile(r"\son[a-z]+\s*=", re.I), "イベント属性（on...=）"),
+    (re.compile(r"""(?:xlink:)?href\s*=\s*["']\s*(?:https?:|//|javascript:)""", re.I), "外部 URL の参照"),
+    (re.compile(r"@import|url\(\s*['\"]?\s*(?:https?:|//)", re.I), "外部 CSS・フォントの読み込み"),
+]
 # Identifiers that must never appear in a published guide.
 SENSITIVE = [
     (re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"), "メールアドレス"),
     (re.compile(r"\b[a-f0-9]{32}\b"), "アカウント ID / 32 桁の ID"),
     (re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b"), "IPv4 アドレス / CIDR"),
 ]
+
+
+def check_svg(path: Path, rel: str) -> list[str]:
+    """Return errors for a diagram SVG (AGENTS.md 4-5)."""
+    errs: list[str] = []
+    raw = path.read_bytes()
+    if len(raw) > MAX_SVG_BYTES:
+        errs.append(f"SVG が {len(raw):,} bytes です（上限 {MAX_SVG_BYTES:,}）: assets/{rel}")
+    try:
+        svg = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return errs + [f"SVG が UTF-8 ではありません: assets/{rel}"]
+    root = re.search(r"<svg\b[^>]*>", svg)
+    if not root:
+        return errs + [f"<svg> 要素がありません: assets/{rel}"]
+    for attr in ("xmlns", "viewBox", "width", "height"):
+        if not re.search(rf'\s{attr}\s*=', root.group(0)):
+            errs.append(f"<svg> に {attr} がありません: assets/{rel}")
+    for pattern, label in SVG_FORBIDDEN:
+        if pattern.search(svg):
+            errs.append(f"SVG で使えない要素・属性があります（{label}）: assets/{rel}")
+    small = sorted({float(v) for v in re.findall(r'font-size\s*[=:]\s*["\']?\s*([\d.]+)', svg) if float(v) < MIN_SVG_FONT})
+    if small:
+        errs.append(f"SVG の文字が小さすぎます（font-size {', '.join(f'{v:g}' for v in small)}。{MIN_SVG_FONT} 以上）: assets/{rel}")
+    vb = re.search(r'viewBox\s*=\s*["\']\s*[\d.-]+[\s,]+[\d.-]+[\s,]+([\d.]+)', root.group(0))
+    if vb and float(vb.group(1)) > 1800:
+        errs.append(f"SVG の横幅が {float(vb.group(1)):g} です（1600 前後にしてください。AGENTS.md 4-5）: assets/{rel}")
+    # Check only human-readable text (text nodes); attribute values such as path
+    # data contain digit/dot runs that look like IP addresses.
+    visible = re.sub(r"<[^>]*>", " ", re.sub(r"<(style|script)[\s\S]*?</\1>", " ", svg, flags=re.I))
+    for pattern, label in SENSITIVE:
+        for m in pattern.finditer(visible):
+            errs.append(f"{label}が接続図に含まれています: {m.group(0)}（assets/{rel}）")
+    return errs
 
 
 def main() -> int:
@@ -61,14 +126,36 @@ def main() -> int:
     for m in re.finditer(r"<(script|link|img|iframe)\b[^>]*\b(?:src|href)=\"(https?:)?//", html, re.I):
         errors.append(f"外部リソースを読み込んでいます: <{m.group(1)} ...>（自己完結にしてください）")
 
+    # ── Content type (from <title>) ──────────────────────────
+    tm = re.search(r"<title>([^<]*)</title>", html)
+    page_title = tm.group(1).strip() if tm else ""
+    kind_key = next((k for k, v in KINDS.items() if page_title.startswith(v["prefix"])), None)
+    if kind_key is None:
+        errors.append(f"<title> が「【設計ガイド】」または「【導入アーキテクチャ】」で始まっていません: {page_title or '(なし)'}")
+        kind_key = "guide"
+    kind = KINDS[kind_key]
+    other = KINDS["architecture" if kind_key == "guide" else "guide"]
+    brand = re.search(r'<div class="brand"><b>([\s\S]*?)</b>', html)
+    if not brand or f"{kind['label']}：" not in brand.group(1):
+        errors.append(f".brand の 1 行目に「{kind['label']}：〈顧客エイリアス〉」がありません（AGENTS.md 4-4）。")
+
     # ── Structure ────────────────────────────────────────────
     titles = re.findall(r'<section class="chapter" id="(ch\d+)" data-title="([^"]+)"', html)
     if not titles:
         errors.append('章（<section class="chapter" id="chN" data-title="...">）が見つかりません。')
     chapter_names = [t for _, t in titles]
-    for name in REQUIRED_CHAPTERS:
+    for i, name in enumerate(kind["leading"]):
+        if i >= len(chapter_names) or chapter_names[i] != name:
+            errors.append(f"{kind['label']}の {i:02d} 章は「{name}」にしてください（AGENTS.md 4-{1 if kind_key == 'guide' else 2}）。")
+    for name in kind["required"]:
         if name not in chapter_names:
             errors.append(f"必須章「{name}」がありません。")
+    if chapter_names and chapter_names[-1] != "参考ドキュメント":
+        errors.append("最後の章は「参考ドキュメント」にしてください。")
+    if f'<b>{other["tip"]}</b>' in html:
+        errors.append(f"{kind['label']}では囲みの見出しを「{other['tip']}」ではなく「{kind['tip']}」にしてください（AGENTS.md 4-3）。")
+    if f'<b>{kind["tip"]}</b>' not in html:
+        warnings.append(f"「{kind['tip']}」の囲み（.tip）が 1 つもありません。")
     for i, (cid, _) in enumerate(titles):
         if cid != f"ch{i}":
             errors.append(f"章 id が連番ではありません: {cid}（期待値 ch{i}）")
@@ -145,7 +232,9 @@ def main() -> int:
             if rel not in referenced:
                 warnings.append(f"本文から参照されていない画像（ZIP に含めません）: assets/{rel}")
                 continue
-            if f.suffix.lower() != ".svg":  # SVG = hand-made diagrams, not screenshots
+            if f.suffix.lower() == ".svg":  # hand-made diagrams (AGENTS.md 4-5), not screenshots
+                errors.extend(check_svg(f, rel))
+            else:
                 entry = (mask_spec or {}).get(rel)
                 if entry is None:
                     errors.append(f"masks.json に記載がありません（マスク未実施）: assets/{rel}")
@@ -154,6 +243,10 @@ def main() -> int:
                 elif mask_lock.get(rel) != hashlib.sha256(f.read_bytes()).hexdigest():
                     errors.append(f"mask.py の出力と一致しません（直接コピー・編集された可能性）: assets/{rel}")
             files.append(f)
+
+    svgs = [n for n in referenced if n.lower().endswith(".svg")]
+    if kind_key == "architecture" and not svgs:
+        errors.append("導入アーキテクチャには接続図（assets/NN-xxx.svg）が必要です（AGENTS.md 4-5）。")
 
     # ── Sensitive identifiers in text ────────────────────────
     text = re.sub(r"<(style|script)[\s\S]*?</\1>", " ", html)
@@ -179,7 +272,7 @@ def main() -> int:
         out.unlink()
         print(f"ERROR: ZIP が {size:,} bytes です（上限 {MAX_ZIP_BYTES:,}）。画像を圧縮してください。")
         return 1
-    print(f"OK   : {out}（{size:,} bytes / 章 {len(titles)} / 節 {len(section_ids)} / 図 {len(referenced)}）")
+    print(f"OK   : {out}（{kind['label']} / {size:,} bytes / 章 {len(titles)} / 節 {len(section_ids)} / 図 {len(referenced)}（うち SVG {len(svgs)}））")
     return 0
 
 
