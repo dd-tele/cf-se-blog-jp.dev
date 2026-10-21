@@ -127,10 +127,10 @@ export default function PortalIndex() {
               className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
             >
               <h2 className="text-lg font-semibold text-gray-900 group-hover:text-brand-600">
-                事例 - 設計ガイドをアップロード
+                事例をアップロード
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                手元の OpenCode で作成した HTML とスクリーンショットの ZIP を下書きとして登録
+                手元の OpenCode で作成した設計ガイド・導入アーキテクチャの ZIP を下書きとして登録
               </p>
             </Link>
           )}
@@ -143,7 +143,7 @@ export default function PortalIndex() {
               マイ記事
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              下書き・審査中・公開済みの記事と設計ガイドを管理
+              下書き・審査中・公開済みの記事と事例を管理
             </p>
           </Link>
 

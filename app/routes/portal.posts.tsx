@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { requireUser } from "~/lib/auth.server";
 import { getUserPosts } from "~/lib/posts.server";
+import { CASE_KINDS, caseKind } from "~/lib/case-kind";
 
 export const meta: MetaFunction = () => [
   { title: "マイ記事 — Cloudflare フィールドノート" },
@@ -130,7 +131,7 @@ export default function PortalPosts() {
                         </Link>
                         {post.contentType === "case_guide" && (
                           <span className="ml-2 inline-block rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold text-white">
-                            設計ガイド
+                            {CASE_KINDS[caseKind(post.title)].label}
                           </span>
                         )}
                       </td>

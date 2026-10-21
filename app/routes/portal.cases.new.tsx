@@ -9,6 +9,7 @@ import { useState } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { createPost, ensureUser, getAllCategories } from "~/lib/posts.server";
 import { ulid } from "~/lib/ulid";
+import { CASE_KINDS, caseKind } from "~/lib/case-kind";
 import {
   deleteGuideAssets,
   isZipFile,
@@ -21,7 +22,7 @@ import {
 const GUIDE_CATEGORY_DEFAULT = "cat-zt";
 
 export const meta: MetaFunction = () => [
-  { title: "設計ガイドをアップロード — Cloudflare フィールドノート" },
+  { title: "事例をアップロード — Cloudflare フィールドノート" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -38,7 +39,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const env = context.cloudflare.env;
   const user = await requireUser(request, env);
   if (!(await userCanUploadGuides(env.DB, user))) {
-    return { error: "設計ガイドをアップロードする権限がありません。管理者に許可を依頼してください。" };
+    return { error: "事例をアップロードする権限がありません。管理者に許可を依頼してください。" };
   }
   await ensureUser(env.DB, user);
 
@@ -74,7 +75,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         title,
         content: parsed.bundle.entryHtml,
         categoryId,
-        tagsJson: JSON.stringify(tags.length ? tags : ["設計ガイド"]),
+        tagsJson: JSON.stringify(tags.length ? tags : [CASE_KINDS[caseKind(title)].label]),
         visibility,
         contentType: "case_guide",
         assetPrefix,
@@ -84,7 +85,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   } catch (e: any) {
     // Do not leave orphaned screenshots behind when the row could not be created.
     await deleteGuideAssets(env.R2_BUCKET, assetPrefix).catch(() => {});
-    return { error: e?.message || "設計ガイドの保存に失敗しました。" };
+    return { error: e?.message || "事例の保存に失敗しました。" };
   }
 
   return redirect(`/portal/edit/${id}?uploaded=1`);
@@ -115,10 +116,11 @@ export default function NewCaseGuide() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">事例 - 設計ガイドをアップロード</h1>
+        <h1 className="mb-2 text-2xl font-bold text-gray-900">事例をアップロード</h1>
         <p className="mb-6 text-sm leading-relaxed text-gray-500">
-          手元の OpenCode で作成した設計ガイド（<code className="rounded bg-gray-100 px-1">index.html</code> と
-          <code className="rounded bg-gray-100 px-1">assets/</code> のスクリーンショット）を ZIP にまとめてアップロードします。
+          手元の OpenCode で作成した設計ガイド・導入アーキテクチャ（<code className="rounded bg-gray-100 px-1">index.html</code> と
+          <code className="rounded bg-gray-100 px-1">assets/</code> のスクリーンショット・接続図）を ZIP にまとめてアップロードします。
+          種別はタイトル先頭の【設計ガイド】【導入アーキテクチャ】で判定され、一覧にバッジで表示されます。
           アップロード後は下書きとして保存され、記事と同じ編集画面から確認・公開できます。
           作成手順はリポジトリの <code className="rounded bg-gray-100 px-1">case-guides/AGENTS.md</code> を参照してください（OpenCode は <code className="rounded bg-gray-100 px-1">case-guides/</code> で起動します）。
         </p>
@@ -129,7 +131,7 @@ export default function NewCaseGuide() {
 
         <Form method="post" encType="multipart/form-data" className="space-y-6">
           <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h2 className="mb-3 text-sm font-semibold text-gray-900">設計ガイド ZIP *</h2>
+            <h2 className="mb-3 text-sm font-semibold text-gray-900">事例 ZIP *</h2>
             <label
               htmlFor="zipFile"
               className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center hover:border-brand-400"

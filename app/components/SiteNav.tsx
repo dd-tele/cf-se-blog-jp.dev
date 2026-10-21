@@ -4,13 +4,13 @@ export type SiteSection = "posts" | "cases" | "slides" | "search";
 
 const SECTIONS: { key: SiteSection; to: string; label: string }[] = [
   { key: "posts", to: "/posts", label: "記事" },
-  { key: "cases", to: "/cases", label: "事例 - 設計ガイド" },
+  { key: "cases", to: "/cases", label: "事例" },
   { key: "slides", to: "/slides", label: "スライド" },
 ];
 
 /**
  * Primary content sections shared by every public header, so the labels for
- * 記事 / 事例 - 設計ガイド / スライド stay consistent across pages.
+ * 記事 / 事例 / スライド stay consistent across pages.
  */
 export function SiteNav({ active, includeSearch = false }: { active?: SiteSection; includeSearch?: boolean }) {
   const items = includeSearch ? [...SECTIONS, { key: "search" as const, to: "/search", label: "検索" }] : SECTIONS;

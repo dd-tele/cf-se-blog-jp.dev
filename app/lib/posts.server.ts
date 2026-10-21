@@ -1,9 +1,10 @@
-import { eq, desc, and, like, or, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, like, notLike, or, sql, inArray } from "drizzle-orm";
 import { getDb } from "~/lib/db.server";
 import { posts, users, categories, aiSummaries, aiDraftRequests, qaThreads, qaMessages } from "~/db/schema";
 import { ulid } from "~/lib/ulid";
 import { slugify, estimateReadingTime, generateExcerpt, htmlToText, generateGuideExcerpt } from "~/lib/utils";
 import type { SessionUser } from "~/lib/auth.server";
+import { CASE_KINDS, type CaseKind } from "~/lib/case-kind";
 
 // ─── Types ─────────────────────────────────────────────────
 export interface CreatePostInput {
@@ -63,9 +64,11 @@ export async function getPublishedPosts(
     visibility?: "public" | "all";
     /** Defaults to "article" so existing article listings never include guides. */
     contentType?: PostContentType | "all";
+    /** 事例 only: filter by the 【...】 title prefix (see ~/lib/case-kind). */
+    caseKind?: CaseKind;
   } = {}
 ) {
-  const { limit = 20, offset = 0, categorySlug, search, visibility = "all", contentType = "article" } = opts;
+  const { limit = 20, offset = 0, categorySlug, search, visibility = "all", contentType = "article", caseKind } = opts;
   const d = getDb(db);
 
   const conditions = [eq(posts.status, "published")];
@@ -76,6 +79,11 @@ export async function getPublishedPosts(
 
   if (visibility === "public") {
     conditions.push(eq(posts.visibility, "public"));
+  }
+
+  if (caseKind) {
+    const archPrefix = `${CASE_KINDS.architecture.prefix}%`;
+    conditions.push(caseKind === "architecture" ? like(posts.title, archPrefix) : notLike(posts.title, archPrefix));
   }
 
   if (categorySlug) {

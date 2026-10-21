@@ -5,7 +5,7 @@ import { contentTypeFor } from "~/lib/slides-bundle.server";
 import { GUIDE_ENTRY_CSP } from "~/lib/case-guides.server";
 import { verifyGuideToken } from "~/lib/guide-token.server";
 
-// Serves a 事例 - 設計ガイド as a "directory":
+// Serves a 事例 (設計ガイド / 導入アーキテクチャ) as a "directory":
 //   /cases/:slug/a/[t.<exp>.<sig>/]          -> entry HTML (posts.content)
 //   /cases/:slug/a/[t.<exp>.<sig>/]<path>    -> bundled asset in R2
 // Relative references such as ./assets/01-overview.png resolve without rewriting.
@@ -44,8 +44,8 @@ export async function loader({ params, context, request }: LoaderFunctionArgs) {
     if (!allowed) {
       return new Response(
         token
-          ? "表示用リンクの有効期限が切れました。設計ガイドのページを再読み込みしてください。"
-          : "この設計ガイドを表示するにはログインが必要です。",
+          ? "表示用リンクの有効期限が切れました。事例のページを再読み込みしてください。"
+          : "この事例を表示するにはログインが必要です。",
         { status: 403, headers: { "Content-Type": "text/plain; charset=utf-8" } }
       );
     }

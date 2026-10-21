@@ -43,6 +43,7 @@ import { invalidatePostListCaches } from "~/lib/cache.server";
 import { ImageUploader } from "~/components/ImageUploader";
 import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
+import { CASE_KINDS, caseKind } from "~/lib/case-kind";
 import {
   deleteGuideAssets,
   isZipFile,
@@ -141,9 +142,9 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
 
   // Replace a design guide's HTML and screenshots with a newly uploaded ZIP.
   if (intent === "replace-bundle") {
-    if (existingPost.content_type !== "case_guide") return { error: "設計ガイドではありません。" };
+    if (existingPost.content_type !== "case_guide") return { error: "事例ではありません。" };
     if (!(await userCanUploadGuides(db, user))) {
-      return { error: "設計ガイドをアップロードする権限がありません。管理者に許可を依頼してください。" };
+      return { error: "事例をアップロードする権限がありません。管理者に許可を依頼してください。" };
     }
     const file = formData.get("zipFile");
     if (!(file instanceof File) || !isZipFile(file)) {
@@ -271,7 +272,7 @@ export default function EditPost() {
   const tags: string[] = post.tags_json ? JSON.parse(post.tags_json) : [];
   const isGuide = post.content_type === "case_guide";
   const viewPath = isGuide ? `/cases/${post.slug}` : `/posts/${post.slug}`;
-  const kindLabel = isGuide ? "設計ガイド" : "記事";
+  const kindLabel = isGuide ? CASE_KINDS[caseKind(post.title)].label : "記事";
   const replaceFetcher = useFetcher<{ success?: boolean; message?: string; error?: string }>();
   // The body textarea is uncontrolled; reload so a later save cannot overwrite the new HTML.
   useEffect(() => {
@@ -445,12 +446,12 @@ export default function EditPost() {
         )}
         {isGuide && searchParams.get("uploaded") === "1" && (
           <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            設計ガイドを下書きとしてアップロードしました。「プレビュー」で表示を確認してから公開してください。
+            {kindLabel}を下書きとしてアップロードしました。「プレビュー」で表示を確認してから公開してください。
           </div>
         )}
         {isGuide && (
           <div className="mb-6 flex items-center gap-2 text-xs">
-            <span className="rounded-full bg-gray-900 px-2.5 py-0.5 font-semibold text-white">事例 - 設計ガイド</span>
+            <span className="rounded-full bg-gray-900 px-2.5 py-0.5 font-semibold text-white">事例 - {kindLabel}</span>
             <span className="text-gray-500">公開先: {viewPath}</span>
           </div>
         )}

@@ -4,6 +4,7 @@ import { getSessionUser } from "~/lib/auth.server";
 import { getPublishedPosts } from "~/lib/posts.server";
 import { stripMarkdown } from "~/lib/utils";
 import { SiteNav } from "~/components/SiteNav";
+import { CASE_KINDS, caseDisplayTitle, caseKind, caseKindBadgeClass } from "~/lib/case-kind";
 
 export const meta: MetaFunction = () => {
   return [
@@ -110,7 +111,7 @@ export default function Index() {
               to="/cases"
               className="whitespace-nowrap rounded-lg border border-gray-900 bg-white px-7 py-3 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50"
             >
-              事例 - 設計ガイド
+              事例
             </Link>
             <Link
               to="/slides"
@@ -203,10 +204,10 @@ export default function Index() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">CASE STUDY · DESIGN GUIDE</p>
-                <h2 className="mt-1 text-2xl font-bold text-gray-900">事例 - 設計ガイド</h2>
+                <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">CASE STUDY</p>
+                <h2 className="mt-1 text-2xl font-bold text-gray-900">事例</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  導入事例のアーキテクチャと、ダッシュボードの各画面・設定項目を詳しく解説するガイド
+                  ダッシュボードを詳しく解説する設計ガイドと、導入前の課題から接続構成・設定の意図までを解説する導入アーキテクチャ
                 </p>
               </div>
               <Link to="/cases" className="text-sm font-medium text-gray-500 hover:text-gray-900">
@@ -217,7 +218,9 @@ export default function Index() {
               {latestGuides.map((g) => (
                 <article key={g.id} className="group relative border-t-2 border-gray-900 py-5">
                   <div className="mb-2 flex items-center gap-2 text-xs">
-                    <span className="font-extrabold tracking-[0.12em] text-brand-500">DESIGN GUIDE</span>
+                    <span className={`rounded-full px-2 py-0.5 font-bold ${caseKindBadgeClass(caseKind(g.title))}`}>
+                      {CASE_KINDS[caseKind(g.title)].label}
+                    </span>
                     {g.categoryName && <span className="text-gray-500">{g.categoryName}</span>}
                     {g.visibility === "limited" && (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-700">限定</span>
@@ -225,7 +228,7 @@ export default function Index() {
                   </div>
                   <h3 className="text-lg font-bold leading-snug text-gray-900 group-hover:text-brand-600">
                     <Link to={`/cases/${g.slug}`} className="after:absolute after:inset-0">
-                      {g.title}
+                      {caseDisplayTitle(g.title)}
                     </Link>
                   </h3>
                   {g.excerpt && <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">{g.excerpt}</p>}

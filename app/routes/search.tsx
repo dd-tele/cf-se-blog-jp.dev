@@ -5,6 +5,7 @@ import { getSessionUser } from "~/lib/auth.server";
 import { semanticSearch } from "~/lib/vectorize.server";
 import { getPublishedPosts } from "~/lib/posts.server";
 import { stripMarkdown } from "~/lib/utils";
+import { CASE_KINDS, caseKind } from "~/lib/case-kind";
 
 export const meta: MetaFunction = () => [
   { title: "検索 — Cloudflare フィールドノート" },
@@ -221,7 +222,7 @@ export default function SearchPage() {
                           post.contentType === "case_guide" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {post.contentType === "case_guide" ? "事例 - 設計ガイド" : "記事"}
+                        {post.contentType === "case_guide" ? `事例 - ${CASE_KINDS[caseKind(post.title)].label}` : "記事"}
                       </span>
                       {post.categoryName && (
                         <span className="text-xs font-medium text-brand-600">
@@ -261,7 +262,7 @@ export default function SearchPage() {
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-12 text-center">
                 <p className="text-sm text-gray-400">
-                  該当する記事・設計ガイドが見つかりませんでした
+                  該当する記事・事例が見つかりませんでした
                 </p>
               </div>
             )}

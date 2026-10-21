@@ -5,10 +5,11 @@ import { getSessionUser } from "~/lib/auth.server";
 import { getPostBySlug } from "~/lib/posts.server";
 import { SiteNav } from "~/components/SiteNav";
 import { issueGuideToken } from "~/lib/guide-token.server";
+import { CASE_KINDS, caseDisplayTitle, caseKind, caseKindBadgeClass } from "~/lib/case-kind";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data) return [{ title: "設計ガイドが見つかりません" }];
-  const title = `${data.guide.title} — 事例 - 設計ガイド | Cloudflare フィールドノート`;
+  if (!data) return [{ title: "事例が見つかりません" }];
+  const title = `${data.guide.title} — 事例 | Cloudflare フィールドノート`;
   if (data.locked) return [{ title }];
   const description = data.guide.metaDescription || data.guide.excerpt || "";
   return [
@@ -88,6 +89,7 @@ export const headers = () => ({ "Cache-Control": "private, no-store" });
 export default function CaseGuideDetail() {
   const { guide, src, user, locked, canManage } = useLoaderData<typeof loader>();
   const date = guide.publishedAt ?? guide.updatedAt;
+  const kind = caseKind(guide.title);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -102,11 +104,14 @@ export default function CaseGuideDetail() {
           {guide.status !== "published" && (
             <span className="shrink-0 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-700">下書き</span>
           )}
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${caseKindBadgeClass(kind)}`}>
+            {CASE_KINDS[kind].label}
+          </span>
           {guide.visibility === "limited" && (
             <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">限定</span>
           )}
           <h1 className="truncate text-sm font-semibold text-gray-900" title={guide.title}>
-            {guide.title}
+            {caseDisplayTitle(guide.title)}
           </h1>
           <span className="hidden shrink-0 text-xs text-gray-400 xl:inline">
             {guide.authorName}
@@ -143,11 +148,11 @@ export default function CaseGuideDetail() {
       {locked || !src ? (
         <main className="flex flex-1 items-center justify-center px-4">
           <div className="max-w-lg text-center">
-            <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">DESIGN GUIDE</p>
-            <h2 className="mt-2 text-2xl font-bold text-gray-900">限定公開の設計ガイドです</h2>
+            <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">{CASE_KINDS[kind].en}</p>
+            <h2 className="mt-2 text-2xl font-bold text-gray-900">限定公開の{CASE_KINDS[kind].label}です</h2>
             <p className="mt-2 font-medium text-gray-700">{guide.title}</p>
             <p className="mt-4 text-sm leading-relaxed text-gray-500">
-              この設計ガイドはログインユーザー限定で公開されています。ログインしてご覧ください。
+              この{CASE_KINDS[kind].label}はログインユーザー限定で公開されています。ログインしてご覧ください。
             </p>
             <a
               href="/portal"
@@ -157,7 +162,7 @@ export default function CaseGuideDetail() {
             </a>
             <div className="mt-4">
               <Link to="/cases" className="text-sm text-gray-500 hover:text-gray-700">
-                ← 設計ガイド一覧に戻る
+                ← 事例一覧に戻る
               </Link>
             </div>
           </div>
