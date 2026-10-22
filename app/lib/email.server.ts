@@ -1,3 +1,16 @@
+import {
+  buildPreviewInviteHtml,
+  buildPreviewInviteSubject,
+  buildPreviewInviteText,
+  type PreviewInviteInput,
+} from "~/lib/preview-invite";
+
+function emailWorkerHeaders(env: Env): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (env.EMAIL_WORKER_SECRET) headers.Authorization = `Bearer ${env.EMAIL_WORKER_SECRET}`;
+  return headers;
+}
+
 export async function sendApprovalEmail(
   env: Env,
   to: string,
@@ -13,7 +26,7 @@ export async function sendApprovalEmail(
 
     const res = await fetch(env.EMAIL_WORKER_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: emailWorkerHeaders(env),
       body: JSON.stringify({
         to,
         subject: "【Cloudflare Field Notes】投稿者アカウントが承認されました",
@@ -71,5 +84,37 @@ export async function sendApprovalEmail(
   } catch (e: any) {
     console.error("[Email] Failed to send approval email:", e);
     return { success: false, error: `メール送信エラー: ${e.message}` };
+  }
+}
+
+/**
+ * Preview invitation to an arbitrary (external) address. Requires the sending
+ * domain to be onboarded to Cloudflare Email Sending; otherwise only verified
+ * Email Routing destinations can receive it and the send fails.
+ */
+export async function sendPreviewInviteEmail(
+  env: Env,
+  invite: PreviewInviteInput
+): Promise<{ success: boolean; error?: string }> {
+  if (!env.EMAIL_WORKER_URL) return { success: false, error: "EMAIL_WORKER_URL が設定されていません" };
+  try {
+    const res = await fetch(env.EMAIL_WORKER_URL, {
+      method: "POST",
+      headers: emailWorkerHeaders(env),
+      body: JSON.stringify({
+        to: invite.email,
+        subject: buildPreviewInviteSubject(invite),
+        text: buildPreviewInviteText(invite),
+        html: buildPreviewInviteHtml(invite),
+      }),
+    });
+    const result = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
+    if (!res.ok || !result.success) {
+      return { success: false, error: `Email Worker エラー: ${result.error ?? res.status}` };
+    }
+    return { success: true };
+  } catch (e: any) {
+    console.error("[Email] Failed to send preview invite:", e);
+    return { success: false, error: `メール送信エラー: ${e?.message ?? e}` };
   }
 }

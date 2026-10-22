@@ -22,8 +22,14 @@ interface Env {
   CF_ACCESS_POLICY_ID?: string;
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
+  /** AUD of the Access application on <site>/preview/* (One-time PIN). Never add it to CF_ACCESS_AUD. */
+  CF_ACCESS_PREVIEW_AUD?: string;
+  /** Reusable Access policy whose include list the app syncs with active preview grants. */
+  CF_ACCESS_PREVIEW_POLICY_ID?: string;
   ADMIN_EMAILS?: string;
   SE_EMAIL_DOMAINS?: string;
   EMAIL_WORKER_URL?: string;
+  /** Shared secret sent as "Authorization: Bearer" to the email Worker. */
+  EMAIL_WORKER_SECRET?: string;
   SESSION_SECRET?: string;
 }

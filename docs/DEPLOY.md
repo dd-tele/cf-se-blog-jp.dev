@@ -331,6 +331,7 @@ Dashboard → `cf-se-blog-jp.dev` ゾーンで以下を設定:
 | **AUD** | `/portal`・`/admin` 共通。Pages シークレット `CF_ACCESS_AUD`（複数ある場合はカンマ区切り） |
 | **セッション署名鍵** | Pages シークレット `SESSION_SECRET`（32文字以上のランダム値。未設定だとログイン不可） |
 | **プレビュー** | `*.cf-se-blog.pages.dev` は Pages の Access ポリシーで全体保護（AUD は本番と別） |
+| **プレビュー共有** | `/preview/*` は別の Access アプリケーション（One-time PIN、AUD は `CF_ACCESS_PREVIEW_AUD`）。Step 11 参照 |
 | **IdP** | Google Workspace |
 | **ポリシー** | Emails ending in `@cloudflare.com` |
 
@@ -355,6 +356,72 @@ Dashboard → `cf-se-blog-jp.dev` ゾーンで以下を設定:
 | `SE_EMAIL_DOMAINS` | SE メールドメイン | Pages Secrets |
 
 Dashboard → Workers & Pages → `cf-se-blog` → Settings → Environment variables → Secrets で設定。
+
+---
+
+## Step 11: プレビュー共有（期限付きリンク + Access One-time PIN）
+
+記事の作成者と管理者が、編集画面の「プレビューを共有」から、指定したメールアドレスに期限付きのプレビューリンク
+（`/preview/<id>`）を発行できます。下書きの記事・事例も閲覧できます。
+
+```
+発行: D1 preview_grants に記録 → プレビュー用 Access ポリシーの Include にメールアドレスを同期（API）→ 案内メール
+閲覧: Access（/preview/* のみ・One-time PIN）でメールアドレスを確認
+      → アプリが JWT（CF_ACCESS_PREVIEW_AUD）と preview_grants（メールアドレス・期限・取り消し）を確認し、その 1 記事だけを表示
+```
+
+- 閲覧者にはサイトのセッションも `users` の行も作りません（`app/root.tsx` は `/preview/` で自動ログインしない）。
+- 期限と取り消しはアプリがリクエストのたびに確認します。Access ポリシーの Include は、発行・取り消し時と、
+  期限切れのリンクが開かれたときに、有効なリンクのメールアドレスの一覧に同期します（`syncPreviewAccessPolicy`）。
+- 事例の iframe 用トークンは、プレビューでは最長 2 時間（リンクの期限まで）に短縮しています。
+
+### 11.1 Access の設定（Zero Trust ダッシュボード）
+
+1. **One-time PIN** がログイン方法に追加されていることを確認する（Integrations → Identity providers）。
+2. **再利用可能なポリシー**を作成する（Access controls → Policies）。
+   - 名前: `Field Notes preview reviewers`、Action: **Allow**
+   - Include: **Emails** = `nobody@preview.invalid`（プレースホルダー。アプリが同期時に置き換える）
+   - Require: **Login Methods** = One-time PIN
+   - 作成後のポリシー ID を控える。
+3. **Self-hosted アプリケーション**を作成する（Access controls → Applications）。
+   - ドメイン: `cf-se-blog-jp.dev`、パス: `preview/*`
+   - ポリシー: 2 のポリシーのみ
+   - ログイン方法: One-time PIN のみ（**Instant Auth** を有効にすると IdP の選択画面を省略できる）
+   - セッション時間: 24 時間（期限はアプリ側でも確認する）
+   - 作成後、Overview の **Application Audience (AUD) Tag** を控える。
+4. Pages の Secrets に設定する。
+
+| 変数名 | 値 |
+|---|---|
+| `CF_ACCESS_PREVIEW_AUD` | 3 の AUD タグ。**`CF_ACCESS_AUD` には追加しないこと**（追加すると閲覧者が通常ユーザーとして自動登録され、限定公開の記事や `/portal` に入れてしまう） |
+| `CF_ACCESS_PREVIEW_POLICY_ID` | 2 のポリシー ID |
+
+Access API は既存の `CF_GLOBAL_API_KEY` または `CF_API_TOKEN`（`Access: Apps and Policies Write` が必要）を使います。
+
+> **シート数**: One-time PIN でログインした閲覧者も Zero Trust のシートを消費し、削除するまでカウントされます
+> （Team & Resources → Users）。
+
+### 11.2 案内メール（Email Sending）
+
+社外のアドレスに案内メールを送るには、送信元ドメインを **Cloudflare Email Sending** に登録する必要があります
+（未登録の場合は Email Routing で確認済みの宛先にしか送れず、案内メールは失敗します。リンクは発行され、案内文をコピーして送れます）。
+
+```bash
+npx wrangler@latest email sending enable cf-se-blog-jp.dev     # SPF / DKIM などの DNS レコードを追加
+npx wrangler@latest email sending dns get cf-se-blog-jp.dev    # レコードの確認
+```
+
+Email Worker は認証必須になりました（`Authorization: Bearer <EMAIL_WORKER_SECRET>`。未設定だと 503 を返し送信しない）。
+承認メールを止めないよう、次の順で設定します。
+
+```bash
+SECRET=$(openssl rand -hex 32)
+# 1. Pages に設定してデプロイ（旧 Worker はヘッダーを無視するので、この時点では影響なし）
+echo "$SECRET" | npx wrangler pages secret put EMAIL_WORKER_SECRET --project-name cf-se-blog
+# 2. Worker に設定してデプロイ
+echo "$SECRET" | npx wrangler secret put EMAIL_WORKER_SECRET --config workers/email-worker/wrangler.toml
+npx wrangler deploy --config workers/email-worker/wrangler.toml
+```
 
 ---
 

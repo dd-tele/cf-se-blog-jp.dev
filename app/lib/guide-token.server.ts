@@ -47,8 +47,13 @@ const message = (postId: string, assetPrefix: string, exp: number) =>
  * Issue a token bound to the guide and its current asset version, so replacing
  * the ZIP (new prefix) or deleting the guide invalidates outstanding tokens.
  */
-export async function issueGuideToken(postId: string, assetPrefix: string | null): Promise<string> {
-  const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
+export async function issueGuideToken(
+  postId: string,
+  assetPrefix: string | null,
+  ttlSeconds: number = TOKEN_TTL_SECONDS
+): Promise<string> {
+  const ttl = Math.max(60, Math.min(TOKEN_TTL_SECONDS, Math.floor(ttlSeconds)));
+  const exp = Math.floor(Date.now() / 1000) + ttl;
   const sig = await crypto.subtle.sign("HMAC", await getKey(), message(postId, assetPrefix ?? "", exp));
   return `t.${exp}.${b64url(sig)}`;
 }

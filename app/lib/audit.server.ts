@@ -19,7 +19,10 @@ export type AuditAction =
   | "ai.draft"
   | "ai.trend_report"
   | "admin.login"
-  | "user.login";
+  | "user.login"
+  | "preview.grant"
+  | "preview.revoke"
+  | "preview.resend";
 
 export type ResourceType =
   | "post"

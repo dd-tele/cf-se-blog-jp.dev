@@ -258,7 +258,7 @@ export async function deleteUser(db: D1Database, userId: string) {
 
 // ─── Cloudflare API Helpers ────────────────────────────────
 
-function getCfApiAuth(env: Env): { headers: Record<string, string>; authMethod: string } | null {
+export function getCfApiAuth(env: Env): { headers: Record<string, string>; authMethod: string } | null {
   // Prefer Global API Key (required for Zero Trust on some enterprise accounts)
   if (env.CF_AUTH_EMAIL && env.CF_GLOBAL_API_KEY) {
     return {

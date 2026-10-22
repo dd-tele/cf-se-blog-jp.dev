@@ -321,6 +321,24 @@ export const slideNotes = sqliteTable(
   (t) => ({ pk: primaryKey({ columns: [t.slide_id, t.idx] }) })
 );
 
+// ─── Preview Grants (time-limited preview links) ──────────
+export const previewGrants = sqliteTable("preview_grants", {
+  id: text("id").primaryKey(),
+  post_id: text("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  expires_at: text("expires_at").notNull(),
+  created_by: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  revoked_at: text("revoked_at"),
+  email_sent_at: text("email_sent_at"),
+  last_viewed_at: text("last_viewed_at"),
+  view_count: integer("view_count").notNull().default(0),
+});
+
 // ─── Audit Logs ────────────────────────────────────────────
 export const auditLogs = sqliteTable("audit_logs", {
   id: text("id").primaryKey(),

@@ -47,7 +47,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     path.endsWith(".ico") ||
     path.startsWith("/api/") ||
     path.startsWith("/r2/") ||
-    path.startsWith("/cdn-cgi/")
+    path.startsWith("/cdn-cgi/") ||
+    // Preview reviewers authenticate with the preview Access app only and must
+    // never get a site session (see app/lib/preview.server.ts).
+    path.startsWith("/preview/")
   ) {
     return null;
   }

@@ -44,6 +44,8 @@ import { ImageUploader } from "~/components/ImageUploader";
 import { ContentToolbar } from "~/components/ContentToolbar";
 import { MarkdownGuide } from "~/components/MarkdownGuide";
 import { CASE_KINDS, caseKind } from "~/lib/case-kind";
+import { PreviewSharePanel } from "~/components/PreviewSharePanel";
+import { grantState, isPreviewAccessConfigured, listPreviewGrants, previewUrl } from "~/lib/preview.server";
 import {
   deleteGuideAssets,
   isZipFile,
@@ -104,7 +106,27 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
       aiDraft = { ...aiDraft, status: terminalStatus };
     }
   }
-  return { post, categories, user, aiStatus: aiDraft?.status ?? null };
+  const host = new URL(request.url).hostname;
+  const previewGrants = (await listPreviewGrants(db, postId)).map((g) => ({
+    id: g.id,
+    email: g.email,
+    url: previewUrl(env, g.id),
+    expiresAt: g.expires_at,
+    createdAt: g.created_at,
+    state: grantState(g),
+    emailSentAt: g.email_sent_at,
+    lastViewedAt: g.last_viewed_at,
+    viewCount: g.view_count,
+  }));
+  return {
+    post,
+    categories,
+    user,
+    aiStatus: aiDraft?.status ?? null,
+    previewGrants,
+    previewConfigured: isPreviewAccessConfigured(env) || host === "localhost" || host === "127.0.0.1",
+    siteName: env.SITE_NAME ?? "Cloudflare Field Notes",
+  };
 }
 
 export async function action({ params, request, context }: ActionFunctionArgs) {
@@ -246,7 +268,7 @@ export async function action({ params, request, context }: ActionFunctionArgs) {
 }
 
 export default function EditPost() {
-  const { post, categories, user, aiStatus } = useLoaderData<typeof loader>();
+  const { post, categories, user, aiStatus, previewGrants, previewConfigured, siteName } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
@@ -782,6 +804,15 @@ export default function EditPost() {
           </div>
           </fieldset>
         </Form>
+
+        <PreviewSharePanel
+          postId={post.id}
+          title={post.title}
+          grants={previewGrants}
+          inviterName={user.displayName}
+          siteName={siteName}
+          configured={previewConfigured}
+        />
 
         {isGuide && (
           <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5">
