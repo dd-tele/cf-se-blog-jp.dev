@@ -18,6 +18,7 @@ import { requireRole } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
 import { createPost, ensureUser } from "~/lib/posts.server";
 import { ulid } from "~/lib/ulid";
+import { AdminHeader } from "~/components/AdminHeader";
 import {
   anonymizeFreeText,
   collectZeroTrustSnapshot,
@@ -458,16 +459,7 @@ export default function CaseBuilder() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-950/95">
-        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="text-sm text-slate-400 hover:text-white">Admin</Link>
-            <span className="text-slate-700">/</span>
-            <span className="font-semibold">Case Builder</span>
-          </div>
-          <span className="text-xs text-slate-400">{user.displayName} · admin</span>
-        </div>
-      </header>
+      <AdminHeader user={user} theme="dark" />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 max-w-3xl">

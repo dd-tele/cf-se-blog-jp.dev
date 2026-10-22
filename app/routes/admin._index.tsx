@@ -10,6 +10,7 @@ import { getAllPostsForAdmin, deletePost } from "~/lib/posts.server";
 import { deleteGuideAssets } from "~/lib/case-guides.server";
 import { invalidatePostListCaches } from "~/lib/cache.server";
 
+import { AdminHeader } from "~/components/AdminHeader";
 export const meta: MetaFunction = () => [
   { title: "投稿管理 — Cloudflare フィールドノート" },
 ];
@@ -60,62 +61,7 @@ export default function AdminIndex() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-              Cloudflare Field Notes
-            </Link>
-            <span className="text-sm text-gray-400">|</span>
-            <span className="text-sm font-semibold text-red-600">Admin</span>
-            <span className="text-sm text-gray-400">|</span>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link to="/admin" className="font-medium text-brand-600">
-                投稿管理
-              </Link>
-              {user.role === "admin" && (
-                <Link to="/admin/access-requests" className="text-gray-500 hover:text-gray-700">
-                  投稿者申請
-                </Link>
-              )}
-              {user.role === "admin" && (
-                <Link to="/admin/users" className="text-gray-500 hover:text-gray-700">
-                  ユーザー管理
-                </Link>
-              )}
-              <Link to="/admin/ai-insights" className="text-gray-500 hover:text-gray-700">
-                AI インサイト
-              </Link>
-              <Link to="/admin/qa" className="text-gray-500 hover:text-gray-700">
-                Q&A 管理
-              </Link>
-              <Link to="/admin/presentation" className="text-gray-500 hover:text-gray-700">
-                プレゼン
-              </Link>
-              {user.role === "admin" && (
-                <Link to="/admin/template-api" className="text-gray-500 hover:text-gray-700">
-                  Template API
-                </Link>
-              )}
-              {user.role === "admin" && (
-                <Link to="/admin/zero-trust-case" className="text-gray-500 hover:text-gray-700">
-                  事例生成
-                </Link>
-              )}
-              <Link to="/portal" className="text-gray-500 hover:text-gray-700">
-                ポータル
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{user.displayName}</span>
-            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-              {user.role}
-            </span>
-          </div>
-        </div>
-      </header>
+      <AdminHeader user={user} />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center justify-between">

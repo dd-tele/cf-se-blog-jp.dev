@@ -4,11 +4,11 @@ import { SiteNav } from "~/components/SiteNav";
 import { getSessionUser } from "~/lib/auth.server";
 
 export const meta: MetaFunction = () => [
-  { title: "Change Log — Cloudflare フィールドノート" },
+  { title: "Change Log — Cloudflare Field Notes" },
   {
     name: "description",
     content:
-      "Cloudflare フィールドノートの基礎設計から現在に至るまでの実装・変更履歴。",
+      "Cloudflare Field Notes の基礎設計から現在に至るまでの実装・変更履歴。",
   },
 ];
 
@@ -44,6 +44,142 @@ const TAG_LABELS: Record<string, string> = {
 };
 
 const CHANGES: ChangeEntry[] = [
+  {
+    date: "2026-10-22",
+    title: "管理画面のメニューをパネル式に",
+    items: [
+      "ヘッダーに並んでいた管理メニューを「メニュー」ボタンから開くパネルに集約",
+      "コンテンツ / ユーザー / ツールの 3 グループに分け、各項目に説明とアイコンを表示",
+      "ヘッダーには現在の画面をパンくず形式で表示。ロールに応じて表示する項目を切り替え",
+      "全管理画面で共通のヘッダーを使用し、画面ごとに異なっていたメニュー項目を統一",
+    ],
+    tag: "improvement",
+  },
+  {
+    date: "2026-10-22",
+    title: "プレビュー共有（期限付きリンク + One-time PIN）",
+    items: [
+      "公開前の記事・事例を、指定したメールアドレスだけに期限付き（1 / 3 / 7 / 14 日）で共有",
+      "/preview/* を別の Access アプリで保護し、One-time PIN で本人確認（通常ログインと AUD を分離）",
+      "アプリ側で JWT と宛先・期限・取り消しを毎回確認。下書きも共有可能",
+      "Access ポリシーの許可リストを有効なリンクの宛先と API で同期",
+      "案内メールを Email Sending で送信、閲覧回数・最終閲覧を表示、操作を監査ログに記録",
+      "Email Worker の呼び出しに共有シークレットによる認証を追加",
+    ],
+    tag: "feature",
+  },
+  {
+    date: "2026-10-21",
+    title: "事例を「設計ガイド」と「導入アーキテクチャ」の 2 種類に",
+    items: [
+      "タイトル先頭の【設計ガイド】【導入アーキテクチャ】で種別を判定し、一覧にバッジと絞り込みを追加",
+      "導入アーキテクチャ用テンプレート（導入前の構成と課題・接続図・設定の意図）を追加",
+      "OpenCode 用の /case コマンドを追加",
+      "接続図（SVG）の検査を追加 — 文字サイズ・幅・スクリプト・外部 URL・IP・メールアドレス",
+      "mask.py を通していないスクリーンショットを ZIP にできないように変更",
+      "HTML が存在しないアセットを参照している ZIP を拒否",
+    ],
+    tag: "feature",
+  },
+  {
+    date: "2026-10-20",
+    title: "事例（/cases）と Zero Trust 事例ビルダー",
+    items: [
+      "OpenCode で作成した HTML の設計ガイドを ZIP でアップロード・公開する「事例」を追加",
+      "CSP sandbox（不透明オリジン）と HMAC 署名付きトークンでアップロード HTML を隔離",
+      "Zero Trust の設定を収集し、Queues + 専用 Worker + Workers AI で事例の下書きを生成",
+    ],
+    tag: "feature",
+  },
+  {
+    date: "2026-10-18",
+    title: "スピーカーノートのアップロードを改善",
+    items: [
+      "スライドのアップロード画面と編集画面に「スピーカーノート（任意）」のファイル欄を追加し、あとからでもノートを差し替え可能に",
+      "スライド ZIP 内の speaker-notes.md / notes.json などをノートとして取り込み、公開ファイルとしては配信しないように変更",
+      "ノート編集画面の「ファイルから取り込む」で、枚数の確認と「すべて置き換える / 空欄だけに入れる」を選択可能に",
+    ],
+    tag: "improvement",
+  },
+  {
+    date: "2026-10-17",
+    title: "スライドのプレゼンターモード",
+    items: [
+      "QR を読み取るとスマートフォンがリモコン兼発表者ビュー（ノート・次スライド・タイマー）に",
+      "Durable Objects（WebSocket Hibernation）で発表画面とリモコンを同期",
+      "スピーカーノートを Markdown / JSON / スライド ZIP から取り込み、編集画面で修正",
+      "スライドのカテゴリ（イベント / お客様 / その他）を追加",
+    ],
+    tag: "feature",
+  },
+  {
+    date: "2026-10-16",
+    title: "認証の強化",
+    items: [
+      "セッション偽造につながる問題を修正、本番環境でモックログインを無効化",
+      "Access のチームドメインの表記揺れに対応し、複数 AUD を許可",
+      "JWT 検証エラーのメッセージを分かりやすく",
+    ],
+    tag: "security",
+  },
+  {
+    date: "2026-07-01",
+    title: "公式ブログへのリンク",
+    items: [
+      "Cloudflare 公式ブログへのリンクを追加し、本サイトが公式ブログではないことを明記",
+    ],
+    tag: "improvement",
+  },
+  {
+    date: "2026-06-20",
+    title: "スライド公開（/slides）",
+    items: [
+      "HTML スライドを公開する /slides を追加（アップロード権限はユーザーごとに付与）",
+      "任意の HTML スライドを ZIP でアップロードし R2 に展開",
+      "スライドの管理・編集画面を追加",
+    ],
+    tag: "feature",
+  },
+  {
+    date: "2026-04-20",
+    title: "Cloudflare Field Notes へリブランド",
+    items: [
+      "サイト名を Cloudflare Field Notes に変更",
+      "「このブログについて」に「このブログの使い方」を追加",
+      "ヒーローとヘッダー・フッターのデザインを刷新",
+    ],
+    tag: "improvement",
+  },
+  {
+    date: "2026-04-16",
+    title: "Access ユーザー切り替え時のセッション修正",
+    items: [
+      "Access のユーザーを切り替えた際にセッションの本人が食い違う問題を修正",
+      "ログアウト後の古い Access JWT を検出",
+      "CF_Authorization Cookie が重複した場合に対応",
+    ],
+    tag: "security",
+  },
+  {
+    date: "2026-04-15",
+    title: "AI モデルを Gemma 4 26B A4B に移行",
+    items: [
+      "ドラフト生成・チャット Q&A などのテキストモデルを @cf/google/gemma-4-26b-a4b-it に変更",
+      "Vibe Coding ページ（/vibe-coding）を追加",
+      "日本語入力の確定 Enter でチャットが送信される問題を修正",
+    ],
+    tag: "improvement",
+  },
+  {
+    date: "2026-04-03",
+    title: "Access JWT からの自動ログイン",
+    items: [
+      "Access で認証済みの場合、アプリのセッションを自動で作成",
+      "マイ記事一覧に編集ボタンを追加",
+      "ファビコンを追加",
+    ],
+    tag: "feature",
+  },
   {
     date: "2026-03-31",
     title: "記事の公開範囲設定（公開 / 限定公開）",

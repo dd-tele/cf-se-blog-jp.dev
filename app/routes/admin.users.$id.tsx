@@ -16,6 +16,7 @@ import { requireRole } from "~/lib/auth.server";
 import { getUserById, adminUpdateUser } from "~/lib/access-requests.server";
 import { AvatarCropModal } from "~/components/AvatarCropModal";
 
+import { AdminHeader } from "~/components/AdminHeader";
 export const meta: MetaFunction = () => [
   { title: "ユーザー編集 — Cloudflare フィールドノート" },
 ];
@@ -159,27 +160,7 @@ export default function AdminUserEdit() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors">
-              Cloudflare Field Notes
-            </Link>
-            <span className="text-sm text-gray-400">|</span>
-            <span className="text-sm font-semibold text-red-600">Admin</span>
-            <span className="text-sm text-gray-400">|</span>
-            <Link to="/admin/users" className="text-sm text-gray-500 hover:text-gray-700">
-              ← ユーザー管理
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{admin.displayName}</span>
-            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-              {admin.role}
-            </span>
-          </div>
-        </div>
-      </header>
+      <AdminHeader user={admin} title={targetUser.nickname || targetUser.display_name} />
 
       <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-2 text-2xl font-bold text-gray-900">ユーザー編集</h1>
