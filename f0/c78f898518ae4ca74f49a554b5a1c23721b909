@@ -1,0 +1,33 @@
+app/lib/access-requests.server.ts
+  s_6d7f177329cb51::t_08050fb9f91c95 261
+app/lib/email.server.ts
+  s_6d7f177329cb51::t_a906aa383fe344 1-13,29,89-120
+app/lib/guide-token.server.ts
+  s_6d7f177329cb51::t_c2804e126be997 50-56
+app/root.tsx
+  s_6d7f177329cb51::t_336002c246e256 50-53
+app/routes/portal.edit.$id.tsx
+  s_6d7f177329cb51::t_2fb3e3c136545f 47-48,109-129,271,808-816
+app/routes/preview.$id.tsx
+  s_6d7f177329cb51::t_6cf7a345eae5ff 1-193
+env.d.ts
+  s_6d7f177329cb51::t_55cfad9f9f31ea 25-28,32-33
+load-context.ts
+  s_6d7f177329cb51::t_5d5223e6c8059c 27-30,35-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f0c78f898518ae4ca74f49a554b5a1c23721b909",
+  "prompts": {},
+  "sessions": {
+    "s_6d7f177329cb51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f09a606e9ffewARkwnGFjNskCZ",
+        "model": "gpt-5.6"
+      },
+      "human_author": "dd-tele <dd.telecaster@gmail.com>"
+    }
+  }
+}
