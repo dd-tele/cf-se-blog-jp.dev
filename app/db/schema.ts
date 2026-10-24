@@ -57,6 +57,20 @@ export const accessRequests = sqliteTable("access_requests", {
     .default(sql`(datetime('now'))`),
 });
 
+// Unconfirmed /apply submissions (double opt-in). See migration 0027.
+export const applyVerifications = sqliteTable("apply_verifications", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  payload_json: text("payload_json").notNull(),
+  token_hash: text("token_hash").notNull().unique(),
+  expires_at: text("expires_at").notNull(),
+  client_ip: text("client_ip"),
+  client_country: text("client_country"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 // ─── Categories ────────────────────────────────────────────
 export const categories = sqliteTable("categories", {
   id: text("id").primaryKey(),

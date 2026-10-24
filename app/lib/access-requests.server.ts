@@ -301,39 +301,10 @@ function getAccessApiConfig(env: Env) {
 
 // ─── Email Routing: Destination Address Registration ──────
 
-export async function registerEmailDestination(
-  env: Env,
-  email: string
-): Promise<{ success: boolean; error?: string }> {
-  const auth = getCfApiAuth(env);
-  if (!auth || !env.CF_ACCOUNT_ID) {
-    return { success: false, error: "Cloudflare API の認証情報が設定されていません" };
-  }
-
-  try {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/email/routing/addresses`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: auth.headers,
-      body: JSON.stringify({ email }),
-    });
-
-    const data = await res.json() as any;
-
-    if (!data.success) {
-      const errMsg = data.errors?.[0]?.message || JSON.stringify(data.errors);
-      // "Address is already being used" is not a real error
-      if (errMsg.includes("already")) {
-        return { success: true };
-      }
-      return { success: false, error: errMsg };
-    }
-
-    return { success: true };
-  } catch (e: any) {
-    return { success: false, error: `Email Routing API error: ${e.message}` };
-  }
-}
+// Applicants are no longer registered as Email Routing destination addresses:
+// approval mail goes through Email Sending, which can reach any address, and
+// /apply now verifies ownership itself (double opt-in). deleteEmailDestination
+// stays to clean up addresses registered by the old flow.
 
 export async function deleteEmailDestination(
   env: Env,

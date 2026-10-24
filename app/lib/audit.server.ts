@@ -22,7 +22,9 @@ export type AuditAction =
   | "user.login"
   | "preview.grant"
   | "preview.revoke"
-  | "preview.resend";
+  | "preview.resend"
+  | "apply.submit"
+  | "apply.verify";
 
 export type ResourceType =
   | "post"
@@ -31,7 +33,8 @@ export type ResourceType =
   | "user"
   | "ai_summary"
   | "ai_draft"
-  | "trend_report";
+  | "trend_report"
+  | "access_request";
 
 export async function writeAuditLog(
   db: D1Database,
