@@ -1,0 +1,27 @@
+app/lib/access-requests.server.ts
+  s_6d7f177329cb51::t_5100e357ade4d7 304-307
+app/lib/audit.server.ts
+  s_6d7f177329cb51::t_8c8dc580e585a7 25-27,36-37
+app/lib/email.server.ts
+  s_6d7f177329cb51::t_0f803d67313b0a 8-16,64,76,130-202
+app/routes/apply.tsx
+  s_6d7f177329cb51::t_13d5c51adeec70 13,16-40,43,46,50-56,59-76,78-83,85-88,91-100,103-126,130-143,145,147-151,153-185,190,194-196,203-204,206,208-209,211-214,228-241,264,273,307-312,322,338,353,368,387,405,439,453,460-472,479,482
+app/routes/changelog.tsx
+  s_6d7f177329cb51::t_15195958a458f0 47-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0e1ea53bfaac7ab7338abadca7854576c84e4a47",
+  "prompts": {},
+  "sessions": {
+    "s_6d7f177329cb51": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f09a606e9ffewARkwnGFjNskCZ",
+        "model": "gpt-5.6"
+      },
+      "human_author": "dd-tele <dd.telecaster@gmail.com>"
+    }
+  }
+}
