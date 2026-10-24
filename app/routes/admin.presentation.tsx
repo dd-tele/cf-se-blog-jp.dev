@@ -3,11 +3,11 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import { useLoaderData, Link } from "@remix-run/react";
 import { requireRole } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
-import { posts, users, qaThreads, qaMessages, aiDraftRequests, templates } from "~/db/schema";
+import { posts, users, qaThreads, qaMessages, aiDraftRequests, templates, slides as slidesTable } from "~/db/schema";
 import { count, eq, sql } from "drizzle-orm";
 
 export const meta: MetaFunction = () => [
-  { title: "プレゼンテーション — Cloudflare フィールドノート" },
+  { title: "プレゼンテーション — Cloudflare Field Notes" },
 ];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -17,12 +17,14 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const d = getDb(db);
 
   // Gather live stats for the presentation
-  const [postStats, userStats, threadStats, draftStats, templateCount] =
+  const [postStats, userStats, threadStats, draftStats, templateCount, slideStats] =
     await Promise.all([
       d
         .select({
           total: count(),
-          published: sql<number>`SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END)`,
+          published: sql<number>`SUM(CASE WHEN status = 'published' AND content_type = 'article' THEN 1 ELSE 0 END)`,
+          articles: sql<number>`SUM(CASE WHEN content_type = 'article' THEN 1 ELSE 0 END)`,
+          cases: sql<number>`SUM(CASE WHEN status = 'published' AND content_type = 'case_guide' THEN 1 ELSE 0 END)`,
           draft: sql<number>`SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END)`,
           totalViews: sql<number>`SUM(view_count)`,
         })
@@ -44,12 +46,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         .from(aiDraftRequests)
         .get(),
       d.select({ total: count() }).from(templates).get(),
+      d
+        .select({
+          published: sql<number>`SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END)`,
+          totalViews: sql<number>`SUM(view_count)`,
+        })
+        .from(slidesTable)
+        .get(),
     ]);
 
   return {
     user,
     stats: {
-      posts: postStats ?? { total: 0, published: 0, draft: 0, totalViews: 0 },
+      posts: postStats ?? { total: 0, published: 0, articles: 0, cases: 0, draft: 0, totalViews: 0 },
+      slides: slideStats ?? { published: 0, totalViews: 0 },
       users: userStats ?? { total: 0 },
       threads: threadStats ?? { total: 0, active: 0 },
       drafts: draftStats ?? { total: 0, completed: 0 },
@@ -58,7 +68,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   };
 }
 
-const TOTAL_SLIDES = 17;
+const TOTAL_SLIDES = 18;
 
 export default function AdminPresentation() {
   const { user, stats } = useLoaderData<typeof loader>();
@@ -151,10 +161,10 @@ export default function AdminPresentation() {
         Cloudflare Solution Engineering
       </p>
       <h1 className="mb-6 text-5xl font-extrabold leading-tight sm:text-6xl lg:text-7xl">
-        Solution Blog Platform
+        Cloudflare Field Notes
       </h1>
       <p className="mb-10 max-w-3xl text-xl leading-relaxed text-white/90 sm:text-2xl">
-        現場のリアルな技術適用・導入知見を共有し、相互に学び合うナレッジハブ。
+        現場のリアルな技術適用・導入知見を「記事」「事例」「スライド」で共有し、相互に学び合うナレッジハブ。
         コミュニティ全体の技術品質を底上げし、より良いインターネット環境の構築へ。
       </p>
       <div className="flex flex-wrap justify-center gap-3">
@@ -163,7 +173,12 @@ export default function AdminPresentation() {
         <Badge>Workers AI (Gemma 4 26B)</Badge>
         <Badge>RAG Chat Q&A</Badge>
         <Badge>Semantic Search</Badge>
-        <Badge>Email Workers</Badge>
+        <Badge>Case Studies</Badge>
+        <Badge>Slides + Presenter Mode</Badge>
+        <Badge>Preview Share (OTP)</Badge>
+        <Badge>Durable Objects</Badge>
+        <Badge>Queues</Badge>
+        <Badge>Email Sending</Badge>
         <Badge>Personal API Keys</Badge>
         <Badge>Author Profiles</Badge>
         <Badge>API Shield</Badge>
@@ -309,8 +324,10 @@ export default function AdminPresentation() {
         以下の数値は D1 データベースからリアルタイムに取得しています。プレゼンテーション表示時点の最新値です。
       </p>
       <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="公開記事" value={stats.posts.published ?? 0} sub={`/ ${stats.posts.total ?? 0} 件`} color="blue" />
-        <StatCard label="累計閲覧数" value={stats.posts.totalViews ?? 0} sub="PV" color="blue" />
+        <StatCard label="公開記事" value={stats.posts.published ?? 0} sub={`/ ${stats.posts.articles ?? 0} 件`} color="blue" />
+        <StatCard label="公開事例" value={stats.posts.cases ?? 0} sub="件" color="blue" />
+        <StatCard label="公開スライド" value={stats.slides.published ?? 0} sub="件" color="purple" />
+        <StatCard label="累計閲覧数" value={(stats.posts.totalViews ?? 0) + (stats.slides.totalViews ?? 0)} sub="PV（記事・事例・スライド）" color="blue" />
         <StatCard label="登録ユーザー" value={stats.users.total ?? 0} sub="名" color="purple" />
         <StatCard label="AI ドラフト生成" value={stats.drafts.completed ?? 0} sub={`/ ${stats.drafts.total ?? 0} 回`} color="amber" />
         <StatCard label="Q&A スレッド" value={stats.threads.total ?? 0} sub={`(Active: ${stats.threads.active ?? 0})`} color="green" />
@@ -354,21 +371,23 @@ export default function AdminPresentation() {
             </ul>
           </div>
           <div className="p-8">
-            <h3 className="mb-5 text-sm font-semibold uppercase tracking-widest text-gray-400">Cloudflare サービス（17 種）</h3>
+            <h3 className="mb-5 text-sm font-semibold uppercase tracking-widest text-gray-400">Cloudflare サービス（主要 15 種）</h3>
             <ul className="space-y-4">
               <StackItem name="Pages" desc="ホスティング + GitHub CI/CD" />
-              <StackItem name="D1" desc="SQLite DB — 13 テーブル、Drizzle ORM" />
-              <StackItem name="R2" desc="画像 / アバターストレージ（S3 互換）" />
+              <StackItem name="D1" desc="SQLite DB — 16 テーブル / 26 マイグレーション、Drizzle ORM" />
+              <StackItem name="R2" desc="画像・アバター・スライド・事例アセット（限定公開はアプリ経由で認可）" />
               <StackItem name="Workers AI" desc="Gemma 4 26B A4B（ドラフト/チャット）+ Llama Guard 3 8B（モデレーション）+ bge-base-en（Embedding）" highlight />
               <StackItem name="Vectorize" desc="ベクトル検索 — セマンティック検索 + 関連記事推薦" />
-              <StackItem name="KV" desc="セッション / レート制限 / キャッシュ" />
-              <StackItem name="Access" desc="Zero Trust 認証（Google SSO）+ RBAC + API 連携" />
-              <StackItem name="Email Workers" desc="申請承認・セキュリティ通知メール送信" highlight />
+              <StackItem name="KV" desc="ページキャッシュ / レート制限 / AI レポートキャッシュ" />
+              <StackItem name="Access" desc="Zero Trust 認証（Google SSO）+ プレビュー共有の One-time PIN + API でポリシー同期" />
+              <StackItem name="Email Sending" desc="申請承認・プレビュー案内メール（認証付き Email Worker）" />
               <StackItem name="WAF" desc="OWASP Top 10 + カスタムルール" />
               <StackItem name="Bot Management" desc="自動化攻撃検知・軽減" />
-              <StackItem name="API Shield" desc="OpenAPI 3.0 スキーマで全 16 EP を検証" highlight />
-              <StackItem name="Turnstile" desc="invisible CAPTCHA — チャット Bot 保護" highlight />
-              <StackItem name="AI Gateway" desc="AI ガードレール / ログ / レイテンシ分析" highlight />
+              <StackItem name="API Shield" desc="OpenAPI 3.0 スキーマで API を検証" />
+              <StackItem name="Turnstile" desc="invisible CAPTCHA — チャット Bot 保護" />
+              <StackItem name="AI Gateway" desc="AI ガードレール / ログ / レイテンシ分析" />
+              <StackItem name="Durable Objects" desc="プレゼンターモードのライブルーム（WebSocket Hibernation）" highlight />
+              <StackItem name="Queues" desc="Zero Trust 事例ドラフトの非同期生成" highlight />
             </ul>
           </div>
         </div>
@@ -398,7 +417,10 @@ export default function AdminPresentation() {
         <FeatureRow number="06" title="管理 & モデレーション" desc="投稿管理、ユーザー管理、Q&A スレッド管理（削除・フラグ）、AI インサイトダッシュボード、トレンドレポート生成。24 時間経過したスレッドは自動削除。フラグ付きメッセージは証跡として管理画面で確認可能。" color="red" tags={["Admin", "User Mgmt", "24h TTL"]} />
         <FeatureRow number="07" title="著者プロフィール & リンク" desc="各投稿者の公開プロフィールページ（/authors/$id）。記事詳細・ホーム・検索結果すべてから著者名をクリックで遷移可能。HTML の入れ子リンク制約を Stretched Link パターンで回避し、カード全体のクリック領域と著者リンクを共存。" color="purple" tags={["Public Profile", "Stretched Link", "COALESCE"]} />
         <FeatureRow number="08" title="アバターアップロード & クロップ" desc="HTML Canvas ベースのカスタムクロップコンポーネント。ドラッグで位置調整、スライダー+ホイールでズーム、円形マスクで顔位置を合わせて 400×400px PNG を出力。R2 にアップロード後、DB の avatar_url を即時更新。" color="green" tags={["Canvas API", "Circular Crop", "R2 Upload"]} />
-        <FeatureRow number="09" title="パーソナル API キー & テンプレート API" desc="外部 AI ツール（Gemini, ChatGPT, Claude 等）からテンプレート API を呼び出すための Bearer トークン認証。キーは cfbk_ プレフィックス + 40 hex、SHA-256 ハッシュで保存。" color="amber" tags={["Bearer Auth", "SHA-256", "Dual Auth Middleware"]} />
+        <FeatureRow number="09" title="事例（設計ガイド / 導入アーキテクチャ）" desc="OpenCode で作成した HTML 事例を ZIP でアップロード。タイトル先頭の【】で 2 種類に分類し、一覧はバッジと絞り込みで区別。mask.py による匿名化と package.py の検証（章構成・マスク・SVG 接続図）を ZIP 化の条件に。" color="blue" tags={["ZIP Upload", "CSP sandbox", "SVG 接続図"]} />
+        <FeatureRow number="10" title="スライド & プレゼンターモード" desc="HTML スライドを ZIP で公開。QR を読み取るとスマートフォンがリモコン兼発表者ビュー（ノート・次スライド・タイマー）になり、Durable Objects の WebSocket で発表画面と同期。" color="purple" tags={["Durable Objects", "WebSocket", "Speaker Notes"]} />
+        <FeatureRow number="11" title="プレビュー共有（期限付きリンク）" desc="公開前の記事・事例を、指定したメールアドレスだけに 1〜14 日の期限で共有。Access の One-time PIN で本人確認し、アプリ側で宛先・期限・取り消しを毎回確認。案内メールはサイトから送信。" color="amber" tags={["Access OTP", "Email Sending", "Audit Log"]} />
+        <FeatureRow number="12" title="パーソナル API キー & テンプレート API" desc="外部 AI ツール（Gemini, ChatGPT, Claude 等）からテンプレート API を呼び出すための Bearer トークン認証。キーは cfbk_ プレフィックス + 40 hex、SHA-256 ハッシュで保存。" color="amber" tags={["Bearer Auth", "SHA-256", "Dual Auth Middleware"]} />
       </div>
     </div>,
   );
@@ -412,7 +434,7 @@ export default function AdminPresentation() {
         <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
         を API レイヤーに採用。Remix が SSR / UI / ルーティングを担当し、Hono が API ロジック・ストリーミング・ミドルウェアを担当する
         <strong className="text-gray-900"> ハイブリッドアーキテクチャ</strong>。
-        <strong className="text-gray-900">10 ファイル・7 ルートモジュール・約 15 エンドポイント</strong>を Hono が処理。
+        <strong className="text-gray-900">8 ルートモジュール・17 エンドポイント</strong>を Hono が処理。
       </p>
       <div className="mb-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <HonoCard number={1} title="型安全バインディング" desc="HonoEnv 型で c.env.DB / c.env.AI / c.env.R2 等すべての CF バインディングに型付きアクセス。実行時エラーを防止。" />
@@ -428,7 +450,7 @@ export default function AdminPresentation() {
         </p>
       </div>
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-400">Hono API エンドポイント（7 モジュール / 約 15 routes）</h4>
+        <h4 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-400">Hono API エンドポイント（8 モジュール / 17 routes）</h4>
         <div className="grid gap-3 text-base sm:grid-cols-2">
           <Endpoint method="GET/POST" path="/api/v1/chat" desc="AI チャット Q&A（streamSSE）" />
           <Endpoint method="POST" path="/api/v1/ai/suggest-tags" desc="タグ提案" />
@@ -440,7 +462,8 @@ export default function AdminPresentation() {
           <Endpoint method="*" path="/api/v1/api-keys" desc="API キー管理 CRUD" />
           <Endpoint method="GET" path="/api/v1/ai-guide" desc="外部 AI ツール向けガイド" />
           <Endpoint method="POST" path="/api/upload-image" desc="画像アップロード（R2）" />
-          <Endpoint method="GET" path="/r2/*" desc="R2 オブジェクト配信" />
+          <Endpoint method="POST" path="/api/v1/import-images" desc="外部画像の R2 取り込み" />
+          <Endpoint method="GET" path="/r2/images/*" desc="公開画像の配信（images/ のみ）" />
           <Endpoint method="GET" path="/api/health" desc="ヘルスチェック" />
         </div>
       </div>
@@ -600,12 +623,13 @@ export default function AdminPresentation() {
     <div key="security" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
       <SlideHeader number={10} title="セキュリティ & インフラ" />
       <div className="grid gap-5 sm:grid-cols-2">
-        <SecurityCard title="Cloudflare Access" items={["Google / Okta SSO 連携", "JWT ベース認証 + 自動リトライ", "RBAC (admin / se / user)", "OTP 再認証時のレジリエンス強化"]} />
+        <SecurityCard title="Cloudflare Access" items={["Google SSO 連携 + アプリ側の JWT 署名検証（複数 AUD）", "署名付き Cookie セッション・モックログインは本番無効", "RBAC (admin / se / ae / user)", "/preview/* は別アプリで One-time PIN（AUD 分離）"]} />
         <SecurityCard title="WAF + Bot Management" items={["OWASP Top 10 防御（SQLi / XSS 等）", "API エンドポイント保護", "Bot 検知・自動化攻撃軽減", "コードスニペット WAF 誤検知回避"]} />
         <SecurityCard title="コンテンツモデレーション" items={["Llama Guard 3 8B (Meta)", "スパムフィルター", "フラグ & 手動レビュー"]} />
-        <SecurityCard title="API Shield" items={["OpenAPI 3.0 スキーマで全 16 エンドポイントを検証", "メソッド・パス・リクエストボディのバリデーション", "スキーマ不一致リクエストを自動ブロック", "Bearer / Cookie / CF Access 3 種の認証定義"]} />
+        <SecurityCard title="API Shield" items={["OpenAPI 3.0 スキーマで API エンドポイントを検証", "メソッド・パス・リクエストボディのバリデーション", "スキーマ不一致リクエストを自動ブロック", "Bearer / Cookie / CF Access 3 種の認証定義"]} />
         <SecurityCard title="Turnstile ✅ 稼働中" items={["チャット Q&A に invisible モード統合・稼働中", "ボットによる自動投稿を Workers 到達前にブロック", "siteverify API でサーバー側トークン検証", "Fail open 設計 — 障害時はスキップして可用性優先"]} />
         <SecurityCard title="AI Gateway ✅ 稼働中" items={["チャット AI 呼び出しを Gateway 経由でルーティング済み", "全リクエスト/レスポンスのログ・分析", "Gateway レベルのレート制限・キャッシュ", "プロンプト/レスポンスのガードレール"]} />
+        <SecurityCard title="アップロード HTML の隔離" items={["事例・スライドは CSP sandbox（不透明オリジン）で配信", "限定公開アセットは HMAC 署名付きの短命トークン", "プレビュー中のトークンは最長 2 時間", "ZIP はパス・拡張子・サイズを検査して R2 に展開"]} />
         <SecurityCard title="API キー & エッジ性能" items={["Bearer トークン (cfbk_) + SHA-256 ハッシュ保存", "Session Cookie とのデュアル認証", "V8 Isolates（コールドスタートなし）", "KV キャッシュ + グローバル CDN"]} />
       </div>
     </div>,
@@ -737,16 +761,59 @@ export default function AdminPresentation() {
     </div>,
   );
 
+  /* ── Slide: Content & Sharing ── */
+  slides.push(
+    <div key="sharing" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
+      <SlideHeader number={14} title="事例・スライド・プレビュー共有" />
+      <p className="mb-8 max-w-4xl text-lg leading-relaxed text-gray-600">
+        記事に加えて<strong className="text-gray-900">事例</strong>と<strong className="text-gray-900">スライド</strong>を公開できるようにし、
+        公開前の内容は<strong className="text-gray-900">期限付きリンク</strong>でお客様にも確認してもらえるようにしました。
+      </p>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
+          <h3 className="mb-1 text-lg font-bold text-blue-800">事例</h3>
+          <p className="mb-3 text-xs font-semibold text-blue-600">/cases — 設計ガイド / 導入アーキテクチャ</p>
+          <ul className="space-y-1.5 text-sm text-gray-700">
+            <li>• SE が OpenCode + AGENTS.md で作成（/case コマンド）</li>
+            <li>• 導入アーキテクチャは課題 → 接続図 → 設定の意図まで解説</li>
+            <li>• マスク 12 種・検証済みでないと ZIP にできない</li>
+            <li>• 接続図は Cloudflare 公式アイコンの SVG</li>
+          </ul>
+        </div>
+        <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
+          <h3 className="mb-1 text-lg font-bold text-indigo-800">スライド & プレゼンター</h3>
+          <p className="mb-3 text-xs font-semibold text-indigo-600">/slides — Durable Objects</p>
+          <ul className="space-y-1.5 text-sm text-gray-700">
+            <li>• HTML スライドを ZIP で公開（限定公開可）</li>
+            <li>• QR でスマホがリモコン兼発表者ビューに</li>
+            <li>• スピーカーノートを取り込み・編集</li>
+            <li>• 256 bit のルームキー、12 時間で失効</li>
+          </ul>
+        </div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+          <h3 className="mb-1 text-lg font-bold text-amber-800">プレビュー共有</h3>
+          <p className="mb-3 text-xs font-semibold text-amber-600">/preview — Access One-time PIN</p>
+          <ul className="space-y-1.5 text-sm text-gray-700">
+            <li>• 宛先メールアドレスと期限（1〜14 日）を指定して発行</li>
+            <li>• 下書きでも共有でき、取り消しは即時反映</li>
+            <li>• 閲覧者はアカウント・セッションなし（1 記事のみ）</li>
+            <li>• 閲覧回数・最終閲覧を表示、操作は監査ログに記録</li>
+          </ul>
+        </div>
+      </div>
+    </div>,
+  );
+
   /* ── Slide 13: Challenges ── */
   slides.push(
     <div key="challenges" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={14} title="現在の課題と取り組み" />
+      <SlideHeader number={15} title="現在の課題と取り組み" />
       <div className="grid gap-8 sm:grid-cols-2">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8">
           <h3 className="mb-3 text-lg font-bold text-amber-800">課題</h3>
           <p className="mb-4 text-lg font-semibold text-gray-900">AI の表現・レスポンス精度の向上</p>
           <p className="mb-6 text-base leading-relaxed text-gray-600">
-            現在の AI ドラフト生成やチャット Q&A は、Cloudflare Workers AI (Llama 3.3 70B) をベースにしていますが、
+            現在の AI ドラフト生成やチャット Q&A は、Cloudflare Workers AI (Gemma 4 26B A4B) をベースにしていますが、
             技術的な正確さや日本語表現の自然さにはまだ改善の余地があります。
           </p>
           <h3 className="mb-3 text-lg font-bold text-green-700">取り組み</h3>
@@ -760,14 +827,14 @@ export default function AdminPresentation() {
           <h3 className="mb-3 text-lg font-bold text-blue-800">課題</h3>
           <p className="mb-4 text-lg font-semibold text-gray-900">より詳細で情報量豊かなコンテンツ作成</p>
           <p className="mb-6 text-base leading-relaxed text-gray-600">
-            記事に構成図やアーキテクチャダイアグラムを含めることで、読者の理解度を大幅に向上させたい。
-            現状はテキスト中心の記事構成に留まっています。
+            構成図やアーキテクチャダイアグラムで読者の理解度を高めたい。
+            事例では SVG 接続図を標準化しましたが、Markdown 記事はまだテキスト中心です。
           </p>
           <h3 className="mb-3 text-lg font-bold text-green-700">取り組み — サードパーティ連携</h3>
           <ul className="space-y-2 text-base text-gray-600">
             <li className="flex items-start gap-2"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-400" />構成図作成ツール連携（Mermaid / Excalidraw / draw.io 等）</li>
             <li className="flex items-start gap-2"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-400" />コードスニペットの埋め込み強化</li>
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-400" />直近ロードマップに組み入れ済み — Phase 2 で対応予定</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-400" />事例の接続図（Cloudflare 公式アイコンの SVG）は対応済み ✅</li>
           </ul>
         </div>
       </div>
@@ -777,11 +844,11 @@ export default function AdminPresentation() {
   /* ── Slide 12: Roadmap ── */
   slides.push(
     <div key="roadmap" className="mx-auto max-w-7xl px-8 py-8 sm:px-12 sm:py-10">
-      <SlideHeader number={15} title="ロードマップ" />
+      <SlideHeader number={16} title="ロードマップ" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <RoadmapPhase phase="Phase 1" title="MVP" status="completed" items={["Public Blog", "User Portal", "Admin Dashboard", "認証/認可 (Access)", "基本セキュリティ"]} />
         <RoadmapPhase phase="Phase 2" title="AI & エンゲージメント" status="in-progress" items={["テンプレート AI ✅", "AI ドラフト生成 ✅", "Vectorize 検索 ✅", "AI チャット Q&A ✅", "Hono API 移行 ✅", "セマンティック検索 ✅", "投稿者申請 & プロフィール ✅", "Email 通知 ✅", "ユーザー管理 ✅", "RSS / Sitemap ✅", "著者プロフィール ✅", "アバタークロップ ✅", "Personal API Keys ✅", "Access 再認証改善 ✅", "API Shield ✅", "Turnstile ✅", "AI Gateway ✅", "記事公開範囲設定 ✅", "AI 精度向上", "サードパーティ連携"]} />
-        <RoadmapPhase phase="Phase 3" title="Advanced" status="planned" items={["Durable Objects", "Queues 非同期処理", "Logpush"]} />
+        <RoadmapPhase phase="Phase 3" title="Content & Sharing" status="in-progress" items={["Gemma 4 移行 ✅", "Access 自動ログイン ✅", "スライド公開 ✅", "プレゼンターモード (Durable Objects) ✅", "認証の強化 ✅", "事例: 設計ガイド ✅", "事例: 導入アーキテクチャ ✅", "ZT 事例ドラフト (Queues) ✅", "プレビュー共有 ✅", "Logpush"]} />
         <RoadmapPhase phase="Phase 4" title="Scale" status="planned" items={["パフォーマンス最適化", "アナリティクス", "多言語対応", "コミュニティ機能", "外部連携"]} />
       </div>
     </div>,

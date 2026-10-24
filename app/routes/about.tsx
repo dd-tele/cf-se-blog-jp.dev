@@ -6,11 +6,11 @@ import { getSessionUser } from "~/lib/auth.server";
 import { ScrollReveal, useAutoReveal } from "~/components/ScrollReveal";
 
 export const meta: MetaFunction = () => [
-  { title: "このブログについて — Cloudflare フィールドノート" },
+  { title: "このブログについて — Cloudflare Field Notes" },
   {
     name: "description",
     content:
-      "Cloudflare フィールドノートのアーキテクチャ、使用技術、機能構成について紹介します。",
+      "Cloudflare Field Notes のコンテンツ（記事・事例・スライド）、アーキテクチャ、使用技術、機能構成について紹介します。",
   },
 ];
 
@@ -74,8 +74,8 @@ export default function AboutPage() {
           </ScrollReveal>
           <ScrollReveal delay={400} duration={1000}>
           <p className="mt-4 text-lg text-gray-300">
-            Cloudflare のサーバーレスプラットフォーム上に構築された、<br className="hidden sm:block" />
-            AI アシスト付きテクニカルブログの技術構成を紹介します。
+            SE が現場の知見を「記事」「事例」「スライド」として共有する、<br className="hidden sm:block" />
+            Cloudflare のサーバーレスプラットフォーム上のナレッジサイトの構成を紹介します。
           </p>
           </ScrollReveal>
         </div>
@@ -139,22 +139,26 @@ export default function AboutPage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">目次</p>
           <div className="flex flex-wrap gap-2">
             {[
-              ["tech-stack", "02 技術スタック"],
-              ["post-flow", "03 記事作成フロー"],
-              ["ai-draft", "04 AI ドラフト生成"],
-              ["ai-assist", "05 AI 修正アシスト"],
-              ["templates", "06 テンプレート一覧"],
-              ["json-import", "07 JSON インポート"],
-              ["access-request", "08 投稿者申請"],
-              ["hono-api", "09 Hono API"],
-              ["data-model", "10 データモデル"],
-              ["security", "11 セキュリティ"],
-              ["ai-chatbot", "12 AI チャットボット"],
-              ["md-import", "13 Markdown インポート"],
-              ["how-to-use", "14 このブログの使い方"],
-              ["disclaimer", "15 免責事項"],
-              ["changelog", "16 Change Log"],
-              ["specs", "17 仕様一覧"],
+              ["content-types", "02 コンテンツの種類"],
+              ["tech-stack", "03 技術スタック"],
+              ["post-flow", "04 記事作成フロー"],
+              ["ai-draft", "05 AI ドラフト生成"],
+              ["ai-assist", "06 AI 修正アシスト"],
+              ["templates", "07 テンプレート一覧"],
+              ["json-import", "08 JSON インポート"],
+              ["access-request", "09 投稿者申請"],
+              ["hono-api", "10 Hono API"],
+              ["data-model", "11 データモデル"],
+              ["security", "12 セキュリティ"],
+              ["ai-chatbot", "13 AI チャットボット"],
+              ["md-import", "14 Markdown インポート"],
+              ["cases", "15 事例の作成と公開"],
+              ["slides", "16 スライド & プレゼンター"],
+              ["preview-share", "17 プレビュー共有"],
+              ["how-to-use", "18 このブログの使い方"],
+              ["disclaimer", "19 免責事項"],
+              ["changelog", "20 Change Log"],
+              ["specs", "21 仕様一覧"],
             ].map(([id, label]) => (
               <a
                 key={id}
@@ -169,11 +173,52 @@ export default function AboutPage() {
         </div>
         </div>
 
+        {/* Content Types */}
+        <div className="border-b border-orange-100 bg-orange-50/40 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="content-types">
+          <SectionHeader tag="02" title="コンテンツの種類" />
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            用途に合わせて 3 種類のコンテンツを公開できます。どれも「全体公開 / ログインユーザー限定」の公開範囲と下書きに対応し、
+            公開前の内容は期限付きのプレビューリンクで社外の方にも確認してもらえます。
+          </p>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">ARTICLE · /posts</p>
+              <h3 className="mt-1 text-lg font-bold text-gray-900">記事</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                Markdown の技術記事。テンプレートと AI ドラフト生成、AI 修正アシスト、Markdown / JSON インポートで執筆を支援します。
+                読者は AI チャット Q&amp;A と関連記事で理解を深められます。
+              </p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">CASE STUDY · /cases</p>
+              <h3 className="mt-1 text-lg font-bold text-gray-900">事例</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                導入事例をもとにした HTML コンテンツを ZIP でアップロードします。タイトル先頭の【】で 2 種類に分かれ、一覧ではバッジと絞り込みで区別されます。
+              </p>
+              <ul className="mt-3 space-y-1.5 text-sm text-gray-600">
+                <li><span className="mr-1.5 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">設計ガイド</span>ダッシュボードの画面ごとの詳細解説</li>
+                <li><span className="mr-1.5 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">導入アーキテクチャ</span>導入前の課題から接続図・設定の意図まで</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-extrabold tracking-[0.14em] text-brand-500">SLIDES · /slides</p>
+              <h3 className="mt-1 text-lg font-bold text-gray-900">スライド</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                reveal.js などの HTML スライドを ZIP で公開します。プレゼンターモードでは、スマートフォンがリモコンと発表者ビュー（スピーカーノート付き）になります。
+              </p>
+            </div>
+          </div>
+        </section>
+        </div>
+        </div>
+
         {/* Tech Stack Grid */}
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="tech-stack">
-          <SectionHeader tag="02" title="技術スタック" />
+          <SectionHeader tag="03" title="技術スタック" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TechCard
               color="blue"
@@ -184,14 +229,14 @@ export default function AboutPage() {
             <TechCard
               color="purple"
               title="D1 (SQLite)"
-              description="記事、ユーザー、テンプレート、カテゴリなど全データを管理するエッジデータベース。Drizzle ORM でタイプセーフにアクセス。"
+              description="記事・事例・スライド、ユーザー、プレビュー共有、監査ログなど 16 テーブルを管理するエッジデータベース。Drizzle ORM でタイプセーフにアクセス。"
               tags={["Database", "SQL", "Edge"]}
             />
             <TechCard
               color="green"
               title="R2 (Object Storage)"
-              description="記事に挿入する画像・スクリーンショットを保存。S3 互換 API でアップロード・配信を処理。"
-              tags={["Storage", "Media", "S3互換"]}
+              description="記事の画像、スライド、事例のスクリーンショット・接続図を保存。限定公開のアセットはアプリ経由で認可して配信。"
+              tags={["Storage", "Media", "ZIP 展開"]}
             />
             <TechCard
               color="amber"
@@ -208,8 +253,8 @@ export default function AboutPage() {
             <TechCard
               color="orange"
               title="Cloudflare Access"
-              description="Zero Trust 認証でポータルを保護。IdP（Google 等）連携による SSO と JWT ベースのセッション管理。"
-              tags={["Zero Trust", "SSO", "JWT"]}
+              description="/portal と /admin を Zero Trust 認証で保護（Google SSO）。プレビュー共有の /preview は別アプリケーションで One-time PIN 認証。アプリ側でも JWT を署名検証。"
+              tags={["Zero Trust", "SSO", "One-time PIN"]}
             />
             <TechCard
               color="red"
@@ -238,8 +283,8 @@ export default function AboutPage() {
             <TechCard
               color="slate"
               title="KV (Key-Value)"
-              description="セッション管理とページキャッシュに使用。エッジ上での低レイテンシなデータアクセスを実現。"
-              tags={["Session", "Cache"]}
+              description="記事一覧のページキャッシュ、AI レポートのキャッシュ、チャットのレート制限に使用。エッジ上で低レイテンシにアクセス。"
+              tags={["Cache", "Rate Limit"]}
             />
             <TechCard
               color="red"
@@ -255,15 +300,27 @@ export default function AboutPage() {
             />
             <TechCard
               color="teal"
-              title="Email Workers + Email Routing"
-              description="専用 Email Worker (send_email バインディング) で承認通知メールを送信。Email Routing API で宛先アドレスの登録・検証・削除を自動管理。"
-              tags={["Email", "通知", "Verification"]}
+              title="Email Sending + Email Routing"
+              description="専用 Email Worker（send_email バインディング・認証必須）から、投稿者の承認通知やプレビューの案内メールを送信。送信ドメインは SPF / DKIM / DMARC 設定済み。"
+              tags={["Email", "通知", "Email Sending"]}
             />
             <TechCard
               color="cyan"
               title="Tailwind CSS"
               description="ユーティリティファーストな CSS フレームワーク。Typography プラグインにより、Markdown コンテンツも美しく表示。"
               tags={["CSS", "Typography", "UI"]}
+            />
+            <TechCard
+              color="indigo"
+              title="Durable Objects"
+              description="プレゼンターモードのライブルーム。発表画面とスマートフォンのリモコンを WebSocket（Hibernation API）で同期し、ページ送りをリアルタイムに反映。"
+              tags={["WebSocket", "Hibernation", "Realtime"]}
+            />
+            <TechCard
+              color="teal"
+              title="Queues"
+              description="Zero Trust 事例ドラフト生成を非同期化。収集した設定をキューに投入し、専用 Worker が Workers AI で事例の下書きを生成。"
+              tags={["Async", "Consumer Worker", "AI"]}
             />
           </div>
         </section>
@@ -274,7 +331,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="post-flow">
-          <SectionHeader tag="03" title="記事作成フロー" />
+          <SectionHeader tag="04" title="記事作成フロー" />
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="grid grid-cols-1 divide-y sm:grid-cols-6 sm:divide-x sm:divide-y-0">
               <FlowStep step={1} title="テンプレート選択" desc="6種類のテンプレートから選択" />
@@ -293,7 +350,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="ai-draft">
-          <SectionHeader tag="04" title="AI ドラフト生成のしくみ" />
+          <SectionHeader tag="05" title="AI ドラフト生成のしくみ" />
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-600">入力</h3>
@@ -341,7 +398,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="ai-assist">
-          <SectionHeader tag="05" title="AI 修正アシスト" />
+          <SectionHeader tag="06" title="AI 修正アシスト" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             AI が生成した下書きを読んで気づいた補足情報や修正指示を、手動で書き直さずに AI で自然に本文に組み込む機能です。
             修正案は HTML プレビューと Markdown ソースのタブ切替で確認し、納得できたら適用します。
@@ -406,7 +463,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="templates">
-          <SectionHeader tag="06" title="テンプレート一覧" />
+          <SectionHeader tag="07" title="テンプレート一覧" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TemplateCard title="Zero Trust 導入ガイド" desc="Access / Gateway / Tunnel の導入事例を構造化して記述" category="Zero Trust" />
             <TemplateCard title="Workers / Pages 開発記" desc="サーバーレスアプリケーションの設計・実装事例" category="Workers" />
@@ -423,7 +480,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="json-import">
-          <SectionHeader tag="07" title="JSON インポート — 他生成 AI との連携" />
+          <SectionHeader tag="08" title="JSON インポート — 他生成 AI との連携" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             Gemini、ChatGPT、Claude などの外部 AI ツールで作成したフィールド入力データを、テンプレートフォームに JSON インポートして記事を生成できます。
             API キー不要でブラウザ内だけで完結するワークフローです。
@@ -477,7 +534,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="access-request">
-          <SectionHeader tag="08" title="投稿者申請 & メール通知フロー" />
+          <SectionHeader tag="09" title="投稿者申請 & メール通知フロー" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             外部エンジニアが投稿者として参加するには、公開申請フォーム（<code className="rounded bg-gray-100 px-1 text-xs">/apply</code>）から申請を送信します。
             Cloudflare Email Routing と専用 Email Worker を組み合わせた通知メールの仕組みが組み込まれています。
@@ -522,7 +579,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="hono-api">
-          <SectionHeader tag="09" title="Hono API アーキテクチャ" />
+          <SectionHeader tag="10" title="Hono API アーキテクチャ" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             本ブログの API レイヤーは、Cloudflare Workers に最適化された超軽量フレームワーク
             <a href="https://hono.dev/" target="_blank" rel="noopener noreferrer" className="mx-1 font-semibold text-red-600 hover:underline">Hono</a>
@@ -576,6 +633,22 @@ export default function AboutPage() {
                 <span className="text-gray-600">画像アップロード（R2）</span>
               </div>
               <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">/api/v1/templates</code>
+                <span className="text-gray-600">テンプレート取得（外部 AI 連携用）</span>
+              </div>
+              <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">/api/v1/api-keys</code>
+                <span className="text-gray-600">Personal API Key の発行・失効</span>
+              </div>
+              <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">/api/v1/import-images</code>
+                <span className="text-gray-600">外部画像の R2 取り込み</span>
+              </div>
+              <div className="flex gap-2">
+                <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">GET /r2/images/*</code>
+                <span className="text-gray-600">公開画像の配信（images/ のみ）</span>
+              </div>
+              <div className="flex gap-2">
                 <code className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs font-mono">GET /api/health</code>
                 <span className="text-gray-600">ヘルスチェック</span>
               </div>
@@ -589,99 +662,47 @@ export default function AboutPage() {
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="data-model">
-          <SectionHeader tag="10" title="データモデル" />
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <svg viewBox="0 0 800 380" className="w-full" xmlns="http://www.w3.org/2000/svg">
-              <rect width="800" height="380" fill="#fafafa" rx="12" />
-
-              {/* Users */}
-              <g>
-                <rect x="30" y="30" width="150" height="150" rx="8" fill="#fff" stroke="#a78bfa" strokeWidth="1.5" />
-                <rect x="30" y="30" width="150" height="30" rx="8" fill="#8b5cf6" />
-                <rect x="30" y="52" width="150" height="8" fill="#8b5cf6" />
-                <text x="105" y="50" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700">users</text>
-                <text x="42" y="80" fill="#6b7280" fontSize="9">id, email, display_name</text>
-                <text x="42" y="95" fill="#6b7280" fontSize="9">role, avatar_url, bio</text>
-                <text x="42" y="110" fill="#6b7280" fontSize="9">nickname, furigana</text>
-                <text x="42" y="125" fill="#6b7280" fontSize="9">company, job_role, expertise</text>
-                <text x="42" y="140" fill="#6b7280" fontSize="9">profile_comment</text>
-                <text x="42" y="155" fill="#6b7280" fontSize="9">approved_post_count</text>
-              </g>
-
-              {/* Access Requests */}
-              <g>
-                <rect x="30" y="210" width="150" height="120" rx="8" fill="#fff" stroke="#14b8a6" strokeWidth="1.5" />
-                <rect x="30" y="210" width="150" height="30" rx="8" fill="#14b8a6" />
-                <rect x="30" y="232" width="150" height="8" fill="#14b8a6" />
-                <text x="105" y="230" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">access_requests</text>
-                <text x="42" y="258" fill="#6b7280" fontSize="9">id, email, display_name</text>
-                <text x="42" y="273" fill="#6b7280" fontSize="9">company, reason</text>
-                <text x="42" y="288" fill="#6b7280" fontSize="9">status: pending | approved</text>
-                <text x="42" y="303" fill="#6b7280" fontSize="9">| rejected</text>
-              </g>
-
-              {/* Posts */}
-              <g>
-                <rect x="250" y="30" width="180" height="160" rx="8" fill="#fff" stroke="#3b82f6" strokeWidth="1.5" />
-                <rect x="250" y="30" width="180" height="30" rx="8" fill="#3b82f6" />
-                <rect x="250" y="52" width="180" height="8" fill="#3b82f6" />
-                <text x="340" y="50" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700">posts</text>
-                <text x="262" y="80" fill="#6b7280" fontSize="9">id, title, slug, content</text>
-                <text x="262" y="95" fill="#6b7280" fontSize="9">excerpt, cover_image_url</text>
-                <text x="262" y="110" fill="#6b7280" fontSize="9">author_id → users</text>
-                <text x="262" y="125" fill="#6b7280" fontSize="9">category_id → categories</text>
-                <text x="262" y="140" fill="#6b7280" fontSize="9">status: draft | published</text>
-                <text x="262" y="155" fill="#6b7280" fontSize="9">tags_json, reading_time</text>
-                <text x="262" y="170" fill="#6b7280" fontSize="9">published_at, view_count</text>
-              </g>
-
-              {/* Categories */}
-              <g>
-                <rect x="500" y="30" width="140" height="90" rx="8" fill="#fff" stroke="#10b981" strokeWidth="1.5" />
-                <rect x="500" y="30" width="140" height="30" rx="8" fill="#10b981" />
-                <rect x="500" y="52" width="140" height="8" fill="#10b981" />
-                <text x="570" y="50" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700">categories</text>
-                <text x="512" y="80" fill="#6b7280" fontSize="9">id, name, slug</text>
-                <text x="512" y="95" fill="#6b7280" fontSize="9">description, sort_order</text>
-              </g>
-
-              {/* Templates */}
-              <g>
-                <rect x="500" y="150" width="160" height="120" rx="8" fill="#fff" stroke="#f59e0b" strokeWidth="1.5" />
-                <rect x="500" y="150" width="160" height="30" rx="8" fill="#f59e0b" />
-                <rect x="500" y="172" width="160" height="8" fill="#f59e0b" />
-                <text x="580" y="170" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700">templates</text>
-                <text x="512" y="200" fill="#6b7280" fontSize="9">id, name, description</text>
-                <text x="512" y="215" fill="#6b7280" fontSize="9">input_fields_json</text>
-                <text x="512" y="230" fill="#6b7280" fontSize="9">ai_prompt_template</text>
-                <text x="512" y="245" fill="#6b7280" fontSize="9">difficulty, category_id</text>
-              </g>
-
-              {/* AI Draft Requests */}
-              <g>
-                <rect x="250" y="220" width="180" height="70" rx="8" fill="#fff" stroke="#ec4899" strokeWidth="1.5" />
-                <rect x="250" y="220" width="180" height="30" rx="8" fill="#ec4899" />
-                <rect x="250" y="242" width="180" height="8" fill="#ec4899" />
-                <text x="340" y="240" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">ai_draft_requests</text>
-                <text x="262" y="268" fill="#6b7280" fontSize="9">user_id, template_id, post_id</text>
-                <text x="262" y="283" fill="#6b7280" fontSize="9">model_used, latency_ms, status</text>
-              </g>
-
-              {/* Email Routing note */}
-              <g>
-                <rect x="500" y="300" width="260" height="60" rx="8" fill="#f0fdfa" stroke="#14b8a6" strokeWidth="1" strokeDasharray="4" />
-                <text x="630" y="322" textAnchor="middle" fill="#0d9488" fontSize="9" fontWeight="600">Cloudflare Email Routing (外部)</text>
-                <text x="630" y="338" textAnchor="middle" fill="#6b7280" fontSize="8">宛先アドレスの登録・検証・削除を API 経由で管理</text>
-                <text x="630" y="352" textAnchor="middle" fill="#6b7280" fontSize="8">Email Worker (send_email) で通知メール送信</text>
-              </g>
-
-              {/* Relations */}
-              <line x1="180" y1="90" x2="250" y2="90" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-              <line x1="430" y1="70" x2="500" y2="70" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-              <line x1="430" y1="255" x2="500" y2="210" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-              <line x1="340" y1="190" x2="340" y2="220" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-              <line x1="180" y1="270" x2="500" y2="330" stroke="#14b8a6" strokeWidth="1" strokeDasharray="4" />
-            </svg>
+          <SectionHeader tag="11" title="データモデル" />
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            D1（SQLite）に 16 テーブル。スキーマは Drizzle ORM で定義し、26 本のマイグレーションを GitHub Actions がデプロイ時に適用します。
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-violet-200 bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-bold text-violet-700">ユーザー・権限</h3>
+              <ul className="space-y-2">
+                <li><code className="rounded bg-violet-50 px-1.5 py-0.5 text-xs font-mono text-violet-700">users</code><p className="mt-0.5 text-xs text-gray-500">ロール、プロフィール、スライド投稿権限</p></li>
+                <li><code className="rounded bg-violet-50 px-1.5 py-0.5 text-xs font-mono text-violet-700">access_requests</code><p className="mt-0.5 text-xs text-gray-500">投稿者申請（pending / approved / rejected）</p></li>
+                <li><code className="rounded bg-violet-50 px-1.5 py-0.5 text-xs font-mono text-violet-700">user_badges</code><p className="mt-0.5 text-xs text-gray-500">投稿数などに応じたバッジ</p></li>
+                <li><code className="rounded bg-violet-50 px-1.5 py-0.5 text-xs font-mono text-violet-700">notification_settings</code><p className="mt-0.5 text-xs text-gray-500">通知の受け取り設定</p></li>
+                <li><code className="rounded bg-violet-50 px-1.5 py-0.5 text-xs font-mono text-violet-700">api_keys</code><p className="mt-0.5 text-xs text-gray-500">Personal API Key（ハッシュで保存）</p></li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-blue-200 bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-bold text-blue-700">コンテンツ</h3>
+              <ul className="space-y-2">
+                <li><code className="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-mono text-blue-700">posts</code><p className="mt-0.5 text-xs text-gray-500">記事と事例。content_type（article / case_guide）、公開範囲、事例の ZIP 情報</p></li>
+                <li><code className="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-mono text-blue-700">categories</code><p className="mt-0.5 text-xs text-gray-500">カテゴリ</p></li>
+                <li><code className="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-mono text-blue-700">templates</code><p className="mt-0.5 text-xs text-gray-500">記事テンプレートと AI プロンプト</p></li>
+                <li><code className="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-mono text-blue-700">slides</code><p className="mt-0.5 text-xs text-gray-500">スライド（ZIP を R2 に展開）</p></li>
+                <li><code className="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-mono text-blue-700">slide_notes</code><p className="mt-0.5 text-xs text-gray-500">スライドごとのスピーカーノート</p></li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-bold text-amber-700">AI</h3>
+              <ul className="space-y-2">
+                <li><code className="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-mono text-amber-700">ai_draft_requests</code><p className="mt-0.5 text-xs text-gray-500">AI ドラフト生成の履歴（モデル・レイテンシ）</p></li>
+                <li><code className="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-mono text-amber-700">ai_summaries</code><p className="mt-0.5 text-xs text-gray-500">記事の AI 要約</p></li>
+                <li><code className="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-mono text-amber-700">qa_threads</code><p className="mt-0.5 text-xs text-gray-500">AI チャット Q&A のスレッド</p></li>
+                <li><code className="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-mono text-amber-700">qa_messages</code><p className="mt-0.5 text-xs text-gray-500">Q&A のメッセージ</p></li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-teal-200 bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-bold text-teal-700">共有・監査</h3>
+              <ul className="space-y-2">
+                <li><code className="rounded bg-teal-50 px-1.5 py-0.5 text-xs font-mono text-teal-700">preview_grants</code><p className="mt-0.5 text-xs text-gray-500">プレビュー共有（宛先・期限・取り消し・閲覧回数）</p></li>
+                <li><code className="rounded bg-teal-50 px-1.5 py-0.5 text-xs font-mono text-teal-700">audit_logs</code><p className="mt-0.5 text-xs text-gray-500">承認・公開・プレビュー発行などの操作ログ</p></li>
+              </ul>
+            </div>
           </div>
         </section>
         </div>
@@ -691,15 +712,16 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="security">
-          <SectionHeader tag="11" title="セキュリティ & インフラ" />
+          <SectionHeader tag="12" title="セキュリティ & インフラ" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-2 font-bold text-gray-900">認証・認可</h3>
               <ul className="space-y-1 text-sm text-gray-600">
-                <li>Cloudflare Access による Zero Trust 認証</li>
-                <li>IdP 連携（Google Workspace 等）</li>
-                <li>JWT ベースのセッション管理（KV 保存）</li>
+                <li>Cloudflare Access による Zero Trust 認証（/portal・/admin）</li>
+                <li>IdP 連携（Google Workspace）+ アプリ側での JWT 署名検証</li>
+                <li>署名付き Cookie セッション（SESSION_SECRET）</li>
                 <li>ロールベースアクセス制御（admin / se / ae / user）</li>
+                <li>プレビュー閲覧者は One-time PIN・セッションなし</li>
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -714,12 +736,12 @@ export default function AboutPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-2 font-bold text-gray-900">エッジコンピューティング</h3>
+              <h3 className="mb-2 font-bold text-gray-900">アップロードコンテンツの隔離</h3>
               <ul className="space-y-1 text-sm text-gray-600">
-                <li>全コンポーネントが Cloudflare エッジで動作</li>
+                <li>事例・スライドの HTML は CSP sandbox（不透明オリジン）で配信</li>
+                <li>限定公開のアセットは HMAC 署名付きの短命トークンで認可</li>
+                <li>/r2 は公開画像（images/）のみ配信</li>
                 <li>オリジンサーバー不要のフルサーバーレス</li>
-                <li>グローバル CDN による低レイテンシ配信</li>
-                <li>自動スケーリング・ゼロコールドスタート</li>
               </ul>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -727,7 +749,7 @@ export default function AboutPage() {
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>公開申請フォーム（/apply）で自己申請</li>
                 <li>Email Routing API で宛先アドレス自動登録・検証</li>
-                <li>専用 Email Worker で承認通知メール送信</li>
+                <li>専用 Email Worker で承認通知メール送信（共有シークレットで認証）</li>
                 <li>ユーザー削除時に Access + Email Routing を自動クリーンアップ</li>
               </ul>
             </div>
@@ -760,7 +782,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="ai-chatbot">
-          <SectionHeader tag="12" title="AI チャットボット — 実装・改善・チューニング" />
+          <SectionHeader tag="13" title="AI チャットボット — 実装・改善・チューニング" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             各記事ページにフローティングチャットウィジェットを設置。読者が記事内容や Cloudflare 全般について質問でき、
             AI がリアルタイムでストリーミング回答します。セキュリティ・モデレーション・UX を多層的に設計しています。
@@ -921,7 +943,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-100 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="md-import">
-          <SectionHeader tag="13" title="Markdown インポート" />
+          <SectionHeader tag="14" title="Markdown インポート" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             既存の Markdown 記事（Qiita、Zenn、社内 Wiki 等）をそのままインポートして記事化できます。
             YAML Frontmatter からタイトル・タグ・カテゴリを自動抽出し、フォームに反映します。
@@ -963,13 +985,125 @@ export default function AboutPage() {
         </div>
         </div>
 
-        {/* How to Use This Blog */}
+        {/* Cases */}
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="cases">
+          <SectionHeader tag="15" title="事例の作成と公開" />
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            事例は、SE が手元の OpenCode（AI コーディングエージェント）で作成し、ZIP でアップロードします。
+            作成ルール（AGENTS.md）とスクリプトをリポジトリの <code className="rounded bg-gray-100 px-1 text-xs">case-guides/</code> にまとめ、
+            誰が作っても同じ構成・品質になるようにしています。
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+              <FlowStep step={1} title="素材を用意" desc="スクリーンショットと補足資料（課題・導入前の構成）" />
+              <FlowStep step={2} title="/case で作成" desc="種別を確認し、AGENTS.md の章立てで執筆" />
+              <FlowStep step={3} title="マスク" desc="ID・ドメイン・IP など 12 種を mask.py で塗りつぶし" />
+              <FlowStep step={4} title="検証・ZIP 化" desc="package.py が章構成・マスク・接続図を検査" />
+              <FlowStep step={5} title="アップロード" desc="下書き → プレビュー → 公開" />
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-gray-900">2 種類の事例</h3>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li><b>設計ガイド</b>: 画面ごとに項目の意味・仕組み・この環境での読み取りを解説</li>
+                <li><b>導入アーキテクチャ</b>: 上記に加え、導入前の構成と課題、接続図、各設定の意図を解説</li>
+                <li>接続図は Cloudflare 公式アイコンを使った SVG</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-gray-900">匿名化を仕組みで担保</h3>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li>マスクは不透明な塗りつぶしのみ（ぼかし不可）</li>
+                <li>mask.py を通していない・確認していない画像は ZIP にできない</li>
+                <li>本文・接続図のメールアドレス・IP・ID も自動検出</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-gray-900">Zero Trust 事例ドラフト生成</h3>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li>管理画面から Zero Trust の設定を API で収集</li>
+                <li>Queues → 専用 Worker → Workers AI で事例記事の下書きを生成</li>
+                <li>生成後は通常の記事と同じ画面で編集・公開</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+        </div>
+        </div>
+
+        {/* Slides */}
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="slides">
+          <SectionHeader tag="16" title="スライド & プレゼンターモード" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-5">
+              <h3 className="mb-2 font-bold text-gray-900">ZIP で公開</h3>
+              <p className="text-sm text-gray-600">reveal.js テンプレートや任意の HTML スライドを ZIP でアップロード。R2 に展開し、限定公開にも対応。</p>
+            </div>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-5">
+              <h3 className="mb-2 font-bold text-gray-900">スマホがリモコンに</h3>
+              <p className="text-sm text-gray-600">発表画面の QR コードを読み取ると、スマートフォンがリモコンと発表者ビュー（現在・次のスライド、タイマー）になります。</p>
+            </div>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-5">
+              <h3 className="mb-2 font-bold text-gray-900">スピーカーノート</h3>
+              <p className="text-sm text-gray-600">スライド内の notes、Markdown / JSON ファイル、ZIP から取り込み、編集画面で修正できます。</p>
+            </div>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-5">
+              <h3 className="mb-2 font-bold text-gray-900">Durable Objects で同期</h3>
+              <p className="text-sm text-gray-600">発表ごとのルームを Durable Object で管理し、WebSocket Hibernation で同期。ルームキーは 256 bit で、12 時間で失効します。</p>
+            </div>
+          </div>
+        </section>
+        </div>
+        </div>
+
+        {/* Preview Share */}
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="preview-share">
+          <SectionHeader tag="17" title="プレビュー共有（期限付きリンク）" />
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">
+            公開前の記事・事例を、指定したメールアドレスの方だけに期限付きで見てもらえます。
+            本人確認は Cloudflare Access の One-time PIN で行い、閲覧者にはサイトのアカウントもセッションも作りません。
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+              <FlowStep step={1} title="リンクを発行" desc="作成者・管理者がメールアドレスと期限（1〜14 日）を指定" />
+              <FlowStep step={2} title="案内メール" desc="Email Sending で閲覧方法を送信" />
+              <FlowStep step={3} title="One-time PIN" desc="/preview/* の Access アプリでメールアドレスを確認" />
+              <FlowStep step={4} title="アプリで認可" desc="JWT と宛先・期限・取り消しを毎回確認" />
+              <FlowStep step={5} title="1 記事だけ表示" desc="下書きも可。ほかの記事・管理画面には入れない" />
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-gray-900">通常ログインと分離</h3>
+              <p className="text-sm text-gray-600">プレビュー用 Access アプリの AUD を通常の AUD と分け、閲覧者が自動でユーザー登録されないようにしています。</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-gray-900">期限と取り消し</h3>
+              <p className="text-sm text-gray-600">期限切れ・取り消しは即時に反映。Access ポリシーの許可リストは、有効なリンクの宛先と API で同期します。</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 font-bold text-gray-900">閲覧状況の記録</h3>
+              <p className="text-sm text-gray-600">リンクごとに閲覧回数・最終閲覧日時を表示し、発行・取り消し・再送は監査ログに残します。</p>
+            </div>
+          </div>
+        </section>
+        </div>
+        </div>
+
+        {/* How to Use This Blog */}
+        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="how-to-use">
-          <SectionHeader tag="14" title="このブログの使い方" />
+          <SectionHeader tag="18" title="このブログの使い方" />
           <p className="mb-8 text-sm leading-relaxed text-gray-600">
-            Cloudflare フィールドノートは、SE が現場で得た技術知見を検証や事例の形で共有する場です。
+            Cloudflare Field Notes は、SE が現場で得た技術知見を記事・事例・スライドの形で共有する場です。
             対象読者ごとに最適な活用方法をまとめました。
           </p>
           <div className="grid gap-5 sm:grid-cols-3">
@@ -1042,10 +1176,10 @@ export default function AboutPage() {
         </div>
 
         {/* Disclaimer Policy */}
-        <div className="border-b border-gray-100 bg-white py-16">
+        <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="disclaimer">
-          <SectionHeader tag="15" title="免責事項ポリシー" />
+          <SectionHeader tag="19" title="免責事項ポリシー" />
           <p className="mb-6 text-sm leading-relaxed text-gray-600">
             本ブログは Cloudflare Japan のソリューションエンジニアが運営していますが、掲載内容は公式な製品仕様や動作保証を意味するものではありません。
             この位置づけを明確にするため、サイト上の複数箇所に免責事項を掲載しています。
@@ -1086,7 +1220,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="changelog">
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm text-center">
-            <div className="mb-3"><span className="mb-2 block text-xs font-bold uppercase tracking-widest text-brand-500">16</span><h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Change Log</h2></div>
+            <div className="mb-3"><span className="mb-2 block text-xs font-bold uppercase tracking-widest text-brand-500">20</span><h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Change Log</h2></div>
             <p className="mb-6 text-sm text-gray-500">
               基礎設計から現在に至るまでの実装・変更履歴をまとめています。
             </p>
@@ -1105,7 +1239,7 @@ export default function AboutPage() {
         <div className="border-b border-gray-200 bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section id="specs">
-          <SectionHeader tag="17" title="仕様一覧" />
+          <SectionHeader tag="21" title="仕様一覧" />
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="w-full text-sm">
               <thead>
@@ -1118,24 +1252,30 @@ export default function AboutPage() {
                 <SpecRow label="フレームワーク" value="Remix v2 (Vite) + Hono (API Layer)" />
                 <SpecRow label="ランタイム" value="Cloudflare Workers (V8 Isolates — コールドスタートなし)" />
                 <SpecRow label="ホスティング" value="Cloudflare Pages (SSR + CDN 静的配信)" />
-                <SpecRow label="データベース" value="Cloudflare D1 (SQLite at edge) + Drizzle ORM" />
-                <SpecRow label="ストレージ" value="Cloudflare R2 (S3 互換・エグレス無料)" />
+                <SpecRow label="データベース" value="Cloudflare D1 (SQLite at edge) + Drizzle ORM — 16 テーブル / 26 マイグレーション" />
+                <SpecRow label="ストレージ" value="Cloudflare R2 — 画像・スライド・事例アセット（限定公開はアプリ経由で認可）" />
                 <SpecRow label="API レイヤー" value="Hono — streamSSE, 型付き Bindings, CORS / Auth / Logger ミドルウェア" />
                 <SpecRow label="AI モデル" value="Google Gemma 4 26B A4B (ドラフト・チャット) + Llama Guard 3 8B (モデレーション)" />
                 <SpecRow label="AI Gateway" value="AI 呼び出しの一元管理 — ログ・分析・レート制限・ガードレール（稼働中）" />
                 <SpecRow label="ベクトル検索" value="Cloudflare Vectorize — セマンティック検索 + RAG チャット Q&A" />
                 <SpecRow label="WAF / DDoS" value="OWASP Core Ruleset + Bot Management + カスタムルール" />
-                <SpecRow label="API Shield" value="OpenAPI 3.0 スキーマで全 16 エンドポイントをエッジ検証" />
+                <SpecRow label="API Shield" value="OpenAPI 3.0 スキーマで API エンドポイントをエッジ検証" />
                 <SpecRow label="Turnstile" value="チャット Bot 保護 (invisible モード・稼働中)" />
-                <SpecRow label="認証" value="Cloudflare Access (Zero Trust / Google SSO)" />
+                <SpecRow label="認証" value="Cloudflare Access — /portal・/admin は Google SSO、/preview は One-time PIN（AUD を分離）" />
                 <SpecRow label="認可" value="RBAC (admin / se / ae / user) + Personal API Keys (Bearer cfbk_)" />
-                <SpecRow label="セッション / キャッシュ" value="Cloudflare KV (グローバル分散)" />
-                <SpecRow label="メール通知" value="Email Workers (send_email) + Email Routing API" />
+                <SpecRow label="セッション" value="署名付き Cookie（SESSION_SECRET・7 日間）" />
+                <SpecRow label="キャッシュ / レート制限" value="Cloudflare KV (グローバル分散)" />
+                <SpecRow label="リアルタイム同期" value="Durable Objects + WebSocket Hibernation（プレゼンターモード）" />
+                <SpecRow label="非同期処理" value="Queues + Consumer Worker（Zero Trust 事例ドラフト生成）" />
+                <SpecRow label="コンテンツ" value="記事（Markdown）/ 事例（HTML ZIP・設計ガイド / 導入アーキテクチャ）/ スライド（HTML ZIP）" />
+                <SpecRow label="アップロード HTML の隔離" value="CSP sandbox（不透明オリジン）+ HMAC 署名付きアセットトークン" />
+                <SpecRow label="プレビュー共有" value="期限付きリンク（1 / 3 / 7 / 14 日）+ Access One-time PIN + 取り消し" />
+                <SpecRow label="メール通知" value="Email Sending（send_email・認証付き Email Worker）+ Email Routing API" />
                 <SpecRow label="投稿者申請" value="/apply → Email 検証 → 管理者承認 → Access ポリシー自動追加" />
                 <SpecRow label="CSS" value="Tailwind CSS v3 + Typography plugin" />
                 <SpecRow label="Markdown" value="marked + DOMPurify (XSS 対策)" />
                 <SpecRow label="言語" value="TypeScript 5.7 (フルスタック型安全)" />
-                <SpecRow label="CI/CD" value="GitHub Actions → Wrangler CLI → Cloudflare Pages" />
+                <SpecRow label="CI/CD" value="GitHub Actions → D1 マイグレーション → Queue Consumer Worker → Cloudflare Pages" />
               </tbody>
             </table>
           </div>
@@ -1153,7 +1293,7 @@ export default function AboutPage() {
               {siteName}
             </Link>
             <span className="text-xs text-gray-600">
-              Built on Cloudflare — Workers, Pages, D1, R2, AI, Email, Hono
+              Built on Cloudflare — Workers, Pages, D1, R2, AI, Durable Objects, Queues, Email, Hono
             </span>
           </div>
         </div>
@@ -1270,7 +1410,7 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
   return (
     <svg viewBox="0 0 1060 720" className="w-full" xmlns="http://www.w3.org/2000/svg">
       <rect width="1060" height="720" fill="#fafafa" rx="12" />
-      <text x="530" y="30" textAnchor="middle" fill="#1e293b" fontSize="13" fontWeight="700">System Architecture — Cloudflare SE Blog Platform</text>
+      <text x="530" y="30" textAnchor="middle" fill="#1e293b" fontSize="13" fontWeight="700">System Architecture — Cloudflare Field Notes</text>
 
       {/* Lane backgrounds */}
       <rect x="10" y="50" width="1040" height="230" rx="10" fill="#3b82f6" fillOpacity="0.03" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="6" />
@@ -1283,7 +1423,7 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
         <rect x="25" y="95" width="120" height="90" rx="10" fill="#1e293b" />
         <text x="85" y="118" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="600">閲覧ユーザー</text>
         <line x1="45" y1="126" x2="125" y2="126" stroke="#334155" strokeWidth="0.5" />
-        <text x="85" y="142" textAnchor="middle" fill="#93c5fd" fontSize="8">記事閲覧</text>
+        <text x="85" y="142" textAnchor="middle" fill="#93c5fd" fontSize="8">記事 / 事例 / スライド</text>
         <text x="85" y="155" textAnchor="middle" fill="#93c5fd" fontSize="8">キーワード検索</text>
         <text x="85" y="168" textAnchor="middle" fill="#93c5fd" fontSize="8">AI チャット Q&amp;A</text>
       </g>
@@ -1305,11 +1445,21 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
         <text x="85" y="461" textAnchor="middle" fill="#ea580c" fontSize="7" fontWeight="600">Access 認証済み</text>
         <line x1="45" y1="472" x2="125" y2="472" stroke="#334155" strokeWidth="0.5" />
         <text x="85" y="487" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="600">SE / Admin</text>
-        <text x="85" y="501" textAnchor="middle" fill="#94a3b8" fontSize="7.5">記事の投稿・管理</text>
+        <text x="85" y="501" textAnchor="middle" fill="#94a3b8" fontSize="7.5">記事 / 事例 / スライド投稿</text>
         <text x="85" y="514" textAnchor="middle" fill="#94a3b8" fontSize="7.5">テンプレート / AI ドラフト</text>
-        <text x="85" y="527" textAnchor="middle" fill="#94a3b8" fontSize="7.5">プロフィール管理</text>
+        <text x="85" y="527" textAnchor="middle" fill="#94a3b8" fontSize="7.5">プレビュー共有 / 発表</text>
         <text x="85" y="540" textAnchor="middle" fill="#94a3b8" fontSize="7.5">管理ダッシュボード</text>
       </g>
+
+      {/* Preview viewer */}
+      <g>
+        <rect x="25" y="580" width="120" height="60" rx="10" fill="#1e293b" />
+        <text x="85" y="603" textAnchor="middle" fill="#fdba74" fontSize="9" fontWeight="600">プレビュー閲覧者</text>
+        <line x1="45" y1="609" x2="125" y2="609" stroke="#334155" strokeWidth="0.5" />
+        <text x="85" y="625" textAnchor="middle" fill="#94a3b8" fontSize="7.5">期限付きリンク（社外可）</text>
+      </g>
+      <line x1="145" y1="610" x2="195" y2="610" stroke="#fdba74" strokeWidth="1.5" strokeDasharray="4" markerEnd={`url(#${aO})`} />
+      <line x1="320" y1="610" x2="355" y2="580" stroke="#fdba74" strokeWidth="1.5" strokeDasharray="4" markerEnd={`url(#${aO})`} />
 
       {/* Arrows: Users → WAF */}
       <line x1="145" y1="140" x2="195" y2="140" stroke="#93c5fd" strokeWidth="2" markerEnd={`url(#${aB})`} />
@@ -1338,8 +1488,8 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
       <g>
         <rect x="355" y="100" width="140" height="64" rx="8" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
         <text x="425" y="116" textAnchor="middle" fill="#1d4ed8" fontSize="8" fontWeight="600">Public ルート（認証不要）</text>
-        <text x="425" y="130" textAnchor="middle" fill="#3b82f6" fontSize="7">/ &nbsp; /posts/* &nbsp; /about &nbsp; /search</text>
-        <text x="425" y="142" textAnchor="middle" fill="#3b82f6" fontSize="7">/api/v1/chat &nbsp; /api/health</text>
+        <text x="425" y="130" textAnchor="middle" fill="#3b82f6" fontSize="7">/ &nbsp; /posts/* &nbsp; /cases/* &nbsp; /slides/*</text>
+        <text x="425" y="142" textAnchor="middle" fill="#3b82f6" fontSize="7">/search &nbsp; /about &nbsp; /api/v1/chat</text>
         <text x="425" y="154" textAnchor="middle" fill="#14b8a6" fontSize="7" fontWeight="600">/apply（投稿者申請フォーム）</text>
         <text x="425" y="162" textAnchor="middle" fill="#94a3b8" fontSize="6">閲覧・検索・Q&amp;A・申請</text>
       </g>
@@ -1352,7 +1502,7 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
         <line x1="370" y1="402" x2="480" y2="402" stroke="#f97316" strokeWidth="0.5" strokeOpacity="0.4" />
         <text x="425" y="418" textAnchor="middle" fill="#9a3412" fontSize="8">Zero Trust 認証</text>
         <text x="425" y="433" textAnchor="middle" fill="#9a3412" fontSize="8">IdP 連携 (Google)</text>
-        <text x="425" y="448" textAnchor="middle" fill="#9a3412" fontSize="8">JWT 検証</text>
+        <text x="425" y="448" textAnchor="middle" fill="#9a3412" fontSize="8">JWT 検証（アプリ側も）</text>
         <rect x="370" y="456" width="110" height="20" rx="5" fill="#fff7ed" stroke="#fed7aa" strokeWidth="1" />
         <text x="425" y="470" textAnchor="middle" fill="#c2410c" fontSize="7" fontWeight="600">申請承認制アクセス制御</text>
         <line x1="370" y1="484" x2="480" y2="484" stroke="#f97316" strokeWidth="0.5" strokeOpacity="0.4" />
@@ -1361,8 +1511,8 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
         <text x="425" y="526" textAnchor="middle" fill="#9a3412" fontSize="7">/admin/* （管理・申請承認）</text>
         <rect x="370" y="536" width="110" height="22" rx="5" fill="#fef2f2" stroke="#fecaca" strokeWidth="1" />
         <text x="425" y="551" textAnchor="middle" fill="#dc2626" fontSize="7" fontWeight="600">未招待 → アクセス拒否</text>
-        <rect x="370" y="564" width="110" height="18" rx="5" fill="#f0fdfa" stroke="#99f6e4" strokeWidth="1" />
-        <text x="425" y="577" textAnchor="middle" fill="#0d9488" fontSize="6.5" fontWeight="600">承認時 API でメール追加</text>
+        <rect x="370" y="564" width="110" height="18" rx="5" fill="#fff7ed" stroke="#fed7aa" strokeWidth="1" />
+        <text x="425" y="577" textAnchor="middle" fill="#c2410c" fontSize="6.5" fontWeight="600">/preview/* は One-time PIN</text>
       </g>
 
       {/* Arrow: CF Access → Pages */}
@@ -1399,9 +1549,9 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
       <g>
         <rect x="760" y="95" width="125" height="80" rx="10" fill="#8b5cf6" fillOpacity="0.1" stroke="#8b5cf6" strokeWidth="1.5" />
         <text x="822" y="118" textAnchor="middle" fill="#6d28d9" fontSize="10" fontWeight="700">D1 (SQLite)</text>
-        <text x="822" y="134" textAnchor="middle" fill="#7c3aed" fontSize="8">記事 / ユーザー / 申請</text>
-        <text x="822" y="148" textAnchor="middle" fill="#7c3aed" fontSize="8">テンプレート / カテゴリ</text>
-        <text x="822" y="162" textAnchor="middle" fill="#7c3aed" fontSize="8">プロフィール / 監査ログ</text>
+        <text x="822" y="134" textAnchor="middle" fill="#7c3aed" fontSize="8">記事 / 事例 / スライド</text>
+        <text x="822" y="148" textAnchor="middle" fill="#7c3aed" fontSize="8">ユーザー / 申請 / プレビュー</text>
+        <text x="822" y="162" textAnchor="middle" fill="#7c3aed" fontSize="8">Q&amp;A / 監査ログ（16 表）</text>
       </g>
       <line x1="885" y1="125" x2="898" y2="125" stroke="#c4b5fd" strokeWidth="1" />
       <g>
@@ -1413,8 +1563,8 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
       <g>
         <rect x="760" y="200" width="125" height="65" rx="10" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="1.5" />
         <text x="822" y="225" textAnchor="middle" fill="#047857" fontSize="10" fontWeight="700">R2 (Storage)</text>
-        <text x="822" y="241" textAnchor="middle" fill="#059669" fontSize="8">画像アップロード</text>
-        <text x="822" y="255" textAnchor="middle" fill="#059669" fontSize="8">メディア管理</text>
+        <text x="822" y="241" textAnchor="middle" fill="#059669" fontSize="8">画像 / スライド</text>
+        <text x="822" y="255" textAnchor="middle" fill="#059669" fontSize="8">事例アセット</text>
       </g>
 
       {/* AI Gateway */}
@@ -1428,7 +1578,7 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
       <g>
         <rect x="760" y="345" width="125" height="70" rx="10" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1.5" />
         <text x="822" y="370" textAnchor="middle" fill="#b45309" fontSize="10" fontWeight="700">Workers AI</text>
-        <text x="822" y="386" textAnchor="middle" fill="#d97706" fontSize="8">Llama 3.3 70B</text>
+        <text x="822" y="386" textAnchor="middle" fill="#d97706" fontSize="8">Gemma 4 26B A4B</text>
         <text x="822" y="402" textAnchor="middle" fill="#d97706" fontSize="8">ドラフト / Chat Q&amp;A</text>
       </g>
       <text x="822" y="333" textAnchor="middle" fill="#9333ea" fontSize="6">Guardrails / Log</text>
@@ -1437,7 +1587,7 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
       <g>
         <rect x="760" y="440" width="125" height="50" rx="10" fill="#64748b" fillOpacity="0.1" stroke="#64748b" strokeWidth="1.5" />
         <text x="822" y="462" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="700">KV</text>
-        <text x="822" y="478" textAnchor="middle" fill="#64748b" fontSize="8">セッション / キャッシュ</text>
+        <text x="822" y="478" textAnchor="middle" fill="#64748b" fontSize="8">キャッシュ / レート制限</text>
       </g>
 
       {/* Email Worker */}
@@ -1445,15 +1595,30 @@ function ArchitectureSvg({ prefix }: { prefix: string }) {
         <rect x="760" y="520" width="125" height="80" rx="10" fill="#14b8a6" fillOpacity="0.1" stroke="#14b8a6" strokeWidth="1.5" />
         <text x="822" y="543" textAnchor="middle" fill="#0d9488" fontSize="10" fontWeight="700">Email Worker</text>
         <text x="822" y="559" textAnchor="middle" fill="#14b8a6" fontSize="7.5">send_email binding</text>
-        <text x="822" y="573" textAnchor="middle" fill="#14b8a6" fontSize="7.5">承認通知メール送信</text>
+        <text x="822" y="573" textAnchor="middle" fill="#14b8a6" fontSize="7.5">承認通知 / プレビュー案内</text>
         <text x="822" y="587" textAnchor="middle" fill="#14b8a6" fontSize="7">noreply@cf-se-blog-jp.dev</text>
       </g>
       {/* Arrow: Email Worker → Email Routing */}
       <line x1="885" y1="560" x2="910" y2="560" stroke="#14b8a6" strokeWidth="1.5" markerEnd={`url(#${aT})`} />
       <g>
         <rect x="910" y="535" width="110" height="50" rx="10" fill="#14b8a6" fillOpacity="0.06" stroke="#14b8a6" strokeWidth="1" strokeDasharray="4" />
-        <text x="965" y="555" textAnchor="middle" fill="#0d9488" fontSize="8" fontWeight="600">Email Routing</text>
-        <text x="965" y="571" textAnchor="middle" fill="#14b8a6" fontSize="7">宛先検証・配信</text>
+        <text x="965" y="555" textAnchor="middle" fill="#0d9488" fontSize="8" fontWeight="600">Email Sending</text>
+        <text x="965" y="571" textAnchor="middle" fill="#14b8a6" fontSize="7">SPF / DKIM / DMARC</text>
+      </g>
+
+      {/* Durable Objects */}
+      <line x1="885" y1="240" x2="910" y2="215" stroke="#cbd5e1" strokeWidth="1.5" markerEnd={`url(#${a})`} />
+      <g>
+        <rect x="910" y="185" width="120" height="50" rx="10" fill="#6366f1" fillOpacity="0.1" stroke="#6366f1" strokeWidth="1.5" />
+        <text x="970" y="206" textAnchor="middle" fill="#4338ca" fontSize="9" fontWeight="700">Durable Objects</text>
+        <text x="970" y="222" textAnchor="middle" fill="#4f46e5" fontSize="7">プレゼンター同期 (WS)</text>
+      </g>
+      {/* Queues */}
+      <line x1="885" y1="465" x2="910" y2="465" stroke="#cbd5e1" strokeWidth="1.5" markerEnd={`url(#${a})`} />
+      <g>
+        <rect x="910" y="440" width="120" height="50" rx="10" fill="#0ea5e9" fillOpacity="0.1" stroke="#0ea5e9" strokeWidth="1.5" />
+        <text x="970" y="461" textAnchor="middle" fill="#0369a1" fontSize="9" fontWeight="700">Queues</text>
+        <text x="970" y="477" textAnchor="middle" fill="#0284c7" fontSize="7">ZT 事例ドラフト生成</text>
       </g>
 
       {/* Vectorize */}

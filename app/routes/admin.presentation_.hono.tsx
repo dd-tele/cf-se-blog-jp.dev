@@ -171,7 +171,7 @@ export default function PresentationHono() {
             <ArchCard
               title="ファイル構成（10 ファイル）"
               items={[
-                { label: "app/api/index.ts", desc: "メイン Hono アプリ — CORS、logger、7 モジュールのルートマウント + health check" },
+                { label: "app/api/index.ts", desc: "メイン Hono アプリ — CORS、logger、8 モジュールのルートマウント + health check" },
                 { label: "app/api/types.ts", desc: "HonoEnv 型定義 — DB, AI, R2, KV, Vectorize 等全 CF バインディングの型" },
                 { label: "app/api/middleware.ts", desc: "認証ミドルウェア 3 種 — optionalAuth / requireAuth / requireRole" },
                 { label: "app/api/routes/chat.ts", desc: "AI チャット Q&A (239行) — Turnstile→レート制限→モデレーション→RAG→streamSSE" },
@@ -179,8 +179,9 @@ export default function PresentationHono() {
                 { label: "app/api/routes/templates.ts", desc: "テンプレート API (455行・最大) — 一覧 / 詳細 / test-generate / quick-generate" },
                 { label: "app/api/routes/api-keys.ts", desc: "API キー管理 (57行) — 一覧 / 作成 / 無効化 (cfbk_ プレフィックス)" },
                 { label: "app/api/routes/upload.ts", desc: "画像アップロード (43行) — multipart → R2 保存 (JPEG/PNG/GIF/WebP/SVG, 10MB上限)" },
-                { label: "app/api/routes/r2.ts", desc: "R2 配信 (23行) — Content-Type 付きオブジェクト配信, max-age=1年, immutable" },
+                { label: "app/api/routes/r2.ts", desc: "R2 配信 (30行) — 公開画像 (images/) のみ配信, max-age=1年, immutable" },
                 { label: "app/api/routes/ai-guide.ts", desc: "AI ツール向けガイド (118行) — 外部 AI (Gemini/ChatGPT/Claude) 用の完全ガイド" },
+                { label: "app/api/routes/import-images.ts", desc: "外部画像の取り込み — Markdown 内の外部画像 URL を R2 にコピーして置換" },
               ]}
             />
             <ArchCard
@@ -208,7 +209,8 @@ export default function PresentationHono() {
                 { label: 'app.route("/api/v1/templates", templatesApi)', desc: "→ routes/templates.ts (一覧 / 詳細 / test-generate / quick-generate)" },
                 { label: 'app.route("/api/v1/api-keys", apiKeysRoute)', desc: "→ routes/api-keys.ts (一覧 / 作成 / 削除)" },
                 { label: 'app.route("/api/v1/ai-guide", aiGuide)', desc: "→ routes/ai-guide.ts (外部AI向けガイド)" },
-                { label: 'app.route("/r2", r2)', desc: "→ routes/r2.ts (R2 オブジェクト配信)" },
+                { label: 'app.route("/api/v1/import-images", importImages)', desc: "→ routes/import-images.ts (POST)" },
+                { label: 'app.route("/r2", r2)', desc: "→ routes/r2.ts (公開画像の配信)" },
               ]}
             />
           </div>
@@ -392,7 +394,7 @@ const ai = env.AI;
 await ai.run(model, {
   mesages: [...]              // ← messages のスペルミス。コンパイル通る！
 });  //  実行時: AI が空のプロンプトで推論 → 謎の出力`}</code></pre>
-                    <p>このブログには <strong>Cloudflare バインディングが 14 個</strong>あり、7 モジュールからアクセスされます。型安全がなければ <strong>98 箇所</strong>でタイポの可能性が生まれ、そのうち 1 つでも間違えれば本番障害になります。</p>
+                    <p>このブログには <strong>Cloudflare バインディングが 14 個</strong>あり、8 モジュールからアクセスされます。型安全がなければ <strong>98 箇所</strong>でタイポの可能性が生まれ、そのうち 1 つでも間違えれば本番障害になります。</p>
                   </div>
                 ),
               }}
@@ -413,7 +415,7 @@ ai.post("/trend-report", requireRole("admin", "se"), handler);
 chat.post("/", optionalAuth, handler);  // 認証なしでも OK
 
 // 認証ロジックの変更は middleware.ts の 1 ファイルだけ
-// → 全 16 エンドポイントに自動反映`}</code></pre>
+// → 全 17 エンドポイントに自動反映`}</code></pre>
                     <p className="font-semibold text-gray-900">Hono なし — 全ファイルにコピペ</p>
                     <pre className="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"><code>{`// api.v1.ai.suggest-tags.tsx
 export async function action({ request, context }) {
@@ -451,6 +453,7 @@ app.route("/api/v1/templates",  templates);  // 4 routes
 app.route("/api/v1/api-keys",   apiKeys);    // 3 routes
 app.route("/api/v1/ai-guide",   aiGuide);    // 1 route
 app.route("/api/upload-image",  upload);      // 1 route
+app.route("/api/v1/import-images", importImages); // 1 route
 app.route("/r2",                r2);          // 1 route
 app.get("/api/health", (c) => c.json({ status: "ok" }));`}</code></pre>
                     <p className="font-semibold text-gray-900">Hono なし — 12 個のファイルがフォルダに散在</p>
@@ -628,7 +631,7 @@ export async function action({ request, context }) {
 
         {/* ───────────────── API Endpoints ───────────────── */}
         <section className="mb-16">
-          <SectionHeader number={8} title="全 API エンドポイント一覧（7 モジュール / 16 routes）" />
+          <SectionHeader number={8} title="全 API エンドポイント一覧（8 モジュール / 17 routes）" />
           <div className="space-y-6">
             {/* Chat */}
             <EndpointModule
@@ -636,10 +639,10 @@ export async function action({ request, context }) {
               file="routes/chat.ts"
               lines={239}
               rows={[
-                { method: "GET", path: "/api/v1/chat", desc: "スレッドのメッセージ一覧取得（期限切れスレッド自動削除）", auth: "任意", services: "D1" },
-                { method: "POST", path: "/api/v1/chat", desc: "メッセージ送信 + AI 応答の SSE ストリーミング", auth: "任意", services: "AI, D1, KV, Vectorize" },
+                { method: "GET", path: "/api/v1/chat", desc: "スレッドのメッセージ一覧取得（期限切れスレッド自動削除）", auth: "必須", services: "D1" },
+                { method: "POST", path: "/api/v1/chat", desc: "メッセージ送信 + AI 応答の SSE ストリーミング", auth: "必須", services: "AI, D1, KV, Vectorize" },
               ]}
-              note="POST は 9段階パイプライン: Turnstile検証 → 入力バリデーション → KVレート制限(10msg/min/IP) → Llama Guard モデレーション → 記事取得 → メッセージ保存 → 会話履歴(直近20件) → RAG(Vectorize topK:3) → streamSSE(Llama 3.3 70B)"
+              note="POST は 9段階パイプライン: Turnstile検証 → 入力バリデーション → KVレート制限(10msg/min/IP) → Llama Guard モデレーション → 記事取得 → メッセージ保存 → 会話履歴(直近20件) → RAG(Vectorize topK:3) → streamSSE(Gemma 4 26B A4B)"
             />
             {/* AI */}
             <EndpointModule
@@ -691,7 +694,16 @@ export async function action({ request, context }) {
               file="routes/r2.ts"
               lines={23}
               rows={[
-                { method: "GET", path: "/r2/*", desc: "R2 オブジェクト配信（Cache-Control: max-age=1年, immutable）", auth: "不要", services: "R2" },
+                { method: "GET", path: "/r2/images/*", desc: "公開画像の配信。slides/・case-guides/ は各ルートが認可して配信（max-age=1年, immutable）", auth: "不要", services: "R2" },
+              ]}
+            />
+            {/* Import Images */}
+            <EndpointModule
+              name="Import Images"
+              file="routes/import-images.ts"
+              lines={112}
+              rows={[
+                { method: "POST", path: "/api/v1/import-images", desc: "Markdown 内の外部画像（最大 20 枚・各 10MB）を R2 に取り込み URL を置換", auth: "必須", services: "R2" },
               ]}
             />
             {/* AI Guide */}

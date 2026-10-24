@@ -144,8 +144,8 @@ export default function PresentationStack() {
               why="Workers ランタイムからレイテンシなしでアクセス可能な唯一のリレーショナル DB。外部 DB（Supabase, PlanetScale 等）への TCP 接続のオーバーヘッドがなく、コールドスタートのペナルティもゼロ。SQLite ベースで SQL の表現力を維持しつつ、Drizzle ORM で型安全なクエリを実現。"
               details={[
                 "Drizzle ORM — TypeScript スキーマ定義からクエリまで完全型安全",
-                "マイグレーション管理 — wrangler d1 migrations で本番/ローカル環境を一元管理（現在 10 マイグレーション）",
-                "リレーション — posts, users, categories, tags, qa_threads, templates 等の多テーブル構成",
+                "マイグレーション管理 — wrangler d1 migrations で本番/ローカル環境を一元管理（現在 26 マイグレーション、GitHub Actions がデプロイ時に適用）",
+                "16 テーブル — posts（記事・事例）, users, slides, slide_notes, preview_grants, qa_threads, templates, audit_logs ほか",
                 "集計クエリ — SUM, COUNT, CASE WHEN でダッシュボード用のリアルタイム統計",
                 "Workers バインディング — c.env.DB で直接アクセス、ネットワークホップなし",
               ]}
@@ -155,11 +155,12 @@ export default function PresentationStack() {
             <TechCard
               name="R2 — オブジェクトストレージ"
               subtitle="S3 互換 + エグレス無料"
-              role="記事に挿入される画像・メディアファイルの格納と配信。"
+              role="記事の画像・アバター、スライドと事例の ZIP 展開先（HTML・スクリーンショット・SVG 接続図）。"
               why="S3 互換 API でエグレス（転送）料金が完全無料。Workers から直接バインディングでアクセスでき、外部 CDN を経由せずにエッジから直接配信。署名付き URL やアクセス制御も Workers 内で実装可能。"
               details={[
                 "画像アップロード — Hono API エンドポイント経由で R2 に直接保存",
-                "配信 — /r2/* ルートで Workers がオブジェクトを取得して配信（Content-Type 自動判定）",
+                "公開配信 — /r2/images/* のみ（スライド・事例のアセットは /r2 から配信しない）",
+                "スライド・事例アセット — アプリが認可し、限定公開は HMAC 署名付きの短命トークンで配信",
                 "バケット名: cf-se-blog-media",
                 "エグレス無料 — 画像の多いブログでもトラフィックコストがゼロ",
               ]}
@@ -167,12 +168,12 @@ export default function PresentationStack() {
             />
 
             <TechCard
-              name="Workers AI — Llama 3.3 70B + Llama Guard 3"
+              name="Workers AI — Gemma 4 26B A4B + Llama Guard 3"
               subtitle="エッジ推論 AI"
               role="AI ドラフト生成、チャット Q&A、タグ提案、文章改善、トレンドレポート、コンテンツモデレーション。"
               why="外部 AI API（OpenAI, Anthropic 等）へのネットワーク遅延とコストを回避。Cloudflare のエッジで推論を実行するため、Workers との統合がシームレス。API キー管理が不要で、Workers バインディング（c.env.AI）で直接呼び出せる。Llama Guard によるコンテンツモデレーションも同じインフラ上で実行可能。"
               details={[
-                "@cf/meta/llama-3.3-70b-instruct-fp8-fast — メインモデル（ドラフト生成、チャット Q&A、タグ提案、文章改善）",
+                "@cf/google/gemma-4-26b-a4b-it — メインモデル（ドラフト生成、チャット Q&A、タグ提案、文章改善、ZT 事例ドラフト）",
                 "@cf/meta/llama-guard-3-8b — コンテンツモデレーション（不適切なチャット入力をブロック）",
                 "@cf/baai/bge-base-en-v1.5 — テキスト Embedding 生成（Vectorize 用）",
                 "ストリーミング推論 — SSE でリアルタイムにトークンを配信（チャット Q&A）",
@@ -200,12 +201,13 @@ export default function PresentationStack() {
             <TechCard
               name="KV — Key-Value ストア"
               subtitle="エッジ分散キャッシュ"
-              role="セッション管理、ページキャッシュ、ドラフト一時保存の 3 つの用途で使用。"
-              why="Workers から最も低レイテンシでアクセスできるデータストア。セッション管理では Cookie に格納する JWT の代わりに KV にセッションデータを保存し、サーバーサイドでの完全な制御を実現。ページキャッシュでは D1 クエリ結果をキャッシュしてパフォーマンスを向上。"
+              role="ページキャッシュ、AI レポートのキャッシュ、チャットのレート制限に使用（PAGE_CACHE）。"
+              why="Workers から最も低レイテンシでアクセスできるデータストア。記事一覧や AI インサイトなど、D1 や Workers AI の結果をキャッシュしてパフォーマンスとコストを改善。セッションは KV ではなく署名付き Cookie（SESSION_SECRET）で管理しています。"
               details={[
-                "SESSIONS — ユーザーセッション管理（ログイン状態、ロール情報）",
-                "PAGE_CACHE — 記事ページの HTML / データキャッシュ（TTL 付き）",
-                "DRAFTS — AI ドラフト生成結果の一時保存",
+                "PAGE_CACHE — 記事一覧のキャッシュ（TTL 付き、公開・更新時に無効化）",
+                "AI インサイト / トレンドレポートのキャッシュ",
+                "チャット Q&A の IP 単位レート制限（10 回/分）",
+                "SESSIONS / DRAFTS バインディングは定義のみで現在は未使用",
                 "グローバル分散 — 世界中のエッジロケーションに自動レプリケート",
               ]}
               color="orange"
@@ -214,11 +216,12 @@ export default function PresentationStack() {
             <TechCard
               name="Cloudflare Access — Zero Trust 認証"
               subtitle="SSO + RBAC"
-              role="管理者・投稿者の認証とアクセス制御。投稿者申請の承認時に Access ポリシーを API で自動更新。"
+              role="管理者・投稿者の認証とアクセス制御（/portal・/admin）。プレビュー共有の /preview/* は別アプリで One-time PIN。承認・プレビュー発行時にポリシーを API で自動更新。"
               why="外部の認証サービス（Auth0, Firebase Auth 等）を使わず、Cloudflare のネットワークレイヤーで認証を実現。Google / Okta SSO 連携でエンタープライズ対応。API 経由でポリシーを動的に更新でき、投稿者オンボーディングの自動化を実現。"
               details={[
                 "Google Workspace / Okta SSO 連携",
-                "JWT ベースの認証 — CF-Access-JWT-Assertion ヘッダーで検証",
+                "JWT 署名検証 — Cf-Access-Jwt-Assertion をアプリ側でも検証（複数 AUD 対応）、検証後は署名付き Cookie セッション",
+                "プレビュー用 Access アプリ — AUD を分離し、閲覧者を自動登録しない。Include を有効なリンクの宛先と同期",
                 "RBAC — admin / se / ae / user の 4 ロールで機能アクセスを制御",
                 "Access API 連携 — 投稿者申請の承認時にポリシーに自動追加",
                 "認証画面は Cloudflare が提供 — カスタム実装不要",
@@ -227,15 +230,15 @@ export default function PresentationStack() {
             />
 
             <TechCard
-              name="Email Workers"
+              name="Email Sending（Email Worker）"
               subtitle="トランザクショナルメール"
-              role="投稿者申請の承認/却下通知、新規投稿通知など、システムイベントに基づくメール送信。"
-              why="外部メールサービス（SendGrid, SES 等）への依存を排除。Cloudflare Workers 上でメールを直接構築・送信でき、同じインフラ内で完結。MIMEText ライブラリで HTML メールを構築し、MailChannels または Email Routing 経由で配信。"
+              role="投稿者申請の承認/却下通知、プレビュー共有の案内メールなど、システムイベントに基づくメール送信。"
+              why="外部メールサービス（SendGrid, SES 等）への依存を排除。Cloudflare Workers 上でメールを直接構築・送信でき、同じインフラ内で完結。send_email バインディングの send() API で、SPF / DKIM / DMARC を設定した独自ドメインから配信。"
               details={[
                 "独立した Workers として実装（cf-se-blog-email-worker）",
-                "メインアプリから fetch() で非同期呼び出し",
-                "MIMEText で HTML メール構築",
-                "投稿者申請の承認/却下、新規ユーザー登録の通知を配信",
+                "メインアプリから fetch() で呼び出し — Authorization: Bearer（EMAIL_WORKER_SECRET）必須",
+                "send_email バインディングの send() API（Email Sending）",
+                "投稿者申請の承認/却下、プレビュー共有の案内を配信",
               ]}
               color="orange"
             />
@@ -262,7 +265,7 @@ export default function PresentationStack() {
               why="アプリケーションに到達する前にエッジレベルで不正なリクエストを排除でき、Workers の処理負荷を削減。OpenAPI 標準に準拠しているため、API ドキュメントとバリデーションルールを一元管理可能。"
               details={[
                 "OpenAPI 3.0 スキーマ (api-shield-schema.json) を Cloudflare API Shield に登録",
-                "全 16 エンドポイントのメソッド・パス・パラメータ・ボディを定義・検証",
+                "API エンドポイントのメソッド・パス・パラメータ・ボディを定義・検証",
                 "Bearer (cfbk_) / Session Cookie / CF Access JWT の 3 種の securitySchemes を定義",
                 "multipart/form-data は API Shield 非対応のため、アプリ側（MIME タイプ・10MB 制限）で検証",
               ]}
@@ -287,7 +290,7 @@ export default function PresentationStack() {
             <TechCard
               name="AI Gateway — AI ガードレール & 可観測性"
               subtitle="AI 呼び出しの一元管理"
-              role="チャット Q&A の Workers AI 呼び出し（Llama Guard モデレーション + Llama 3.3 応答生成）を AI Gateway 経由でルーティング。ログ・分析・レート制限・ガードレールを一元管理。"
+              role="チャット Q&A の Workers AI 呼び出し（Llama Guard モデレーション + Gemma 4 応答生成）を AI Gateway 経由でルーティング。ログ・分析・レート制限・ガードレールを一元管理。"
               why="Workers AI への直接呼び出しではリクエストログやトークン使用量の可視化が困難。AI Gateway を経由することで、全 AI リクエストのモニタリング、レート制限、レスポンスキャッシュ、コンテンツフィルタリング（ガードレール）を Dashboard から設定可能に。コード変更は ai.run() の第 3 引数に gateway ID を渡すだけ。"
               details={[
                 "ai.run() の第 3 引数に { gateway: { id } } を渡すだけで Gateway 経由にルーティング",
@@ -296,6 +299,33 @@ export default function PresentationStack() {
                 "レスポンスキャッシュ — 同一プロンプトへの応答を再利用してコスト削減",
                 "ガードレール — プロンプト/レスポンスのコンテンツフィルタリングを Dashboard から設定",
                 "AI_GATEWAY_ID 未設定時は通常の Workers AI 直接呼び出しにフォールバック",
+              ]}
+              color="orange"
+            />
+
+            <TechCard
+              name="Durable Objects — プレゼンター同期"
+              subtitle="WebSocket Hibernation"
+              role="プレゼンターモードのライブルーム。発表画面とスマートフォンのリモコン・発表者ビューを WebSocket で同期。"
+              why="発表ごとに 1 つの Durable Object がルームの状態（現在のスライド・接続端末）を持つため、複数端末の同期を単一の場所で一貫して処理できる。Hibernation API により、接続中でもアイドル時の課金を抑えられる。"
+              details={[
+                "独立した Worker（cf-se-blog-slide-sync）の PresentRoom クラスを Pages から script_name で参照",
+                "/present-ws/ 経由で WebSocket を中継",
+                "ルームキーは 256 bit、12 時間で失効",
+                "スピーカーノートは D1 の slide_notes に保存",
+              ]}
+              color="orange"
+            />
+
+            <TechCard
+              name="Queues — 非同期処理"
+              subtitle="Producer / Consumer Worker"
+              role="Zero Trust 事例ドラフト生成。管理画面で収集した設定をキューに投入し、専用 Worker が Workers AI で下書きを生成。"
+              why="AI による長い生成をリクエストから切り離し、タイムアウトを避けつつ再試行を Queues に任せられる。"
+              details={[
+                "Producer — Pages（CASE_DRAFT_QUEUE バインディング）",
+                "Consumer — case-draft Worker（GitHub Actions でデプロイ）",
+                "生成結果は通常の記事と同じ編集画面で確認・公開",
               ]}
               color="orange"
             />
