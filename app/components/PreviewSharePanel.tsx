@@ -3,6 +3,7 @@ import { useFetcher } from "@remix-run/react";
 import {
   PREVIEW_DAY_OPTIONS,
   PREVIEW_DEFAULT_DAYS,
+  PREVIEW_DEFAULT_MESSAGE,
   buildPreviewInviteSubject,
   buildPreviewInviteText,
   formatPreviewExpiry,
@@ -119,8 +120,9 @@ export function PreviewSharePanel({
         </div>
         <textarea
           name="message"
-          rows={2}
+          rows={10}
           maxLength={1000}
+          defaultValue={PREVIEW_DEFAULT_MESSAGE}
           placeholder="案内メールに添えるメッセージ（任意）"
           disabled={!configured}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"

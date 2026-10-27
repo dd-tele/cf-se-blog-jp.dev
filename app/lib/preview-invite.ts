@@ -5,6 +5,26 @@
 export const PREVIEW_DAY_OPTIONS = [1, 3, 7, 14] as const;
 export const PREVIEW_DEFAULT_DAYS = 7;
 
+/** Pre-filled text of the "message" field on the preview share panel. Editable before sending. */
+export const PREVIEW_DEFAULT_MESSAGE = `いつもお世話になっております。
+
+技術やアーキテクチャにフォーカスをしたブログの原稿です。
+
+ご確認いただきたい主要なポイントは以下になります。
+
+・御社の課題やその解決方法に齟齬がないか
+・設定や構成の意図に齟齬はないか。
+・移行前の構成に異なる点はないか。（できるだけ抽象的に表現、描画するようにしています）
+・スクリーンショットに御社を特定できる情報が含まれていないか。（マスク漏れがないか）
+・説明文に御社を特定できる情報が含まれていないか。
+・今後の展望やさらなる課題解決のご提案は御社との会話をヒントにした、弊社目線での解説となっております。（今後についての目線合わせや補足、ご助言があれば大変助かります）
+
+本取り組みは主要なお客様にご協力を頂き、全てのお客様の運用や設計の参考となるアーキテクチャのご紹介、解説となるよう組み立てております。
+
+また、お客様の枠を超えて、ネットワークやセキュリティの最適化、エッジを利用したサーバーレスプラットフォームへの気付きを広めていくプロジェクトとして、Cloudflare の船に乗っていただきました皆様と次世代を創り上げていくプロジェクトです。
+
+今後ともどうぞよろしくお願いいたします。`;
+
 /** "2026/10/29 18:00" in Japan time. `utc` is SQLite 'YYYY-MM-DD HH:MM:SS' (UTC). */
 export function formatPreviewExpiry(utc: string): string {
   const d = new Date(`${utc.replace(" ", "T")}Z`);
