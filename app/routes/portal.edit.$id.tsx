@@ -294,7 +294,7 @@ export default function EditPost() {
   const tags: string[] = post.tags_json ? JSON.parse(post.tags_json) : [];
   const isGuide = post.content_type === "case_guide";
   const viewPath = isGuide ? `/cases/${post.slug}` : `/posts/${post.slug}`;
-  const kindLabel = isGuide ? CASE_KINDS[caseKind(post.title)].label : "記事";
+  const kindLabel = isGuide ? CASE_KINDS[caseKind(post.title, post.case_kind)].label : "記事";
   const replaceFetcher = useFetcher<{ success?: boolean; message?: string; error?: string }>();
   // The body textarea is uncontrolled; reload so a later save cannot overwrite the new HTML.
   useEffect(() => {

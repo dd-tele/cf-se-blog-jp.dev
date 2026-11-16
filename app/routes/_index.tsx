@@ -218,8 +218,8 @@ export default function Index() {
               {latestGuides.map((g) => (
                 <article key={g.id} className="group relative border-t-2 border-gray-900 py-5">
                   <div className="mb-2 flex items-center gap-2 text-xs">
-                    <span className={`rounded-full px-2 py-0.5 font-bold ${caseKindBadgeClass(caseKind(g.title))}`}>
-                      {CASE_KINDS[caseKind(g.title)].label}
+                    <span className={`rounded-full px-2 py-0.5 font-bold ${caseKindBadgeClass(caseKind(g.title, g.caseKind))}`}>
+                      {CASE_KINDS[caseKind(g.title, g.caseKind)].label}
                     </span>
                     {g.categoryName && <span className="text-gray-500">{g.categoryName}</span>}
                     {g.visibility === "limited" && (

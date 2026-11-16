@@ -78,6 +78,7 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
     dev: viewer.ok && viewer.dev === true,
     post: {
       title: post.title,
+      caseKind: post.caseKind,
       status: post.status,
       authorName: post.authorName,
       updatedAt: post.updatedAt,
@@ -146,7 +147,7 @@ export default function PreviewPage() {
   const data = useLoaderData<typeof loader>();
   if (data.blocked) return <BlockedView data={data as Blocked} />;
   const { post } = data;
-  const kindLabel = post.isGuide ? `事例 - ${CASE_KINDS[caseKind(post.title)].label}` : "記事";
+  const kindLabel = post.isGuide ? `事例 - ${CASE_KINDS[caseKind(post.title, post.caseKind)].label}` : "記事";
 
   return (
     <div className="flex h-screen flex-col bg-white">

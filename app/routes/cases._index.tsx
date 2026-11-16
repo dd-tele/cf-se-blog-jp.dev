@@ -192,7 +192,7 @@ export default function CaseGuideIndex() {
         ) : (
           <div className="grid gap-x-8 gap-y-2 lg:grid-cols-2">
             {guides.map((g) => {
-              const kind = caseKind(g.title);
+              const kind = caseKind(g.title, g.caseKind);
               return (
               <article key={g.id} className="group relative border-t-2 border-gray-900 py-5">
                 <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">

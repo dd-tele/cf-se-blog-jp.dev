@@ -31,6 +31,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     publishedAt: string | null;
     visibility: string;
     contentType: string;
+    caseKind: string | null;
     score?: number;
   }[] = [];
 
@@ -61,6 +62,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
             publishedAt: p.publishedAt,
             visibility: p.visibility ?? "public",
             contentType: p.contentType ?? "article",
+            caseKind: p.caseKind ?? null,
             score: matchMap.get(p.id),
           }))
           .sort((a: { score?: number }, b: { score?: number }) => (b.score ?? 0) - (a.score ?? 0));
@@ -84,6 +86,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         publishedAt: p.publishedAt,
         visibility: p.visibility ?? "public",
         contentType: p.contentType ?? "article",
+        caseKind: p.caseKind ?? null,
       }));
     }
   }
@@ -222,7 +225,7 @@ export default function SearchPage() {
                           post.contentType === "case_guide" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {post.contentType === "case_guide" ? `事例 - ${CASE_KINDS[caseKind(post.title)].label}` : "記事"}
+                        {post.contentType === "case_guide" ? `事例 - ${CASE_KINDS[caseKind(post.title, post.caseKind)].label}` : "記事"}
                       </span>
                       {post.categoryName && (
                         <span className="text-xs font-medium text-brand-600">

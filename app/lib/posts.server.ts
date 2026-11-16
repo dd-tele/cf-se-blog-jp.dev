@@ -1,10 +1,10 @@
-import { eq, desc, and, like, notLike, or, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, inArray } from "drizzle-orm";
 import { getDb } from "~/lib/db.server";
 import { posts, users, categories, aiSummaries, aiDraftRequests, qaThreads, qaMessages } from "~/db/schema";
 import { ulid } from "~/lib/ulid";
 import { slugify, estimateReadingTime, generateExcerpt, htmlToText, generateGuideExcerpt } from "~/lib/utils";
 import type { SessionUser } from "~/lib/auth.server";
-import { CASE_KINDS, type CaseKind } from "~/lib/case-kind";
+import { CASE_KINDS, detectCaseKind, type CaseKind } from "~/lib/case-kind";
 
 // ─── Types ─────────────────────────────────────────────────
 export interface CreatePostInput {
@@ -64,7 +64,7 @@ export async function getPublishedPosts(
     visibility?: "public" | "all";
     /** Defaults to "article" so existing article listings never include guides. */
     contentType?: PostContentType | "all";
-    /** 事例 only: filter by the 【...】 title prefix (see ~/lib/case-kind). */
+    /** 事例 only: filter by posts.case_kind (see ~/lib/case-kind). */
     caseKind?: CaseKind;
   } = {}
 ) {
@@ -82,8 +82,11 @@ export async function getPublishedPosts(
   }
 
   if (caseKind) {
+    // Stored kind; rows without one fall back to the title prefix.
     const archPrefix = `${CASE_KINDS.architecture.prefix}%`;
-    conditions.push(caseKind === "architecture" ? like(posts.title, archPrefix) : notLike(posts.title, archPrefix));
+    conditions.push(
+      sql`COALESCE(${posts.case_kind}, CASE WHEN ${posts.title} LIKE ${archPrefix} THEN 'architecture' ELSE 'guide' END) = ${caseKind}`
+    );
   }
 
   if (categorySlug) {
@@ -120,6 +123,7 @@ export async function getPublishedPosts(
       viewCount: posts.view_count,
       visibility: posts.visibility,
       contentType: posts.content_type,
+      caseKind: posts.case_kind,
       publishedAt: posts.published_at,
     })
     .from(posts)
@@ -163,6 +167,7 @@ export async function getPostBySlug(db: D1Database, slug: string) {
       visibility: posts.visibility,
       status: posts.status,
       contentType: posts.content_type,
+      caseKind: posts.case_kind,
       assetPrefix: posts.asset_prefix,
     })
     .from(posts)
@@ -200,6 +205,7 @@ export async function getUserPosts(
       visibility: posts.visibility,
       status: posts.status,
       contentType: posts.content_type,
+      caseKind: posts.case_kind,
       categoryName: categories.name,
       viewCount: posts.view_count,
       publishedAt: posts.published_at,
@@ -245,6 +251,7 @@ export async function getAuthorPublicProfile(db: D1Database, authorId: string) {
       readingTimeMinutes: posts.reading_time_minutes,
       visibility: posts.visibility,
       contentType: posts.content_type,
+      caseKind: posts.case_kind,
       viewCount: posts.view_count,
       publishedAt: posts.published_at,
     })
@@ -290,6 +297,7 @@ export async function createPost(
     visibility: input.visibility ?? "public",
     content_type: contentType,
     asset_prefix: input.assetPrefix ?? null,
+    case_kind: contentType === "case_guide" ? detectCaseKind(input.content, input.title) : null,
     tags_json: input.tagsJson,
     meta_title: input.metaTitle || input.title,
     meta_description: input.metaDescription || derived.metaDescription,
@@ -348,6 +356,10 @@ export async function updatePost(
     updateData.reading_time_minutes = derived.readingTime;
     updateData.excerpt =
       input.excerpt || (existing.content_type === "case_guide" ? derived.excerpt : input.content.slice(0, 200));
+  }
+  if (existing.content_type === "case_guide" && input.content !== undefined) {
+    // Re-detect when the guide HTML is replaced (the ZIP may switch kind).
+    updateData.case_kind = detectCaseKind(input.content, input.title ?? existing.title);
   }
   if (input.assetPrefix !== undefined) updateData.asset_prefix = input.assetPrefix;
   if (input.categoryId !== undefined) updateData.category_id = input.categoryId;

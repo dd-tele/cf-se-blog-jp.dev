@@ -44,6 +44,7 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
         id: post.id,
         slug: post.slug,
         title: post.title,
+        caseKind: post.caseKind,
         status: post.status,
         visibility: post.visibility,
         authorName: post.authorName,
@@ -68,6 +69,7 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
       id: post.id,
       slug: post.slug,
       title: post.title,
+      caseKind: post.caseKind,
       status: post.status,
       visibility: post.visibility,
       authorName: post.authorName,
@@ -89,7 +91,7 @@ export const headers = () => ({ "Cache-Control": "private, no-store" });
 export default function CaseGuideDetail() {
   const { guide, src, user, locked, canManage } = useLoaderData<typeof loader>();
   const date = guide.publishedAt ?? guide.updatedAt;
-  const kind = caseKind(guide.title);
+  const kind = caseKind(guide.title, guide.caseKind);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">

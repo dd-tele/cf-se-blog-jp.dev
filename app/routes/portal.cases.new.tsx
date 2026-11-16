@@ -9,7 +9,7 @@ import { useState } from "react";
 import { requireUser } from "~/lib/auth.server";
 import { createPost, ensureUser, getAllCategories } from "~/lib/posts.server";
 import { ulid } from "~/lib/ulid";
-import { CASE_KINDS, caseKind } from "~/lib/case-kind";
+import { CASE_KINDS, detectCaseKind } from "~/lib/case-kind";
 import {
   deleteGuideAssets,
   isZipFile,
@@ -75,7 +75,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         title,
         content: parsed.bundle.entryHtml,
         categoryId,
-        tagsJson: JSON.stringify(tags.length ? tags : [CASE_KINDS[caseKind(title)].label]),
+        tagsJson: JSON.stringify(tags.length ? tags : [CASE_KINDS[detectCaseKind(parsed.bundle.entryHtml, title)].label]),
         visibility,
         contentType: "case_guide",
         assetPrefix,

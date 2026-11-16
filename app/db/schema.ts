@@ -109,6 +109,8 @@ export const posts = sqliteTable("posts", {
     .notNull()
     .default("article"),
   asset_prefix: text("asset_prefix"), // R2 prefix for case_guide assets
+  // 事例 kind, detected from the uploaded HTML (NULL for articles / legacy rows)
+  case_kind: text("case_kind", { enum: ["guide", "architecture"] }),
   auto_approved: integer("auto_approved", { mode: "boolean" })
     .notNull()
     .default(false),

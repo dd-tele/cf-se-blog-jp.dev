@@ -131,7 +131,7 @@ export default function PortalPosts() {
                         </Link>
                         {post.contentType === "case_guide" && (
                           <span className="ml-2 inline-block rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold text-white">
-                            {CASE_KINDS[caseKind(post.title)].label}
+                            {CASE_KINDS[caseKind(post.title, post.caseKind)].label}
                           </span>
                         )}
                       </td>
